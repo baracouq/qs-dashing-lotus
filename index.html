@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>QS Insights — Shop Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1117" />
+<title>QS Insights</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -23,25 +24,30 @@
     --danger: #f85149;
     --warn: #d29922;
     --info: #58a6ff;
-    --grid: rgba(255,255,255,0.04);
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  body {
+  html, body {
     margin: 0;
     background: var(--bg);
-    background-image:
-      radial-gradient(circle at 20% 0%, rgba(94, 196, 108, 0.06), transparent 40%),
-      radial-gradient(circle at 80% 100%, rgba(88, 166, 255, 0.05), transparent 40%);
-    background-attachment: fixed;
     color: var(--text);
     font-family: 'Space Grotesk', system-ui, sans-serif;
-    min-height: 100vh;
-    padding: 24px;
+    overscroll-behavior-y: contain;
   }
 
-  .container { max-width: 1280px; margin: 0 auto; }
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(94, 196, 108, 0.06), transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(88, 166, 255, 0.05), transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding: 16px 14px 80px;
+    padding-top: env(safe-area-inset-top, 16px);
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .container { max-width: 720px; margin: 0 auto; }
 
   /* LOGIN GATE */
   #login-gate {
@@ -52,38 +58,35 @@
     align-items: center;
     justify-content: center;
     z-index: 999;
+    padding: 20px;
   }
   #login-gate .card {
     background: var(--bg-panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 36px 40px;
+    border-radius: 14px;
+    padding: 32px 28px;
     max-width: 360px;
-    width: 90%;
+    width: 100%;
     text-align: center;
   }
   #login-gate h1 {
     font-family: 'VT323', monospace;
-    font-size: 42px;
+    font-size: 38px;
     color: var(--accent);
     margin: 0 0 6px;
     line-height: 1;
   }
   #login-gate h1 span { color: var(--text); }
-  #login-gate p {
-    color: var(--text-dim);
-    font-size: 13px;
-    margin: 0 0 24px;
-  }
+  #login-gate p { color: var(--text-dim); font-size: 13px; margin: 0 0 22px; }
   #login-gate input {
     width: 100%;
     background: var(--bg-panel-2);
     border: 1px solid var(--border);
     color: var(--text);
-    padding: 12px 14px;
-    border-radius: 6px;
+    padding: 14px;
+    border-radius: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    font-size: 16px;
     margin-bottom: 12px;
   }
   #login-gate input:focus { outline: none; border-color: var(--accent); }
@@ -92,118 +95,166 @@
     background: var(--accent);
     color: #0d1117;
     border: none;
-    padding: 12px;
-    border-radius: 6px;
+    padding: 14px;
+    border-radius: 8px;
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
   }
-  #login-gate button:hover { background: #ffdc8a; }
-  #login-error {
-    color: var(--danger);
-    font-size: 12px;
-    margin-top: 10px;
-    min-height: 16px;
-  }
+  #login-error { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
 
   /* HEADER */
   header {
     display: flex;
-    align-items: end;
+    align-items: center;
     justify-content: space-between;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 28px;
+    margin-bottom: 14px;
   }
   .logo {
     font-family: 'VT323', monospace;
-    font-size: 38px;
+    font-size: 30px;
     color: var(--accent);
     line-height: 1;
-    letter-spacing: 1px;
   }
   .logo span { color: var(--text); }
-  .tagline { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
-  .stats-summary {
-    display: flex;
-    gap: 24px;
+  #refresh-btn {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 12px;
+    border-radius: 8px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    color: var(--text-dim);
+    cursor: pointer;
+    -webkit-appearance: none;
   }
-  .stats-summary b { color: var(--accent); font-weight: 700; }
+  #refresh-btn:active { background: var(--bg-panel-2); }
 
-  /* PANELS */
-  .panel {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .panel-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--text-dim);
-    margin: 0 0 14px;
-  }
-
-  /* STAT CARDS */
-  .stats-row {
+  /* KPI CARDS - 2x2 grid op mobiel */
+  .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
   }
-  .stat-card {
+  .kpi {
     background: var(--bg-panel);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 14px;
   }
-  .stat-card .label {
+  .kpi .label {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-faint);
   }
-  .stat-card .value {
+  .kpi .value {
     font-family: 'VT323', monospace;
-    font-size: 32px;
+    font-size: 30px;
     color: var(--text);
     line-height: 1.1;
     margin-top: 4px;
   }
 
-  /* CHART CONTAINER */
-  .chart-wrap { position: relative; height: 220px; }
-
-  /* TABLE */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    font-family: 'JetBrains Mono', monospace;
+  /* TABS */
+  .tabs {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 8px 0 12px;
+    margin: 0 -2px 12px;
+    z-index: 5;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-  th {
-    text-align: left;
-    font-weight: 400;
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs-inner {
+    display: flex;
+    gap: 6px;
+    padding: 0 2px;
+    width: max-content;
+  }
+  .tab {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-appearance: none;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: #0d1117;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* PANELS */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin: 0 0 12px;
+  }
+
+  /* TAB CONTENT - swipeable */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* CHART */
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* LIST ROWS */
+  .list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    gap: 12px;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row .main { flex: 1; min-width: 0; }
+  .list-row .main > div:first-child { color: var(--text); }
+  .list-row .meta {
+    font-size: 11px;
     color: var(--text-faint);
-    padding: 8px 8px 8px 0;
-    border-bottom: 1px solid var(--border);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  td {
-    padding: 10px 8px 10px 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
+  .list-row .amount {
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
   }
-  tr:last-child td { border-bottom: none; }
+
+  /* COMPACT TABLE for mobile - rows instead of table */
+  .compact-list .list-row {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
 
   .badge {
     display: inline-block;
@@ -218,19 +269,12 @@
   .badge.slow { background: rgba(210, 153, 34, 0.15); color: var(--warn); }
   .badge.hot { background: rgba(94, 196, 108, 0.15); color: var(--accent-2); }
 
-  section { margin-bottom: 20px; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media (max-width: 900px) {
-    .two-col { grid-template-columns: 1fr; }
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
-    .stats-summary { flex-direction: column; gap: 4px; }
-  }
-
+  /* HEATMAP - smaller on mobile */
   .heatmap {
     display: grid;
-    grid-template-columns: 40px repeat(24, 1fr);
-    gap: 2px;
-    font-size: 9px;
+    grid-template-columns: 32px repeat(24, 1fr);
+    gap: 1.5px;
+    font-size: 8px;
     color: var(--text-faint);
     font-family: 'JetBrains Mono', monospace;
   }
@@ -240,9 +284,10 @@
     background: rgba(255, 209, 102, 0.04);
   }
 
+  /* EMPTY STATE */
   .empty-state {
     text-align: center;
-    padding: 60px 20px;
+    padding: 50px 20px;
     color: var(--text-dim);
     font-size: 14px;
   }
@@ -253,39 +298,28 @@
     margin-bottom: 10px;
   }
 
-  .list-row {
+  /* META BAR */
+  .meta-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-  }
-  .list-row:last-child { border-bottom: none; }
-  .list-row .meta { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
-
-  footer {
-    margin-top: 32px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     color: var(--text-faint);
-    text-align: center;
+    margin-bottom: 14px;
+    padding: 0 2px;
   }
 
-  #refresh-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    cursor: pointer;
+  /* DESKTOP TWEAKS - subtle scaling, never abandons mobile feel */
+  @media (min-width: 768px) {
+    body { padding: 24px 28px 80px; }
+    .container { max-width: 880px; }
+    .logo { font-size: 36px; }
+    .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+    .kpi .value { font-size: 36px; }
+    .chart-wrap { height: 260px; }
+    .heatmap { grid-template-columns: 40px repeat(24, 1fr); font-size: 10px; }
   }
-  #refresh-btn:hover { color: var(--text); border-color: var(--border-bright); }
 </style>
 </head>
 <body>
@@ -295,28 +329,57 @@
   <div class="card">
     <h1>QS<span>·INSIGHTS</span></h1>
     <p>Enter password to view dashboard.</p>
-    <input type="password" id="password-input" placeholder="Password" autofocus />
+    <input type="password" id="password-input" placeholder="Password" autocomplete="current-password" />
     <button onclick="checkPassword()">Unlock</button>
     <div id="login-error"></div>
   </div>
 </div>
 
-<!-- MAIN APP (hidden until unlocked) -->
+<!-- MAIN APP -->
 <div class="container" id="app" style="display:none;">
 
   <header>
-    <div>
-      <div class="logo">QS<span>·INSIGHTS</span></div>
-      <div class="tagline">Your shop history, decoded.</div>
-    </div>
-    <div class="stats-summary">
-      <div><b id="totalTx">0</b> transactions</div>
-      <div><b id="totalRev">$0</b> revenue</div>
-      <div><b id="dateRange">no data</b></div>
-      <button id="refresh-btn" onclick="loadData()">↻ Refresh</button>
-    </div>
+    <div class="logo">QS<span>·INSIGHTS</span></div>
+    <button id="refresh-btn" onclick="loadData()">↻ Refresh</button>
   </header>
 
+  <div class="meta-bar">
+    <span id="dateRange">no data</span>
+    <span id="lastUpdated">—</span>
+  </div>
+
+  <!-- KPIs always visible -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="label">Revenue</div>
+      <div class="value" id="totalRev">$0</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Transactions</div>
+      <div class="value" id="totalTx">0</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Buyers</div>
+      <div class="value" id="totalBuyers">0</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Avg sale</div>
+      <div class="value" id="avgSale">$0</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tabs-inner">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="items">Items</button>
+      <button class="tab" data-tab="customers">Customers</button>
+      <button class="tab" data-tab="activity">Activity</button>
+      <button class="tab" data-tab="recent">Recent</button>
+    </div>
+  </div>
+
+  <!-- TAB CONTENTS -->
   <main id="dashboard">
     <div class="panel">
       <div class="empty-state">
@@ -328,13 +391,8 @@
 
 </div>
 
-<footer style="display:none;" id="footer">
-  QS·INSIGHTS // hosted dashboard // last updated <span id="last-updated">—</span>
-</footer>
-
 <script>
   // ===== AUTH =====
-  // SHA-256 hash of your password. Set via qs_set_password.py
   const PASSWORD_HASH = "a9b7f5467f6907a926c3ced7fd0637c21c735bd50622fc18fa9b033bd09de5c9";
 
   async function sha256(text) {
@@ -361,23 +419,23 @@
   function unlock() {
     document.getElementById('login-gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    document.getElementById('footer').style.display = 'block';
     loadData();
   }
 
-  // Allow Enter to submit
   document.getElementById('password-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') checkPassword();
   });
 
-  // Skip gate if already unlocked this session
   if (sessionStorage.getItem('qs_unlocked') === 'yes') {
     unlock();
+  } else {
+    document.getElementById('password-input').focus();
   }
 
   // ===== DATA LOADING =====
   let transactions = [];
   let charts = {};
+  let activeTab = 'overview';
 
   async function loadData() {
     try {
@@ -385,7 +443,7 @@
       if (!resp.ok) throw new Error('Could not load transactions_archive.csv');
       const text = await resp.text();
       transactions = parseCSV(text);
-      document.getElementById('last-updated').textContent = new Date().toLocaleString();
+      document.getElementById('lastUpdated').textContent = 'updated ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
       render();
     } catch (err) {
       document.getElementById('dashboard').innerHTML = `
@@ -394,8 +452,8 @@
             <div class="ascii">[ ! ]</div>
             <p>Could not load data.</p>
             <p style="font-size: 12px;">${err.message}</p>
-            <p style="font-size: 11px; margin-top: 20px;">
-              Make sure <code>transactions_archive.csv</code> is in the same folder as this HTML file.
+            <p style="font-size: 11px; margin-top: 16px;">
+              Make sure <code>transactions_archive.csv</code> is uploaded alongside this page.
             </p>
           </div>
         </div>`;
@@ -435,27 +493,60 @@
     return result;
   }
 
+  // ===== TAB SWITCHING =====
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeTab = btn.dataset.tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === btn));
+      document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.toggle('active', c.dataset.tab === activeTab);
+      });
+      // Resize charts when becoming visible
+      setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 50);
+    });
+  });
+
+  // SWIPE between tabs
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const tabOrder = ['overview', 'items', 'customers', 'activity', 'recent'];
+
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (!touchStartX) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // Only horizontal swipes, not too vertical
+    if (Math.abs(dx) > 60 && Math.abs(dy) < 50) {
+      const idx = tabOrder.indexOf(activeTab);
+      if (dx < 0 && idx < tabOrder.length - 1) {
+        document.querySelector(`.tab[data-tab="${tabOrder[idx+1]}"]`).click();
+      } else if (dx > 0 && idx > 0) {
+        document.querySelector(`.tab[data-tab="${tabOrder[idx-1]}"]`).click();
+      }
+    }
+    touchStartX = 0;
+  }, { passive: true });
+
   // ===== RENDER =====
   function render() {
     const dash = document.getElementById('dashboard');
     document.getElementById('totalTx').textContent = transactions.length;
     document.getElementById('totalRev').textContent = '$' + transactions.reduce((s,t) => s+t.net, 0).toLocaleString(undefined, {maximumFractionDigits: 0});
 
-    if (transactions.length) {
-      const dates = transactions.map(t => new Date(t.time)).sort((a,b)=>a-b);
-      const fmt = d => d.toISOString().slice(0,10);
-      document.getElementById('dateRange').textContent = `${fmt(dates[0])} → ${fmt(dates[dates.length-1])}`;
-    } else {
-      document.getElementById('dateRange').textContent = 'no data';
-    }
-
     if (!transactions.length) {
+      ['totalBuyers', 'avgSale'].forEach(id => document.getElementById(id).textContent = id === 'avgSale' ? '$0' : '0');
+      document.getElementById('dateRange').textContent = 'no data';
       dash.innerHTML = `
         <div class="panel">
           <div class="empty-state">
             <div class="ascii">[ ⛏ ]</div>
             <p>No transactions yet.</p>
-            <p style="font-size: 12px;">Run qs_run.bat locally and upload transactions_archive.csv.</p>
+            <p style="font-size: 12px;">Run the local pipeline and upload transactions_archive.csv.</p>
           </div>
         </div>`;
       return;
@@ -464,7 +555,14 @@
     const total = transactions.reduce((s,t) => s+t.net, 0);
     const buyers = new Set(transactions.map(t => t.buyer));
     const avg = total / transactions.length;
+    document.getElementById('totalBuyers').textContent = buyers.size;
+    document.getElementById('avgSale').textContent = '$' + avg.toLocaleString(undefined, {maximumFractionDigits: 0});
 
+    const dates = transactions.map(t => new Date(t.time)).sort((a,b)=>a-b);
+    const fmt = d => d.toISOString().slice(5,10);
+    document.getElementById('dateRange').textContent = `${fmt(dates[0])} → ${fmt(dates[dates.length-1])}`;
+
+    // Aggregations
     const byItem = {};
     transactions.forEach(t => {
       if (!byItem[t.item]) byItem[t.item] = { item: t.item, qty: 0, revenue: 0, count: 0, lastSale: 0 };
@@ -518,96 +616,99 @@
       heat[d.getDay()][d.getHours()]++;
     });
 
+    // Render all tabs (display:none on inactive)
     dash.innerHTML = `
-      <section>
-        <div class="stats-row">
-          <div class="stat-card"><div class="label">Total revenue</div><div class="value">$${total.toLocaleString(undefined, {maximumFractionDigits: 0})}</div></div>
-          <div class="stat-card"><div class="label">Transactions</div><div class="value">${transactions.length}</div></div>
-          <div class="stat-card"><div class="label">Unique buyers</div><div class="value">${buyers.size}</div></div>
-          <div class="stat-card"><div class="label">Avg transaction</div><div class="value">$${avg.toLocaleString(undefined, {maximumFractionDigits: 0})}</div></div>
+      <div class="tab-content active" data-tab="overview">
+        <div class="panel">
+          <h3 class="panel-title">Revenue · last 14 days</h3>
+          <div class="chart-wrap"><canvas id="revChart"></canvas></div>
         </div>
-      </section>
+        <div class="panel">
+          <h3 class="panel-title">Shops</h3>
+          ${shopArr.map(s => `
+            <div class="list-row">
+              <div class="main">
+                <div>${s.shop}</div>
+                <div class="meta">${s.count} transactions</div>
+              </div>
+              <div class="amount">$${s.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+            </div>`).join('')}
+        </div>
+      </div>
 
-      <section class="panel">
-        <h3 class="panel-title">Revenue · last 14 days</h3>
-        <div class="chart-wrap"><canvas id="revChart"></canvas></div>
-      </section>
-
-      <section class="two-col">
+      <div class="tab-content" data-tab="items">
         <div class="panel">
           <h3 class="panel-title">Top items by revenue</h3>
-          ${itemArr.slice(0,7).map(i => `
+          ${itemArr.slice(0,10).map(i => `
             <div class="list-row">
-              <div><div>${i.item}</div><div class="meta">${i.qty} sold · ${i.count} transactions</div></div>
-              <div style="color: var(--accent);">$${i.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+              <div class="main">
+                <div>${i.item}</div>
+                <div class="meta">${i.qty} sold · ${i.count} sales</div>
+              </div>
+              <div class="amount">$${i.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
             </div>`).join('')}
         </div>
+
+        <div class="panel">
+          <h3 class="panel-title">Underperformers</h3>
+          <div class="compact-list">
+            ${slowItems.slice(0, 10).map(i => {
+              const status = i.daysSince > 21 ? 'dead' : i.daysSince > 7 ? 'slow' : 'hot';
+              const label = status === 'dead' ? 'Remove' : status === 'slow' ? 'Drop price' : 'OK';
+              return `<div class="list-row">
+                <div class="main">
+                  <div>${i.item}</div>
+                  <div class="meta">${i.qty} sold · last ${i.daysSince}d ago</div>
+                </div>
+                <span class="badge ${status}">${label}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" data-tab="customers">
         <div class="panel">
           <h3 class="panel-title">Top customers</h3>
-          ${buyerArr.slice(0,7).map(b => `
+          ${buyerArr.map(b => `
             <div class="list-row">
-              <div><div>${b.buyer}</div><div class="meta">${b.count} purchases</div></div>
-              <div style="color: var(--accent);">$${b.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+              <div class="main">
+                <div>${b.buyer}</div>
+                <div class="meta">${b.count} purchases</div>
+              </div>
+              <div class="amount">$${b.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
             </div>`).join('')}
         </div>
-      </section>
+      </div>
 
-      <section class="two-col">
+      <div class="tab-content" data-tab="activity">
         <div class="panel">
-          <h3 class="panel-title">Sales by hour of day</h3>
+          <h3 class="panel-title">Sales by hour</h3>
           <div class="chart-wrap"><canvas id="hourChart"></canvas></div>
         </div>
         <div class="panel">
-          <h3 class="panel-title">Activity heatmap · day × hour</h3>
+          <h3 class="panel-title">Day × hour heatmap</h3>
           <div id="heatmap" class="heatmap"></div>
+          <p style="font-size:10px; color:var(--text-faint); margin: 10px 0 0; font-family: 'JetBrains Mono', monospace;">Darker = more sales</p>
         </div>
-      </section>
+      </div>
 
-      <section class="panel">
-        <h3 class="panel-title">Underperformers · slow movers and dead stock</h3>
-        <table>
-          <thead><tr><th>Item</th><th>Sold</th><th>Revenue</th><th>Last sale</th><th>Status</th></tr></thead>
-          <tbody>
-            ${slowItems.slice(0, 12).map(i => {
-              const status = i.daysSince > 21 ? 'dead' : i.daysSince > 7 ? 'slow' : 'hot';
-              const label = status === 'dead' ? 'Remove' : status === 'slow' ? 'Lower price' : 'Healthy';
-              return `<tr>
-                <td>${i.item}</td><td>${i.qty}</td>
-                <td>$${i.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
-                <td>${i.daysSince}d ago</td>
-                <td><span class="badge ${status}">${label}</span></td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </section>
-
-      <section class="panel">
-        <h3 class="panel-title">Shops</h3>
-        ${shopArr.map(s => `
-          <div class="list-row">
-            <div><div>${s.shop}</div><div class="meta">${s.count} transactions</div></div>
-            <div style="color: var(--accent);">$${s.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
-          </div>`).join('')}
-      </section>
-
-      <section class="panel">
-        <h3 class="panel-title">Recent transactions</h3>
-        <table>
-          <thead><tr><th>When</th><th>Buyer</th><th>Item</th><th>Qty</th><th>Net</th><th>Shop</th></tr></thead>
-          <tbody>
-            ${[...transactions].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,15).map(t => `
-              <tr>
-                <td>${formatRelativeDate(t.time)}</td>
-                <td>${t.buyer}</td><td>${t.item}</td><td>${t.qty}</td>
-                <td>$${t.net.toLocaleString(undefined,{maximumFractionDigits:2})}</td>
-                <td>${t.shop}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </section>
+      <div class="tab-content" data-tab="recent">
+        <div class="panel">
+          <h3 class="panel-title">Recent transactions</h3>
+          ${[...transactions].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,30).map(t => `
+            <div class="list-row">
+              <div class="main">
+                <div>${t.buyer} bought ${t.qty}× ${t.item}</div>
+                <div class="meta">${formatRelativeDate(t.time)}</div>
+              </div>
+              <div class="amount">$${t.net.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+            </div>`).join('')}
+        </div>
+      </div>
     `;
 
+    // Re-bind tab clicks (innerHTML wiped them)
     Object.values(charts).forEach(c => c?.destroy?.());
     charts = {};
 
@@ -619,16 +720,17 @@
           data: Object.values(dailyRev),
           borderColor: '#ffd166',
           backgroundColor: 'rgba(255, 209, 102, 0.1)',
-          fill: true, tension: 0.3, pointRadius: 3,
-          pointBackgroundColor: '#ffd166'
+          fill: true, tension: 0.3, pointRadius: 2,
+          pointBackgroundColor: '#ffd166',
+          borderWidth: 2
         }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 }, callback: v => '$' + v }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 }, callback: v => '$' + v }, grid: { color: 'rgba(255,255,255,0.04)' } }
         }
       }
     });
@@ -643,12 +745,13 @@
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 } }, grid: { display: false } },
-          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
         }
       }
     });
 
+    // Heatmap
     const heatmap = document.getElementById('heatmap');
     heatmap.innerHTML = '';
     const max = Math.max(1, ...heat.flat());
@@ -664,6 +767,7 @@
       const lbl = document.createElement('div');
       lbl.textContent = day;
       lbl.style.alignSelf = 'center';
+      lbl.style.fontSize = '9px';
       heatmap.appendChild(lbl);
       for (let h = 0; h < 24; h++) {
         const cell = document.createElement('div');
@@ -671,7 +775,7 @@
         const v = heat[di][h];
         const alpha = v / max;
         cell.style.background = `rgba(255, 209, 102, ${0.04 + alpha * 0.85})`;
-        cell.title = `${day} ${h}:00 — ${v} sales`;
+        cell.title = `${day} ${h}:00 — ${v}`;
         heatmap.appendChild(cell);
       }
     });
