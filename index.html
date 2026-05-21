@@ -197,6 +197,77 @@
     gap: 4px 12px;
   }
 
+  /* Clickable rows */
+  .list-row.clickable {
+    cursor: pointer;
+    transition: background 0.1s;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .list-row.clickable:active {
+    background: var(--bg-panel-2);
+  }
+  .list-row.clickable:hover {
+    background: var(--bg-panel-2);
+  }
+
+  /* Profile view */
+  .profile-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    -webkit-appearance: none;
+  }
+  .profile-back:active { background: var(--bg-panel-2); }
+
+  .profile-header {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 18px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .profile-header .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0d1117;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'VT323', monospace;
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+  .profile-header .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .profile-header .subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .trend-up { color: var(--accent-2); }
+  .trend-down { color: var(--danger); }
+  .trend-flat { color: var(--text-faint); }
+
   .badge {
     display: inline-block;
     padding: 2px 8px;
@@ -543,14 +614,15 @@
 
       <div class="tab-content" data-tab="customers">
         <div class="panel">
-          <h3 class="panel-title">Top customers</h3>
+          <h3 class="panel-title">Top customers · tap for profile</h3>
           ${buyerArr.map(b => `
-            <div class="list-row">
+            <div class="list-row clickable" onclick="showCustomerProfile('${b.buyer.replace(/'/g, "\\'")}')">
               <div class="main">
                 <div>${b.buyer}</div>
                 <div class="meta">${b.count} purchases</div>
               </div>
               <div class="amount">$${b.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+              <div style="color: var(--text-faint); font-size: 14px; margin-left: 4px;">›</div>
             </div>`).join('')}
         </div>
       </div>
@@ -661,6 +733,154 @@
     if (days === 1) return `yesterday ${time}`;
     if (days < 7) return `${days}d ago ${time}`;
     return d.toISOString().slice(0,10);
+  }
+
+  // ===== CUSTOMER PROFILE =====
+  function showCustomerProfile(buyerName) {
+    const txs = transactions.filter(t => t.buyer === buyerName)
+      .sort((a, b) => new Date(a.time) - new Date(b.time));
+    if (!txs.length) return;
+
+    const totalSpent = txs.reduce((s, t) => s + t.net, 0);
+    const avgSpend = totalSpent / txs.length;
+    const firstPurchase = new Date(txs[0].time);
+    const lastPurchase = new Date(txs[txs.length - 1].time);
+    const daysActive = Math.max(1, Math.round((lastPurchase - firstPurchase) / 86400000));
+
+    // Items they buy
+    const itemMap = {};
+    txs.forEach(t => {
+      if (!itemMap[t.item]) itemMap[t.item] = { item: t.item, qty: 0, revenue: 0, count: 0 };
+      itemMap[t.item].qty += t.qty;
+      itemMap[t.item].revenue += t.net;
+      itemMap[t.item].count += 1;
+    });
+    const topItems = Object.values(itemMap).sort((a, b) => b.revenue - a.revenue);
+
+    // Hour pattern
+    const hourly = Array(24).fill(0);
+    txs.forEach(t => hourly[new Date(t.time).getHours()]++);
+
+    // Trend: split into two halves of the active period
+    const midpoint = new Date((firstPurchase.getTime() + lastPurchase.getTime()) / 2);
+    const firstHalf = txs.filter(t => new Date(t.time) <= midpoint);
+    const secondHalf = txs.filter(t => new Date(t.time) > midpoint);
+    const firstHalfRev = firstHalf.reduce((s, t) => s + t.net, 0);
+    const secondHalfRev = secondHalf.reduce((s, t) => s + t.net, 0);
+    let trendLabel, trendClass;
+    if (txs.length < 4 || daysActive < 3) {
+      trendLabel = 'Too new to tell';
+      trendClass = 'trend-flat';
+    } else if (secondHalfRev > firstHalfRev * 1.2) {
+      trendLabel = `↑ Up ${Math.round((secondHalfRev / firstHalfRev - 1) * 100)}%`;
+      trendClass = 'trend-up';
+    } else if (secondHalfRev < firstHalfRev * 0.8) {
+      trendLabel = `↓ Down ${Math.round((1 - secondHalfRev / firstHalfRev) * 100)}%`;
+      trendClass = 'trend-down';
+    } else {
+      trendLabel = '→ Steady';
+      trendClass = 'trend-flat';
+    }
+
+    // Days since last purchase
+    const daysSinceLast = Math.floor((Date.now() - lastPurchase.getTime()) / 86400000);
+    const lastSeenLabel = daysSinceLast === 0 ? 'today'
+      : daysSinceLast === 1 ? 'yesterday'
+      : `${daysSinceLast}d ago`;
+
+    // Avatar initial
+    const initial = buyerName.charAt(0).toUpperCase();
+
+    const dash = document.getElementById('dashboard');
+    dash.innerHTML = `
+      <button class="profile-back" onclick="render()">← Back to dashboard</button>
+
+      <div class="profile-header">
+        <div class="avatar">${initial}</div>
+        <div class="name">${buyerName}</div>
+        <div class="subtitle">customer since ${firstPurchase.toISOString().slice(0,10)}</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="label">Total spent</div>
+          <div class="value">$${totalSpent.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Purchases</div>
+          <div class="value">${txs.length}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Avg spend</div>
+          <div class="value">$${avgSpend.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Last seen</div>
+          <div class="value" style="font-size: 22px; padding-top: 8px;">${lastSeenLabel}</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Recent activity trend</h3>
+        <div style="display: flex; align-items: center; gap: 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+          <div style="font-size: 20px; font-weight: 700;" class="${trendClass}">${trendLabel}</div>
+          <div style="color: var(--text-faint); font-size: 11px;">
+            Active for ${daysActive} day${daysActive === 1 ? '' : 's'}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Favorite items</h3>
+        ${topItems.map(i => `
+          <div class="list-row">
+            <div class="main">
+              <div>${i.item}</div>
+              <div class="meta">${i.qty} bought · ${i.count} purchase${i.count === 1 ? '' : 's'}</div>
+            </div>
+            <div class="amount">$${i.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Buying pattern · hour of day</h3>
+        <div class="chart-wrap"><canvas id="profileHourChart"></canvas></div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">All purchases (${txs.length})</h3>
+        ${[...txs].reverse().map(t => `
+          <div class="list-row">
+            <div class="main">
+              <div>${t.qty}× ${t.item}</div>
+              <div class="meta">${formatRelativeDate(t.time)} · ${t.shop}</div>
+            </div>
+            <div class="amount">$${t.net.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          </div>`).join('')}
+      </div>
+    `;
+
+    // Render hour chart
+    Object.values(charts).forEach(c => c?.destroy?.());
+    charts = {};
+    charts.profileHour = new Chart(document.getElementById('profileHourChart'), {
+      type: 'bar',
+      data: {
+        labels: Array.from({length:24}, (_,i)=>i),
+        datasets: [{ data: hourly, backgroundColor: '#ffd166', borderRadius: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+
+    // Scroll to top so the profile is visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   loadData();
