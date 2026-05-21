@@ -49,61 +49,6 @@
 
   .container { max-width: 720px; margin: 0 auto; }
 
-  /* LOGIN GATE */
-  #login-gate {
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-    padding: 20px;
-  }
-  #login-gate .card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 32px 28px;
-    max-width: 360px;
-    width: 100%;
-    text-align: center;
-  }
-  #login-gate h1 {
-    font-family: 'VT323', monospace;
-    font-size: 38px;
-    color: var(--accent);
-    margin: 0 0 6px;
-    line-height: 1;
-  }
-  #login-gate h1 span { color: var(--text); }
-  #login-gate p { color: var(--text-dim); font-size: 13px; margin: 0 0 22px; }
-  #login-gate input {
-    width: 100%;
-    background: var(--bg-panel-2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 14px;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 16px;
-    margin-bottom: 12px;
-  }
-  #login-gate input:focus { outline: none; border-color: var(--accent); }
-  #login-gate button {
-    width: 100%;
-    background: var(--accent);
-    color: #0d1117;
-    border: none;
-    padding: 14px;
-    border-radius: 8px;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-  }
-  #login-error { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
-
   /* HEADER */
   header {
     display: flex;
@@ -131,7 +76,7 @@
   }
   #refresh-btn:active { background: var(--bg-panel-2); }
 
-  /* KPI CARDS - 2x2 grid op mobiel */
+  /* KPI CARDS */
   .kpi-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -215,14 +160,11 @@
     margin: 0 0 12px;
   }
 
-  /* TAB CONTENT - swipeable */
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  /* CHART */
   .chart-wrap { position: relative; height: 200px; }
 
-  /* LIST ROWS */
   .list-row {
     display: flex;
     justify-content: space-between;
@@ -250,7 +192,6 @@
     white-space: nowrap;
   }
 
-  /* COMPACT TABLE for mobile - rows instead of table */
   .compact-list .list-row {
     flex-wrap: wrap;
     gap: 4px 12px;
@@ -269,7 +210,6 @@
   .badge.slow { background: rgba(210, 153, 34, 0.15); color: var(--warn); }
   .badge.hot { background: rgba(94, 196, 108, 0.15); color: var(--accent-2); }
 
-  /* HEATMAP - smaller on mobile */
   .heatmap {
     display: grid;
     grid-template-columns: 32px repeat(24, 1fr);
@@ -284,7 +224,6 @@
     background: rgba(255, 209, 102, 0.04);
   }
 
-  /* EMPTY STATE */
   .empty-state {
     text-align: center;
     padding: 50px 20px;
@@ -298,7 +237,6 @@
     margin-bottom: 10px;
   }
 
-  /* META BAR */
   .meta-bar {
     display: flex;
     justify-content: space-between;
@@ -310,7 +248,6 @@
     padding: 0 2px;
   }
 
-  /* DESKTOP TWEAKS - subtle scaling, never abandons mobile feel */
   @media (min-width: 768px) {
     body { padding: 24px 28px 80px; }
     .container { max-width: 880px; }
@@ -324,19 +261,7 @@
 </head>
 <body>
 
-<!-- LOGIN GATE -->
-<div id="login-gate">
-  <div class="card">
-    <h1>QS<span>·INSIGHTS</span></h1>
-    <p>Enter password to view dashboard.</p>
-    <input type="password" id="password-input" placeholder="Password" autocomplete="current-password" />
-    <button onclick="checkPassword()">Unlock</button>
-    <div id="login-error"></div>
-  </div>
-</div>
-
-<!-- MAIN APP -->
-<div class="container" id="app" style="display:none;">
+<div class="container">
 
   <header>
     <div class="logo">QS<span>·INSIGHTS</span></div>
@@ -348,7 +273,6 @@
     <span id="lastUpdated">—</span>
   </div>
 
-  <!-- KPIs always visible -->
   <div class="kpi-grid">
     <div class="kpi">
       <div class="label">Revenue</div>
@@ -368,7 +292,6 @@
     </div>
   </div>
 
-  <!-- TABS -->
   <div class="tabs">
     <div class="tabs-inner">
       <button class="tab active" data-tab="overview">Overview</button>
@@ -379,7 +302,6 @@
     </div>
   </div>
 
-  <!-- TAB CONTENTS -->
   <main id="dashboard">
     <div class="panel">
       <div class="empty-state">
@@ -392,47 +314,6 @@
 </div>
 
 <script>
-  // ===== AUTH =====
-  const PASSWORD_HASH = "a9b7f5467f6907a926c3ced7fd0637c21c735bd50622fc18fa9b033bd09de5c9";
-
-  async function sha256(text) {
-    const buf = new TextEncoder().encode(text);
-    const hash = await crypto.subtle.digest('SHA-256', buf);
-    return Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  async function checkPassword() {
-    const input = document.getElementById('password-input').value;
-    const errEl = document.getElementById('login-error');
-    if (!input) { errEl.textContent = 'Enter a password.'; return; }
-    const hash = await sha256(input);
-    if (hash === PASSWORD_HASH) {
-      sessionStorage.setItem('qs_unlocked', 'yes');
-      unlock();
-    } else {
-      errEl.textContent = 'Wrong password.';
-      document.getElementById('password-input').value = '';
-    }
-  }
-
-  function unlock() {
-    document.getElementById('login-gate').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    loadData();
-  }
-
-  document.getElementById('password-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') checkPassword();
-  });
-
-  if (sessionStorage.getItem('qs_unlocked') === 'yes') {
-    unlock();
-  } else {
-    document.getElementById('password-input').focus();
-  }
-
-  // ===== DATA LOADING =====
   let transactions = [];
   let charts = {};
   let activeTab = 'overview';
@@ -493,7 +374,6 @@
     return result;
   }
 
-  // ===== TAB SWITCHING =====
   document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
       activeTab = btn.dataset.tab;
@@ -501,12 +381,10 @@
       document.querySelectorAll('.tab-content').forEach(c => {
         c.classList.toggle('active', c.dataset.tab === activeTab);
       });
-      // Resize charts when becoming visible
       setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 50);
     });
   });
 
-  // SWIPE between tabs
   let touchStartX = 0;
   let touchStartY = 0;
   const tabOrder = ['overview', 'items', 'customers', 'activity', 'recent'];
@@ -520,7 +398,6 @@
     if (!touchStartX) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
-    // Only horizontal swipes, not too vertical
     if (Math.abs(dx) > 60 && Math.abs(dy) < 50) {
       const idx = tabOrder.indexOf(activeTab);
       if (dx < 0 && idx < tabOrder.length - 1) {
@@ -532,7 +409,6 @@
     touchStartX = 0;
   }, { passive: true });
 
-  // ===== RENDER =====
   function render() {
     const dash = document.getElementById('dashboard');
     document.getElementById('totalTx').textContent = transactions.length;
@@ -562,7 +438,6 @@
     const fmt = d => d.toISOString().slice(5,10);
     document.getElementById('dateRange').textContent = `${fmt(dates[0])} → ${fmt(dates[dates.length-1])}`;
 
-    // Aggregations
     const byItem = {};
     transactions.forEach(t => {
       if (!byItem[t.item]) byItem[t.item] = { item: t.item, qty: 0, revenue: 0, count: 0, lastSale: 0 };
@@ -616,7 +491,6 @@
       heat[d.getDay()][d.getHours()]++;
     });
 
-    // Render all tabs (display:none on inactive)
     dash.innerHTML = `
       <div class="tab-content active" data-tab="overview">
         <div class="panel">
@@ -708,7 +582,6 @@
       </div>
     `;
 
-    // Re-bind tab clicks (innerHTML wiped them)
     Object.values(charts).forEach(c => c?.destroy?.());
     charts = {};
 
@@ -751,7 +624,6 @@
       }
     });
 
-    // Heatmap
     const heatmap = document.getElementById('heatmap');
     heatmap.innerHTML = '';
     const max = Math.max(1, ...heat.flat());
@@ -790,6 +662,8 @@
     if (days < 7) return `${days}d ago ${time}`;
     return d.toISOString().slice(0,10);
   }
+
+  loadData();
 </script>
 </body>
 </html>
