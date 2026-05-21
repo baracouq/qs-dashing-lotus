@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QS Insights — Shop Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-panel: #161b22;
+    --bg-panel-2: #1c2128;
+    --border: #30363d;
+    --border-bright: #484f58;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-faint: #6e7681;
+    --accent: #ffd166;
+    --accent-2: #5ec46c;
+    --danger: #f85149;
+    --warn: #d29922;
+    --info: #58a6ff;
+    --grid: rgba(255,255,255,0.04);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(94, 196, 108, 0.06), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(88, 166, 255, 0.05), transparent 40%);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* LOGIN GATE */
+  #login-gate {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #login-gate .card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 40px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+  }
+  #login-gate h1 {
+    font-family: 'VT323', monospace;
+    font-size: 42px;
+    color: var(--accent);
+    margin: 0 0 6px;
+    line-height: 1;
+  }
+  #login-gate h1 span { color: var(--text); }
+  #login-gate p {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 24px;
+  }
+  #login-gate input {
+    width: 100%;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  #login-gate input:focus { outline: none; border-color: var(--accent); }
+  #login-gate button {
+    width: 100%;
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #login-gate button:hover { background: #ffdc8a; }
+  #login-error {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .logo {
+    font-family: 'VT323', monospace;
+    font-size: 38px;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: 1px;
+  }
+  .logo span { color: var(--text); }
+  .tagline { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+  .stats-summary {
+    display: flex;
+    gap: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .stats-summary b { color: var(--accent); font-weight: 700; }
+
+  /* PANELS */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin: 0 0 14px;
+  }
+
+  /* STAT CARDS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .stat-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+  }
+  .stat-card .value {
+    font-family: 'VT323', monospace;
+    font-size: 32px;
+    color: var(--text);
+    line-height: 1.1;
+    margin-top: 4px;
+  }
+
+  /* CHART CONTAINER */
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  th {
+    text-align: left;
+    font-weight: 400;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+    padding: 8px 8px 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 8px 10px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+  }
+  .badge.dead { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+  .badge.slow { background: rgba(210, 153, 34, 0.15); color: var(--warn); }
+  .badge.hot { background: rgba(94, 196, 108, 0.15); color: var(--accent-2); }
+
+  section { margin-bottom: 20px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) {
+    .two-col { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stats-summary { flex-direction: column; gap: 4px; }
+  }
+
+  .heatmap {
+    display: grid;
+    grid-template-columns: 40px repeat(24, 1fr);
+    gap: 2px;
+    font-size: 9px;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .heatmap .cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: rgba(255, 209, 102, 0.04);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+  .empty-state .ascii {
+    font-family: 'VT323', monospace;
+    font-size: 56px;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row .meta { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+  footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  #refresh-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  #refresh-btn:hover { color: var(--text); border-color: var(--border-bright); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="login-gate">
+  <div class="card">
+    <h1>QS<span>·INSIGHTS</span></h1>
+    <p>Enter password to view dashboard.</p>
+    <input type="password" id="password-input" placeholder="Password" autofocus />
+    <button onclick="checkPassword()">Unlock</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until unlocked) -->
+<div class="container" id="app" style="display:none;">
+
+  <header>
+    <div>
+      <div class="logo">QS<span>·INSIGHTS</span></div>
+      <div class="tagline">Your shop history, decoded.</div>
+    </div>
+    <div class="stats-summary">
+      <div><b id="totalTx">0</b> transactions</div>
+      <div><b id="totalRev">$0</b> revenue</div>
+      <div><b id="dateRange">no data</b></div>
+      <button id="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <main id="dashboard">
+    <div class="panel">
+      <div class="empty-state">
+        <div class="ascii">[ ⛏ ]</div>
+        <p>Loading shop history...</p>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<footer style="display:none;" id="footer">
+  QS·INSIGHTS // hosted dashboard // last updated <span id="last-updated">—</span>
+</footer>
+
+<script>
+  // ===== AUTH =====
+  // SHA-256 hash of your password. Set via qs_set_password.py
+  const PASSWORD_HASH = "a9b7f5467f6907a926c3ced7fd0637c21c735bd50622fc18fa9b033bd09de5c9";
+
+  async function sha256(text) {
+    const buf = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function checkPassword() {
+    const input = document.getElementById('password-input').value;
+    const errEl = document.getElementById('login-error');
+    if (!input) { errEl.textContent = 'Enter a password.'; return; }
+    const hash = await sha256(input);
+    if (hash === PASSWORD_HASH) {
+      sessionStorage.setItem('qs_unlocked', 'yes');
+      unlock();
+    } else {
+      errEl.textContent = 'Wrong password.';
+      document.getElementById('password-input').value = '';
+    }
+  }
+
+  function unlock() {
+    document.getElementById('login-gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('footer').style.display = 'block';
+    loadData();
+  }
+
+  // Allow Enter to submit
+  document.getElementById('password-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') checkPassword();
+  });
+
+  // Skip gate if already unlocked this session
+  if (sessionStorage.getItem('qs_unlocked') === 'yes') {
+    unlock();
+  }
+
+  // ===== DATA LOADING =====
+  let transactions = [];
+  let charts = {};
+
+  async function loadData() {
+    try {
+      const resp = await fetch('transactions_archive.csv?t=' + Date.now());
+      if (!resp.ok) throw new Error('Could not load transactions_archive.csv');
+      const text = await resp.text();
+      transactions = parseCSV(text);
+      document.getElementById('last-updated').textContent = new Date().toLocaleString();
+      render();
+    } catch (err) {
+      document.getElementById('dashboard').innerHTML = `
+        <div class="panel">
+          <div class="empty-state">
+            <div class="ascii">[ ! ]</div>
+            <p>Could not load data.</p>
+            <p style="font-size: 12px;">${err.message}</p>
+            <p style="font-size: 11px; margin-top: 20px;">
+              Make sure <code>transactions_archive.csv</code> is in the same folder as this HTML file.
+            </p>
+          </div>
+        </div>`;
+    }
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    const headers = parseCSVLine(lines[0]);
+    return lines.slice(1).map(line => {
+      const vals = parseCSVLine(line);
+      const o = {};
+      headers.forEach((h, i) => o[h.trim()] = vals[i] || '');
+      return {
+        time: o.time,
+        buyer: o.buyer,
+        item: o.item,
+        qty: parseInt(o.quantity) || 1,
+        net: parseFloat(o.net) || 0,
+        shop: o.shop || 'unknown'
+      };
+    }).filter(t => t.time && t.buyer && t.item);
+  }
+
+  function parseCSVLine(line) {
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQuotes = !inQuotes; continue; }
+      if (c === ',' && !inQuotes) { result.push(cur); cur = ''; continue; }
+      cur += c;
+    }
+    result.push(cur);
+    return result;
+  }
+
+  // ===== RENDER =====
+  function render() {
+    const dash = document.getElementById('dashboard');
+    document.getElementById('totalTx').textContent = transactions.length;
+    document.getElementById('totalRev').textContent = '$' + transactions.reduce((s,t) => s+t.net, 0).toLocaleString(undefined, {maximumFractionDigits: 0});
+
+    if (transactions.length) {
+      const dates = transactions.map(t => new Date(t.time)).sort((a,b)=>a-b);
+      const fmt = d => d.toISOString().slice(0,10);
+      document.getElementById('dateRange').textContent = `${fmt(dates[0])} → ${fmt(dates[dates.length-1])}`;
+    } else {
+      document.getElementById('dateRange').textContent = 'no data';
+    }
+
+    if (!transactions.length) {
+      dash.innerHTML = `
+        <div class="panel">
+          <div class="empty-state">
+            <div class="ascii">[ ⛏ ]</div>
+            <p>No transactions yet.</p>
+            <p style="font-size: 12px;">Run qs_run.bat locally and upload transactions_archive.csv.</p>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const total = transactions.reduce((s,t) => s+t.net, 0);
+    const buyers = new Set(transactions.map(t => t.buyer));
+    const avg = total / transactions.length;
+
+    const byItem = {};
+    transactions.forEach(t => {
+      if (!byItem[t.item]) byItem[t.item] = { item: t.item, qty: 0, revenue: 0, count: 0, lastSale: 0 };
+      byItem[t.item].qty += t.qty;
+      byItem[t.item].revenue += t.net;
+      byItem[t.item].count += 1;
+      const ts = new Date(t.time).getTime();
+      if (ts > byItem[t.item].lastSale) byItem[t.item].lastSale = ts;
+    });
+    const itemArr = Object.values(byItem).sort((a,b) => b.revenue - a.revenue);
+
+    const byBuyer = {};
+    transactions.forEach(t => {
+      if (!byBuyer[t.buyer]) byBuyer[t.buyer] = { buyer: t.buyer, revenue: 0, count: 0 };
+      byBuyer[t.buyer].revenue += t.net;
+      byBuyer[t.buyer].count += 1;
+    });
+    const buyerArr = Object.values(byBuyer).sort((a,b) => b.revenue - a.revenue);
+
+    const byShop = {};
+    transactions.forEach(t => {
+      if (!byShop[t.shop]) byShop[t.shop] = { shop: t.shop, revenue: 0, count: 0 };
+      byShop[t.shop].revenue += t.net;
+      byShop[t.shop].count += 1;
+    });
+    const shopArr = Object.values(byShop).sort((a,b) => b.revenue - a.revenue);
+
+    const now = Date.now();
+    const slowItems = itemArr.map(i => {
+      const daysSince = Math.floor((now - i.lastSale) / 86400000);
+      return { ...i, daysSince };
+    }).sort((a,b) => b.daysSince - a.daysSince);
+
+    const dailyRev = {};
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now - i * 86400000);
+      const key = d.toISOString().slice(0,10);
+      dailyRev[key] = 0;
+    }
+    transactions.forEach(t => {
+      const key = new Date(t.time).toISOString().slice(0,10);
+      if (key in dailyRev) dailyRev[key] += t.net;
+    });
+
+    const hourly = Array(24).fill(0);
+    transactions.forEach(t => { hourly[new Date(t.time).getHours()]++; });
+
+    const heat = Array.from({length: 7}, () => Array(24).fill(0));
+    transactions.forEach(t => {
+      const d = new Date(t.time);
+      heat[d.getDay()][d.getHours()]++;
+    });
+
+    dash.innerHTML = `
+      <section>
+        <div class="stats-row">
+          <div class="stat-card"><div class="label">Total revenue</div><div class="value">$${total.toLocaleString(undefined, {maximumFractionDigits: 0})}</div></div>
+          <div class="stat-card"><div class="label">Transactions</div><div class="value">${transactions.length}</div></div>
+          <div class="stat-card"><div class="label">Unique buyers</div><div class="value">${buyers.size}</div></div>
+          <div class="stat-card"><div class="label">Avg transaction</div><div class="value">$${avg.toLocaleString(undefined, {maximumFractionDigits: 0})}</div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3 class="panel-title">Revenue · last 14 days</h3>
+        <div class="chart-wrap"><canvas id="revChart"></canvas></div>
+      </section>
+
+      <section class="two-col">
+        <div class="panel">
+          <h3 class="panel-title">Top items by revenue</h3>
+          ${itemArr.slice(0,7).map(i => `
+            <div class="list-row">
+              <div><div>${i.item}</div><div class="meta">${i.qty} sold · ${i.count} transactions</div></div>
+              <div style="color: var(--accent);">$${i.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+            </div>`).join('')}
+        </div>
+        <div class="panel">
+          <h3 class="panel-title">Top customers</h3>
+          ${buyerArr.slice(0,7).map(b => `
+            <div class="list-row">
+              <div><div>${b.buyer}</div><div class="meta">${b.count} purchases</div></div>
+              <div style="color: var(--accent);">$${b.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+            </div>`).join('')}
+        </div>
+      </section>
+
+      <section class="two-col">
+        <div class="panel">
+          <h3 class="panel-title">Sales by hour of day</h3>
+          <div class="chart-wrap"><canvas id="hourChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3 class="panel-title">Activity heatmap · day × hour</h3>
+          <div id="heatmap" class="heatmap"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3 class="panel-title">Underperformers · slow movers and dead stock</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Sold</th><th>Revenue</th><th>Last sale</th><th>Status</th></tr></thead>
+          <tbody>
+            ${slowItems.slice(0, 12).map(i => {
+              const status = i.daysSince > 21 ? 'dead' : i.daysSince > 7 ? 'slow' : 'hot';
+              const label = status === 'dead' ? 'Remove' : status === 'slow' ? 'Lower price' : 'Healthy';
+              return `<tr>
+                <td>${i.item}</td><td>${i.qty}</td>
+                <td>$${i.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+                <td>${i.daysSince}d ago</td>
+                <td><span class="badge ${status}">${label}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h3 class="panel-title">Shops</h3>
+        ${shopArr.map(s => `
+          <div class="list-row">
+            <div><div>${s.shop}</div><div class="meta">${s.count} transactions</div></div>
+            <div style="color: var(--accent);">$${s.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+          </div>`).join('')}
+      </section>
+
+      <section class="panel">
+        <h3 class="panel-title">Recent transactions</h3>
+        <table>
+          <thead><tr><th>When</th><th>Buyer</th><th>Item</th><th>Qty</th><th>Net</th><th>Shop</th></tr></thead>
+          <tbody>
+            ${[...transactions].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,15).map(t => `
+              <tr>
+                <td>${formatRelativeDate(t.time)}</td>
+                <td>${t.buyer}</td><td>${t.item}</td><td>${t.qty}</td>
+                <td>$${t.net.toLocaleString(undefined,{maximumFractionDigits:2})}</td>
+                <td>${t.shop}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </section>
+    `;
+
+    Object.values(charts).forEach(c => c?.destroy?.());
+    charts = {};
+
+    charts.rev = new Chart(document.getElementById('revChart'), {
+      type: 'line',
+      data: {
+        labels: Object.keys(dailyRev).map(k => k.slice(5)),
+        datasets: [{
+          data: Object.values(dailyRev),
+          borderColor: '#ffd166',
+          backgroundColor: 'rgba(255, 209, 102, 0.1)',
+          fill: true, tension: 0.3, pointRadius: 3,
+          pointBackgroundColor: '#ffd166'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 }, callback: v => '$' + v }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+
+    charts.hour = new Chart(document.getElementById('hourChart'), {
+      type: 'bar',
+      data: {
+        labels: Array.from({length:24}, (_,i)=>i),
+        datasets: [{ data: hourly, backgroundColor: '#5ec46c', borderRadius: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 } }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+
+    const heatmap = document.getElementById('heatmap');
+    heatmap.innerHTML = '';
+    const max = Math.max(1, ...heat.flat());
+    heatmap.appendChild(document.createElement('div'));
+    for (let h = 0; h < 24; h++) {
+      const lbl = document.createElement('div');
+      lbl.textContent = h % 4 === 0 ? h : '';
+      lbl.style.textAlign = 'center';
+      heatmap.appendChild(lbl);
+    }
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    days.forEach((day, di) => {
+      const lbl = document.createElement('div');
+      lbl.textContent = day;
+      lbl.style.alignSelf = 'center';
+      heatmap.appendChild(lbl);
+      for (let h = 0; h < 24; h++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const v = heat[di][h];
+        const alpha = v / max;
+        cell.style.background = `rgba(255, 209, 102, ${0.04 + alpha * 0.85})`;
+        cell.title = `${day} ${h}:00 — ${v} sales`;
+        heatmap.appendChild(cell);
+      }
+    });
+  }
+
+  function formatRelativeDate(iso) {
+    const d = new Date(iso);
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    const time = d.toTimeString().slice(0,5);
+    if (days === 0) return `today ${time}`;
+    if (days === 1) return `yesterday ${time}`;
+    if (days < 7) return `${days}d ago ${time}`;
+    return d.toISOString().slice(0,10);
+  }
+</script>
+</body>
+</html>
