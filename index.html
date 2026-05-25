@@ -372,6 +372,135 @@
   .advice-card.lower .arrow { color: var(--warn); }
   .advice-card.hold  .arrow { color: var(--text-faint); }
 
+  /* Today panel - hero style */
+  .today-hero {
+    background: linear-gradient(135deg, rgba(255, 209, 102, 0.1), rgba(94, 196, 108, 0.06));
+    border: 1px solid rgba(255, 209, 102, 0.25);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .today-hero .title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .today-hero .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .today-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0 10px;
+  }
+  .today-stat {
+    text-align: center;
+  }
+  .today-stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+  }
+  .today-stat .num {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    color: var(--text);
+    line-height: 1.1;
+    margin-top: 2px;
+  }
+  .today-stat .vs {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  /* Comparison metric cards */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .compare-card {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .compare-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+    margin-bottom: 2px;
+  }
+  .compare-card .current {
+    font-family: 'VT323', monospace;
+    font-size: 26px;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .compare-card .prev {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-top: 4px;
+  }
+  .compare-card .delta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .compare-card .delta.up { color: var(--accent-2); }
+  .compare-card .delta.down { color: var(--danger); }
+  .compare-card .delta.flat { color: var(--text-faint); }
+
+  /* Record cards */
+  .record-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .record-card:last-child { border-bottom: none; }
+  .record-card .icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    width: 36px;
+    text-align: center;
+  }
+  .record-card .info { flex: 1; min-width: 0; }
+  .record-card .info .title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+  }
+  .record-card .info .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    margin-top: 2px;
+  }
+  .record-card .info .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+
   .heatmap {
     display: grid;
     grid-template-columns: 32px repeat(24, 1fr);
@@ -772,10 +901,252 @@
 
     dash.innerHTML = `
       <div class="tab-content active" data-tab="overview">
+        ${(() => {
+          // ===== TODAY HIGHLIGHTS =====
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayMs = today.getTime();
+          const todayTxs = transactions.filter(t => new Date(t.time).getTime() >= todayMs);
+          const todayRev = todayTxs.reduce((s, t) => s + t.net, 0);
+          const todayBuyers = new Set(todayTxs.map(t => t.buyer)).size;
+          const todayCount = todayTxs.length;
+
+          // Average day stats (for comparison)
+          const daysSpan = Math.max(1, (Date.now() - new Date(transactions[0].time).getTime()) / 86400000);
+          const avgDayRev = transactions.reduce((s, t) => s + t.net, 0) / daysSpan;
+          const avgDayCount = transactions.length / daysSpan;
+
+          const vsAvgRev = avgDayRev > 0 ? ((todayRev / avgDayRev - 1) * 100) : 0;
+          const vsAvgCount = avgDayCount > 0 ? ((todayCount / avgDayCount - 1) * 100) : 0;
+
+          function vsLabel(pct) {
+            if (Math.abs(pct) < 5) return `<span style="color: var(--text-faint);">≈ average</span>`;
+            const cls = pct > 0 ? 'trend-up' : 'trend-down';
+            const arrow = pct > 0 ? '↑' : '↓';
+            return `<span class="${cls}">${arrow} ${Math.abs(pct).toFixed(0)}% vs avg</span>`;
+          }
+
+          const dateStr = today.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+
+          // ===== WEEK vs WEEK =====
+          const weekMs = 7 * 86400000;
+          const thisWeekStart = Date.now() - weekMs;
+          const lastWeekStart = Date.now() - 2 * weekMs;
+          const thisWeekTxs = transactions.filter(t => new Date(t.time).getTime() >= thisWeekStart);
+          const lastWeekTxs = transactions.filter(t => {
+            const ts = new Date(t.time).getTime();
+            return ts >= lastWeekStart && ts < thisWeekStart;
+          });
+
+          const tw = {
+            rev: thisWeekTxs.reduce((s, t) => s + t.net, 0),
+            count: thisWeekTxs.length,
+            buyers: new Set(thisWeekTxs.map(t => t.buyer)).size,
+            avg: thisWeekTxs.length ? thisWeekTxs.reduce((s, t) => s + t.net, 0) / thisWeekTxs.length : 0,
+          };
+          const lw = {
+            rev: lastWeekTxs.reduce((s, t) => s + t.net, 0),
+            count: lastWeekTxs.length,
+            buyers: new Set(lastWeekTxs.map(t => t.buyer)).size,
+            avg: lastWeekTxs.length ? lastWeekTxs.reduce((s, t) => s + t.net, 0) / lastWeekTxs.length : 0,
+          };
+
+          function delta(cur, prev) {
+            if (prev === 0) {
+              if (cur === 0) return { pct: 0, cls: 'flat', text: '— no data' };
+              return { pct: 100, cls: 'up', text: '↑ new!' };
+            }
+            const pct = ((cur / prev - 1) * 100);
+            if (Math.abs(pct) < 3) return { pct: 0, cls: 'flat', text: '→ steady' };
+            const cls = pct > 0 ? 'up' : 'down';
+            const arrow = pct > 0 ? '↑' : '↓';
+            return { pct, cls, text: `${arrow} ${Math.abs(pct).toFixed(0)}%` };
+          }
+
+          const dRev = delta(tw.rev, lw.rev);
+          const dCount = delta(tw.count, lw.count);
+          const dBuyers = delta(tw.buyers, lw.buyers);
+          const dAvg = delta(tw.avg, lw.avg);
+
+          // ===== RECORDS =====
+          // Best day ever
+          const dailyRev = {};
+          transactions.forEach(t => {
+            const day = t.time.slice(0, 10);
+            dailyRev[day] = (dailyRev[day] || 0) + t.net;
+          });
+          const bestDay = Object.entries(dailyRev).sort((a, b) => b[1] - a[1])[0];
+
+          // Biggest single sale
+          const biggest = [...transactions].sort((a, b) => b.net - a.net)[0];
+
+          // All-time top customer
+          const customerTotals = {};
+          transactions.forEach(t => {
+            customerTotals[t.buyer] = (customerTotals[t.buyer] || 0) + t.net;
+          });
+          const topCustomer = Object.entries(customerTotals).sort((a, b) => b[1] - a[1])[0];
+
+          // Most active hour overall
+          const hourCount = Array(24).fill(0);
+          transactions.forEach(t => hourCount[new Date(t.time).getHours()]++);
+          const peakHour = hourCount.indexOf(Math.max(...hourCount));
+
+          // Bestselling item (qty)
+          const itemTotals = {};
+          transactions.forEach(t => {
+            itemTotals[t.item] = (itemTotals[t.item] || 0) + t.qty;
+          });
+          const bestItem = Object.entries(itemTotals).sort((a, b) => b[1] - a[1])[0];
+
+          // Longest active streak (consecutive days with sales)
+          const activeDays = new Set(Object.keys(dailyRev));
+          let streakBest = 0;
+          let streakCurrent = 0;
+          const sortedDays = [...activeDays].sort();
+          let prevDate = null;
+          for (const d of sortedDays) {
+            if (prevDate) {
+              const diff = (new Date(d) - new Date(prevDate)) / 86400000;
+              if (diff === 1) {
+                streakCurrent++;
+              } else {
+                streakCurrent = 1;
+              }
+            } else {
+              streakCurrent = 1;
+            }
+            if (streakCurrent > streakBest) streakBest = streakCurrent;
+            prevDate = d;
+          }
+
+          // Latest sale for "newest" highlight
+          const latest = [...transactions].sort((a, b) => new Date(b.time) - new Date(a.time))[0];
+
+          return `
+            <div class="today-hero">
+              <div class="title">📅 Today</div>
+              <div class="date">${dateStr}</div>
+              <div class="today-stats">
+                <div class="today-stat">
+                  <div class="label">Revenue</div>
+                  <div class="num">$${todayRev.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                  <div class="vs">${vsLabel(vsAvgRev)}</div>
+                </div>
+                <div class="today-stat">
+                  <div class="label">Sales</div>
+                  <div class="num">${todayCount}</div>
+                  <div class="vs">${vsLabel(vsAvgCount)}</div>
+                </div>
+                <div class="today-stat">
+                  <div class="label">Buyers</div>
+                  <div class="num">${todayBuyers}</div>
+                  <div class="vs" style="color: var(--text-faint);">unique today</div>
+                </div>
+              </div>
+              ${latest ? `
+                <div style="border-top: 1px solid rgba(255, 209, 102, 0.15); padding-top: 10px; margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; display: flex; align-items: center; gap: 10px;">
+                  ${avatarImg(latest.buyer)}
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="color: var(--text);">Latest: ${latest.buyer} · ${latest.qty}× ${latest.item}</div>
+                    <div style="font-size: 10px; color: var(--text-faint); margin-top: 2px;">${formatRelativeDate(latest.time)} · $${latest.net.toFixed(2)}</div>
+                  </div>
+                </div>` : ''}
+            </div>
+
+            <div class="panel">
+              <h3 class="panel-title">📈 This week vs last week</h3>
+              <div class="compare-grid">
+                <div class="compare-card">
+                  <div class="label">Revenue</div>
+                  <div class="current">$${tw.rev.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                  <div class="prev">last: $${lw.rev.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                  <div class="delta ${dRev.cls}">${dRev.text}</div>
+                </div>
+                <div class="compare-card">
+                  <div class="label">Sales</div>
+                  <div class="current">${tw.count}</div>
+                  <div class="prev">last: ${lw.count}</div>
+                  <div class="delta ${dCount.cls}">${dCount.text}</div>
+                </div>
+                <div class="compare-card">
+                  <div class="label">Buyers</div>
+                  <div class="current">${tw.buyers}</div>
+                  <div class="prev">last: ${lw.buyers}</div>
+                  <div class="delta ${dBuyers.cls}">${dBuyers.text}</div>
+                </div>
+                <div class="compare-card">
+                  <div class="label">Avg sale</div>
+                  <div class="current">$${tw.avg.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                  <div class="prev">last: $${lw.avg.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                  <div class="delta ${dAvg.cls}">${dAvg.text}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h3 class="panel-title">🏆 Records & milestones</h3>
+              ${bestDay ? `
+                <div class="record-card">
+                  <div class="icon">💰</div>
+                  <div class="info">
+                    <div class="title">Best day ever</div>
+                    <div class="value">$${bestDay[1].toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                    <div class="sub">${new Date(bestDay[0]).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}</div>
+                  </div>
+                </div>` : ''}
+              ${biggest ? `
+                <div class="record-card">
+                  <div class="icon">💎</div>
+                  <div class="info">
+                    <div class="title">Biggest single sale</div>
+                    <div class="value">$${biggest.net.toFixed(2)} · ${biggest.qty}× ${biggest.item}</div>
+                    <div class="sub">by ${biggest.buyer} · ${formatRelativeDate(biggest.time)}</div>
+                  </div>
+                </div>` : ''}
+              ${topCustomer ? `
+                <div class="record-card">
+                  <div class="icon">👑</div>
+                  <div class="info">
+                    <div class="title">All-time top customer</div>
+                    <div class="value">${topCustomer[0]}</div>
+                    <div class="sub">$${topCustomer[1].toLocaleString(undefined,{maximumFractionDigits:0})} lifetime spend</div>
+                  </div>
+                </div>` : ''}
+              ${bestItem ? `
+                <div class="record-card">
+                  <div class="icon">📦</div>
+                  <div class="info">
+                    <div class="title">Bestselling item</div>
+                    <div class="value">${bestItem[0]}</div>
+                    <div class="sub">${bestItem[1].toLocaleString()} units sold all-time</div>
+                  </div>
+                </div>` : ''}
+              <div class="record-card">
+                <div class="icon">⏰</div>
+                <div class="info">
+                  <div class="title">Peak hour</div>
+                  <div class="value">${peakHour}:00 - ${peakHour+1}:00</div>
+                  <div class="sub">${hourCount[peakHour]} sales in this window</div>
+                </div>
+              </div>
+              <div class="record-card">
+                <div class="icon">🔥</div>
+                <div class="info">
+                  <div class="title">Longest sales streak</div>
+                  <div class="value">${streakBest} day${streakBest === 1 ? '' : 's'} in a row</div>
+                  <div class="sub">consecutive days with at least one sale</div>
+                </div>
+              </div>
+            </div>
+          `;
+        })()}
+
         <div class="panel">
           <h3 class="panel-title">Revenue · last 14 days</h3>
           <div class="chart-wrap"><canvas id="revChart"></canvas></div>
         </div>
+
         <div class="panel">
           <h3 class="panel-title">Shops</h3>
           ${shopArr.map(s => `
