@@ -212,6 +212,22 @@
     background: var(--bg-panel-2);
   }
 
+  /* Minecraft item icons */
+  .item-icon {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .item-icon.large {
+    width: 32px;
+    height: 32px;
+  }
+
   /* Minecraft head avatars */
   .mc-head {
     width: 32px;
@@ -631,6 +647,45 @@
       loading="lazy"
       alt="${buyerName}"
       onerror="this.outerHTML='<div class=\\'mc-head ${sizeClass}\\' style=\\'display:inline-flex; background: var(--accent); color: #0d1117; align-items: center; justify-content: center; font-family: VT323, monospace; font-size: ${sizeClass === 'large' ? 40 : 18}px;\\'>${initial}</div>'" />`;
+  }
+
+  // ===== ITEM ICONS =====
+  // mcasset.cloud serves official Mojang textures. Items live under /item/,
+  // blocks under /block/. We convert "Sandstone Slab" → "sandstone_slab" and
+  // try item path first, falling back to block.
+  const MC_VERSION = '1.21.5';
+  const ITEM_CDN = `https://mcasset.cloud/${MC_VERSION}/assets/minecraft/textures`;
+
+  function itemSlug(itemName) {
+    if (!itemName) return '';
+    return itemName.toLowerCase()
+      .replace(/'/g, '')
+      .replace(/[^a-z0-9_]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  // Some Minecraft items have non-obvious filenames. Map display name → slug.
+  const ITEM_SLUG_OVERRIDES = {
+    'wood': 'oak_log',
+    'log': 'oak_log',
+    'plank': 'oak_planks',
+    'planks': 'oak_planks',
+    'sandstone_slab': 'sandstone_slab',  // block category
+  };
+
+  function itemIcon(itemName, size = 24) {
+    if (!itemName) return '';
+    const slug = ITEM_SLUG_OVERRIDES[itemName.toLowerCase()] || itemSlug(itemName);
+    if (!slug) return '';
+    // Try /item/ first, then /block/. The onerror chain handles both fallbacks.
+    const itemUrl = `${ITEM_CDN}/item/${slug}.png`;
+    const blockUrl = `${ITEM_CDN}/block/${slug}.png`;
+    return `<img class="item-icon"
+      src="${itemUrl}"
+      loading="lazy"
+      alt=""
+      width="${size}" height="${size}"
+      onerror="if(this.dataset.tried!=='block'){this.dataset.tried='block';this.src='${blockUrl}';}else{this.style.display='none';}" />`;
   }
 
   // ===== STORAGE UTILITIES =====
@@ -1190,7 +1245,7 @@
                 </div>` : ''}
               ${bestItem ? `
                 <div class="record-card">
-                  <div class="icon">📦</div>
+                  <div class="icon">${itemIcon(bestItem[0], 28) || '📦'}</div>
                   <div class="info">
                     <div class="title">Bestselling item</div>
                     <div class="value">${bestItem[0]}</div>
@@ -1268,6 +1323,7 @@
           <h3 class="panel-title">Top items by revenue</h3>
           ${itemArr.slice(0,10).map(i => `
             <div class="list-row">
+              ${itemIcon(i.item, 28)}
               <div class="main">
                 <div>${i.item}</div>
                 <div class="meta">${i.qty} sold · ${i.count} sales</div>
@@ -1283,6 +1339,7 @@
               const status = i.daysSince > 21 ? 'dead' : i.daysSince > 7 ? 'slow' : 'hot';
               const label = status === 'dead' ? 'Remove' : status === 'slow' ? 'Drop price' : 'OK';
               return `<div class="list-row">
+                ${itemIcon(i.item, 24)}
                 <div class="main">
                   <div>${i.item}</div>
                   <div class="meta">${i.qty} sold · last ${i.daysSince}d ago</div>
@@ -1361,6 +1418,7 @@
           <h3 class="panel-title">Recent transactions</h3>
           ${[...transactions].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,30).map(t => `
             <div class="list-row">
+              ${itemIcon(t.item, 24)}
               <div class="main">
                 <div>${t.buyer} bought ${t.qty}× ${t.item}</div>
                 <div class="meta">${formatRelativeDate(t.time)}</div>
@@ -1661,6 +1719,7 @@
         <h3 class="panel-title">Favorite items</h3>
         ${topItems.map(i => `
           <div class="list-row">
+            ${itemIcon(i.item, 24)}
             <div class="main">
               <div>${i.item}</div>
               <div class="meta">${i.qty} bought · ${i.count} purchase${i.count === 1 ? '' : 's'}</div>
@@ -1692,6 +1751,7 @@
         <h3 class="panel-title">All purchases (${txs.length})</h3>
         ${[...txs].reverse().map(t => `
           <div class="list-row">
+            ${itemIcon(t.item, 24)}
             <div class="main">
               <div>${t.qty}× ${t.item}</div>
               <div class="meta">${formatRelativeDate(t.time)} · ${t.shop}</div>
@@ -1859,6 +1919,7 @@
           <h3 class="panel-title">Items sold here</h3>
           ${items.map(i => `
             <div class="list-row">
+              ${itemIcon(i.item, 24)}
               <div class="main">
                 <div>${i.item}</div>
                 <div class="meta">${i.qty} units · ${i.count} sales</div>
@@ -1890,6 +1951,7 @@
         <h3 class="panel-title">Recent sales (${Math.min(20, txs.length)} of ${txs.length})</h3>
         ${[...txs].reverse().slice(0, 20).map(t => `
           <div class="list-row">
+            ${itemIcon(t.item, 24)}
             <div class="main">
               <div>${t.buyer} · ${t.qty}× ${t.item}</div>
               <div class="meta">${formatRelativeDate(t.time)}</div>
