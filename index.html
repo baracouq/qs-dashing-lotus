@@ -757,12 +757,22 @@
       const vals = parseCSVLine(line);
       const o = {};
       headers.forEach((h, i) => o[h.trim()] = vals[i] || '');
+      const net = parseFloat(o.net) || 0;
+      // Gross is the pre-tax amount. If not in CSV, derive from net assuming 1% tax.
+      let gross = parseFloat(o.gross);
+      let tax = parseFloat(o.tax);
+      if (!gross || isNaN(gross)) {
+        gross = net / 0.99;
+        tax = gross - net;
+      }
       return {
         time: o.time,
         buyer: o.buyer,
         item: o.item,
         qty: parseInt(o.quantity) || 1,
-        net: parseFloat(o.net) || 0,
+        net: net,
+        gross: gross,
+        tax: tax || 0,
         shop: o.shop || 'unknown'
       };
     }).filter(t => t.time && t.buyer && t.item);
@@ -865,11 +875,31 @@
     });
     const buyerArr = Object.values(byBuyer).sort((a,b) => b.revenue - a.revenue);
 
+    // Enrich shop aggregation with friendly names
     const byShop = {};
     transactions.forEach(t => {
-      if (!byShop[t.shop]) byShop[t.shop] = { shop: t.shop, revenue: 0, count: 0 };
+      if (!byShop[t.shop]) byShop[t.shop] = {
+        shop: t.shop, revenue: 0, count: 0,
+        itemCounts: {}, buyers: new Set(), lastSale: 0
+      };
       byShop[t.shop].revenue += t.net;
       byShop[t.shop].count += 1;
+      byShop[t.shop].itemCounts[t.item] = (byShop[t.shop].itemCounts[t.item] || 0) + 1;
+      byShop[t.shop].buyers.add(t.buyer);
+      const ts = new Date(t.time).getTime();
+      if (ts > byShop[t.shop].lastSale) byShop[t.shop].lastSale = ts;
+    });
+    // Derive friendly name: top item + coords
+    Object.values(byShop).forEach(s => {
+      const items = Object.entries(s.itemCounts).sort((a, b) => b[1] - a[1]);
+      const topItem = items[0][0];
+      const isMixed = items.length > 1 && items[1][1] / items[0][1] > 0.5;
+      // Try to extract coords from shop string like "world 20008,75,-17140"
+      const coordMatch = s.shop.match(/(-?\d+)[\s,]+(-?\d+)[\s,]+(-?\d+)/);
+      const coords = coordMatch ? `${coordMatch[1]}, ${coordMatch[2]}, ${coordMatch[3]}` : s.shop;
+      s.label = isMixed ? `Mixed @ ${coords}` : `${topItem} @ ${coords}`;
+      s.topItem = topItem;
+      s.uniqueItems = items.length;
     });
     const shopArr = Object.values(byShop).sort((a,b) => b.revenue - a.revenue);
 
@@ -908,6 +938,8 @@
           const todayMs = today.getTime();
           const todayTxs = transactions.filter(t => new Date(t.time).getTime() >= todayMs);
           const todayRev = todayTxs.reduce((s, t) => s + t.net, 0);
+          const todayGross = todayTxs.reduce((s, t) => s + t.gross, 0);
+          const todayTax = todayTxs.reduce((s, t) => s + t.tax, 0);
           const todayBuyers = new Set(todayTxs.map(t => t.buyer)).size;
           const todayCount = todayTxs.length;
 
@@ -1044,6 +1076,12 @@
                   <div class="vs" style="color: var(--text-faint);">unique today</div>
                 </div>
               </div>
+              ${todayCount > 0 ? `
+                <div style="border-top: 1px solid rgba(255, 209, 102, 0.15); padding-top: 10px; margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); display: flex; justify-content: space-between;">
+                  <span>Gross: <span style="color: var(--text);">$${todayGross.toLocaleString(undefined,{maximumFractionDigits:2})}</span></span>
+                  <span>Tax: <span style="color: var(--warn);">$${todayTax.toLocaleString(undefined,{maximumFractionDigits:2})}</span></span>
+                  <span>Net: <span style="color: var(--accent-2);">$${todayRev.toLocaleString(undefined,{maximumFractionDigits:2})}</span></span>
+                </div>` : ''}
               ${latest ? `
                 <div style="border-top: 1px solid rgba(255, 209, 102, 0.15); padding-top: 10px; margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; display: flex; align-items: center; gap: 10px;">
                   ${avatarImg(latest.buyer)}
@@ -1082,6 +1120,43 @@
                   <div class="delta ${dAvg.cls}">${dAvg.text}</div>
                 </div>
               </div>
+            </div>
+
+            <div class="panel">
+              <h3 class="panel-title">💵 Earnings breakdown · all-time</h3>
+              ${(() => {
+                const totalGross = transactions.reduce((s, t) => s + t.gross, 0);
+                const totalTax = transactions.reduce((s, t) => s + t.tax, 0);
+                const totalNet = transactions.reduce((s, t) => s + t.net, 0);
+                const taxPct = totalGross > 0 ? (totalTax / totalGross * 100) : 0;
+                return `
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint);">Gross sales</div>
+                      <div style="font-family: 'VT323', monospace; font-size: 24px; color: var(--text); margin-top: 2px;">$${totalGross.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                      <div style="font-size: 10px; color: var(--text-faint); margin-top: 2px;">what buyers paid</div>
+                    </div>
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint);">Tax paid</div>
+                      <div style="font-family: 'VT323', monospace; font-size: 24px; color: var(--warn); margin-top: 2px;">$${totalTax.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                      <div style="font-size: 10px; color: var(--text-faint); margin-top: 2px;">${taxPct.toFixed(2)}% of gross</div>
+                    </div>
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint);">Net earned</div>
+                      <div style="font-family: 'VT323', monospace; font-size: 24px; color: var(--accent-2); margin-top: 2px;">$${totalNet.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                      <div style="font-size: 10px; color: var(--text-faint); margin-top: 2px;">your take-home</div>
+                    </div>
+                  </div>
+                  <div style="height: 8px; background: var(--bg-panel-2); border-radius: 4px; overflow: hidden; display: flex;">
+                    <div style="background: var(--accent-2); width: ${(totalNet / totalGross * 100).toFixed(1)}%;"></div>
+                    <div style="background: var(--warn); width: ${taxPct.toFixed(1)}%;"></div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text-faint);">
+                    <span><span style="color: var(--accent-2);">■</span> kept</span>
+                    <span><span style="color: var(--warn);">■</span> tax</span>
+                  </div>
+                `;
+              })()}
             </div>
 
             <div class="panel">
@@ -1148,14 +1223,15 @@
         </div>
 
         <div class="panel">
-          <h3 class="panel-title">Shops</h3>
+          <h3 class="panel-title">Shops · tap for details</h3>
           ${shopArr.map(s => `
-            <div class="list-row">
+            <div class="list-row clickable" onclick="showShopProfile('${s.shop.replace(/'/g, "\\'")}')">
               <div class="main">
-                <div>${s.shop}</div>
-                <div class="meta">${s.count} transactions</div>
+                <div>${s.label}</div>
+                <div class="meta">${s.count} sales · ${s.buyers.size} buyer${s.buyers.size === 1 ? '' : 's'}${s.uniqueItems > 1 ? ` · ${s.uniqueItems} items` : ''}</div>
               </div>
               <div class="amount">$${s.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+              <div style="color: var(--text-faint); font-size: 14px; margin-left: 4px;">›</div>
             </div>`).join('')}
         </div>
       </div>
@@ -1543,6 +1619,26 @@
             Active for ${daysActive} day${daysActive === 1 ? '' : 's'}
           </div>
         </div>
+        ${(() => {
+          const grossTotal = txs.reduce((s, t) => s + t.gross, 0);
+          const taxTotal = txs.reduce((s, t) => s + t.tax, 0);
+          return `
+            <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+              <div>
+                <div style="color: var(--text-faint); font-size: 9px; text-transform: uppercase;">Paid total</div>
+                <div style="color: var(--text); margin-top: 2px;">$${grossTotal.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+              </div>
+              <div>
+                <div style="color: var(--text-faint); font-size: 9px; text-transform: uppercase;">Tax</div>
+                <div style="color: var(--warn); margin-top: 2px;">$${taxTotal.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+              </div>
+              <div>
+                <div style="color: var(--text-faint); font-size: 9px; text-transform: uppercase;">You got</div>
+                <div style="color: var(--accent-2); margin-top: 2px;">$${totalSpent.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+              </div>
+            </div>
+          `;
+        })()}
       </div>
 
       <div class="panel">
@@ -1626,6 +1722,208 @@
 
     // Scroll to top so the profile is visible
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ===== SHOP PROFILE =====
+  function showShopProfile(shopId) {
+    const txs = transactions.filter(t => t.shop === shopId)
+      .sort((a, b) => new Date(a.time) - new Date(b.time));
+    if (!txs.length) return;
+
+    const totalRev = txs.reduce((s, t) => s + t.net, 0);
+    const totalQty = txs.reduce((s, t) => s + t.qty, 0);
+    const avgSale = totalRev / txs.length;
+    const firstSale = new Date(txs[0].time);
+    const lastSale = new Date(txs[txs.length - 1].time);
+    const daysActive = Math.max(1, Math.round((lastSale - firstSale) / 86400000));
+    const daysSinceLast = Math.floor((Date.now() - lastSale.getTime()) / 86400000);
+
+    // Items sold here
+    const itemMap = {};
+    txs.forEach(t => {
+      if (!itemMap[t.item]) itemMap[t.item] = { item: t.item, qty: 0, revenue: 0, count: 0 };
+      itemMap[t.item].qty += t.qty;
+      itemMap[t.item].revenue += t.net;
+      itemMap[t.item].count += 1;
+    });
+    const items = Object.values(itemMap).sort((a, b) => b.revenue - a.revenue);
+    const topItem = items[0].item;
+
+    // Top customers of THIS shop
+    const buyerMap = {};
+    txs.forEach(t => {
+      if (!buyerMap[t.buyer]) buyerMap[t.buyer] = { buyer: t.buyer, revenue: 0, count: 0 };
+      buyerMap[t.buyer].revenue += t.net;
+      buyerMap[t.buyer].count += 1;
+    });
+    const buyers = Object.values(buyerMap).sort((a, b) => b.revenue - a.revenue);
+
+    // Hour pattern
+    const hourly = Array(24).fill(0);
+    txs.forEach(t => hourly[new Date(t.time).getHours()]++);
+
+    // Velocity over last 14 days for this shop
+    const cutoff = Date.now() - 14 * 86400000;
+    const recent = txs.filter(t => new Date(t.time).getTime() >= cutoff);
+    const recentRev = recent.reduce((s, t) => s + t.net, 0);
+    const velocityPerDay = recent.length / 14;
+
+    // Parse coords for display
+    const coordMatch = shopId.match(/(-?\d+)[\s,]+(-?\d+)[\s,]+(-?\d+)/);
+    const coords = coordMatch ? `${coordMatch[1]}, ${coordMatch[2]}, ${coordMatch[3]}` : shopId;
+    const isMixed = items.length > 1 && items[1].count / items[0].count > 0.5;
+    const shopName = isMixed ? `Mixed shop` : topItem;
+
+    const lastSeenLabel = daysSinceLast === 0 ? 'today'
+      : daysSinceLast === 1 ? 'yesterday'
+      : `${daysSinceLast}d ago`;
+
+    const dash = document.getElementById('dashboard');
+    dash.innerHTML = `
+      <button class="profile-back" onclick="backToOverview()">← Back to overview</button>
+
+      <div class="profile-header">
+        <div style="font-size: 56px; line-height: 1;">🏪</div>
+        <div class="name" style="margin-top: 6px;">${shopName}</div>
+        <div class="subtitle">@ ${coords}</div>
+        <div class="subtitle" style="margin-top: 4px;">active since ${firstSale.toISOString().slice(0,10)}</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="label">Revenue</div>
+          <div class="value">$${totalRev.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Sales</div>
+          <div class="value">${txs.length}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Units sold</div>
+          <div class="value">${totalQty.toLocaleString()}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Last sale</div>
+          <div class="value" style="font-size: 22px; padding-top: 8px;">${lastSeenLabel}</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Performance</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+          <div>
+            <div style="color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Velocity</div>
+            <div style="font-size: 18px; color: var(--text); margin-top: 4px;">${velocityPerDay.toFixed(1)} <span style="font-size: 11px; color: var(--text-faint);">sales/day</span></div>
+            <div style="color: var(--text-faint); font-size: 10px; margin-top: 4px;">last 14 days</div>
+          </div>
+          <div>
+            <div style="color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Avg sale</div>
+            <div style="font-size: 18px; color: var(--text); margin-top: 4px;">$${avgSale.toFixed(2)}</div>
+            <div style="color: var(--text-faint); font-size: 10px; margin-top: 4px;">all-time</div>
+          </div>
+          <div>
+            <div style="color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Last 14d</div>
+            <div style="font-size: 18px; color: var(--text); margin-top: 4px;">$${recentRev.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+            <div style="color: var(--text-faint); font-size: 10px; margin-top: 4px;">${recent.length} sales</div>
+          </div>
+          <div>
+            <div style="color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Unique buyers</div>
+            <div style="font-size: 18px; color: var(--text); margin-top: 4px;">${buyers.length}</div>
+            <div style="color: var(--text-faint); font-size: 10px; margin-top: 4px;">over ${daysActive} days</div>
+          </div>
+        </div>
+        ${(() => {
+          const grossTotal = txs.reduce((s, t) => s + t.gross, 0);
+          const taxTotal = txs.reduce((s, t) => s + t.tax, 0);
+          return `
+            <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 14px; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+              <div>
+                <div style="color: var(--text-faint); font-size: 9px; text-transform: uppercase;">Buyers paid</div>
+                <div style="color: var(--text); margin-top: 2px;">$${grossTotal.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+              </div>
+              <div>
+                <div style="color: var(--text-faint); font-size: 9px; text-transform: uppercase;">Tax</div>
+                <div style="color: var(--warn); margin-top: 2px;">$${taxTotal.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+              </div>
+              <div>
+                <div style="color: var(--text-faint); font-size: 9px; text-transform: uppercase;">You got</div>
+                <div style="color: var(--accent-2); margin-top: 2px;">$${totalRev.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+              </div>
+            </div>
+          `;
+        })()}
+      </div>
+
+      ${items.length > 1 ? `
+        <div class="panel">
+          <h3 class="panel-title">Items sold here</h3>
+          ${items.map(i => `
+            <div class="list-row">
+              <div class="main">
+                <div>${i.item}</div>
+                <div class="meta">${i.qty} units · ${i.count} sales</div>
+              </div>
+              <div class="amount">$${i.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <div class="panel">
+        <h3 class="panel-title">Top customers at this shop</h3>
+        ${buyers.slice(0, 8).map(b => `
+          <div class="list-row clickable" onclick="showCustomerProfile('${b.buyer.replace(/'/g, "\\'")}')">
+            ${avatarImg(b.buyer)}
+            <div class="main">
+              <div>${b.buyer}</div>
+              <div class="meta">${b.count} purchase${b.count === 1 ? '' : 's'}</div>
+            </div>
+            <div class="amount">$${b.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+            <div style="color: var(--text-faint); font-size: 14px; margin-left: 4px;">›</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Sales pattern · hour of day</h3>
+        <div class="chart-wrap"><canvas id="shopHourChart"></canvas></div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Recent sales (${Math.min(20, txs.length)} of ${txs.length})</h3>
+        ${[...txs].reverse().slice(0, 20).map(t => `
+          <div class="list-row">
+            <div class="main">
+              <div>${t.buyer} · ${t.qty}× ${t.item}</div>
+              <div class="meta">${formatRelativeDate(t.time)}</div>
+            </div>
+            <div class="amount">$${t.net.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          </div>`).join('')}
+      </div>
+    `;
+
+    Object.values(charts).forEach(c => c?.destroy?.());
+    charts = {};
+    charts.shopHour = new Chart(document.getElementById('shopHourChart'), {
+      type: 'bar',
+      data: {
+        labels: Array.from({length:24}, (_,i)=>i),
+        datasets: [{ data: hourly, backgroundColor: '#ffd166', borderRadius: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function backToOverview() {
+    render();
+    const overviewTab = document.querySelector('.tab[data-tab="overview"]');
+    if (overviewTab) overviewTab.click();
   }
 
   // ===== TAG & NOTE MANAGEMENT =====
