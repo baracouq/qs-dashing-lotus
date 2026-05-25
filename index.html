@@ -517,6 +517,68 @@
     margin-top: 2px;
   }
 
+  /* Suspicion flags */
+  .suspicion-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .suspicion-card.high {
+    background: rgba(248, 81, 73, 0.08);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+  }
+  .suspicion-card.medium {
+    background: rgba(210, 153, 34, 0.06);
+    border: 1px solid rgba(210, 153, 34, 0.25);
+  }
+  .suspicion-card:hover { filter: brightness(1.15); }
+  .suspicion-card .main { flex: 1; min-width: 0; }
+  .suspicion-card .buyer-name {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .suspicion-card .signals {
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .suspicion-card .signal-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.05);
+    margin-right: 4px;
+    margin-top: 2px;
+    font-size: 9px;
+    color: var(--text);
+  }
+  .suspicion-score {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .suspicion-score .level {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    line-height: 1;
+  }
+  .suspicion-score.high .level { color: var(--danger); }
+  .suspicion-score.medium .level { color: var(--warn); }
+  .suspicion-score .pts {
+    font-size: 9px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
   .heatmap {
     display: grid;
     grid-template-columns: 32px repeat(24, 1fr);
@@ -1242,6 +1304,151 @@
                 `;
               })()}
             </div>
+
+            ${(() => {
+              // ===== ARBITRAGE / RESELLER DETECTION =====
+              // Score each buyer on suspicious patterns. Show those scoring ≥3.
+              const candidates = [];
+              const buyers = [...new Set(transactions.map(t => t.buyer))];
+
+              // Total qty per item (for market share calc)
+              const itemTotalQty = {};
+              transactions.forEach(t => {
+                itemTotalQty[t.item] = (itemTotalQty[t.item] || 0) + t.qty;
+              });
+
+              buyers.forEach(buyer => {
+                const btxs = transactions.filter(t => t.buyer === buyer)
+                  .sort((a, b) => new Date(a.time) - new Date(b.time));
+                if (btxs.length < 2) return; // Need history to detect patterns
+
+                let score = 0;
+                const signals = [];
+
+                // 1. Heavy bulk avg: ≥ 96 (3 stacks) average per tx
+                const totalQty = btxs.reduce((s, t) => s + t.qty, 0);
+                const avgQty = totalQty / btxs.length;
+                if (avgQty >= 96) {
+                  score += 2;
+                  signals.push(`avg ${Math.round(avgQty)}/tx (3+ stacks)`);
+                }
+
+                // 2. Giga bulk: single tx ≥ 320 stuks (5 stacks)
+                const megaTx = btxs.find(t => t.qty >= 320);
+                if (megaTx) {
+                  score += 3;
+                  signals.push(`bought ${megaTx.qty}× ${megaTx.item} at once`);
+                }
+
+                // 3. Burst buying: 5+ tx within any 30-minute window
+                let maxBurst = 0;
+                for (let i = 0; i < btxs.length; i++) {
+                  const t0 = new Date(btxs[i].time).getTime();
+                  let count = 1;
+                  for (let j = i + 1; j < btxs.length; j++) {
+                    const t1 = new Date(btxs[j].time).getTime();
+                    if (t1 - t0 <= 30 * 60 * 1000) count++;
+                    else break;
+                  }
+                  if (count > maxBurst) maxBurst = count;
+                }
+                if (maxBurst >= 5) {
+                  score += 2;
+                  signals.push(`${maxBurst} buys in 30min`);
+                }
+
+                // 4. SHOP DRAINAGE: large share of total qty bought in short window
+                // Find any 1-hour window where this buyer bought ≥ 60% of all
+                // sales of their top item in that window
+                const itemQty = {};
+                btxs.forEach(t => itemQty[t.item] = (itemQty[t.item] || 0) + t.qty);
+                const sortedItems = Object.entries(itemQty).sort((a, b) => b[1] - a[1]);
+                const topItemName = sortedItems[0][0];
+                const topItemBuyerQty = sortedItems[0][1];
+
+                // Find the buyer's biggest "session" of top-item buys
+                const topItemBtxs = btxs.filter(t => t.item === topItemName);
+                let drainageMax = { buyerQty: 0, totalQty: 0, share: 0 };
+                for (let i = 0; i < topItemBtxs.length; i++) {
+                  const t0 = new Date(topItemBtxs[i].time).getTime();
+                  const tEnd = t0 + 60 * 60 * 1000; // 1 hour window
+                  const buyerQtyWindow = topItemBtxs.filter(t => {
+                    const ts = new Date(t.time).getTime();
+                    return ts >= t0 && ts <= tEnd;
+                  }).reduce((s, t) => s + t.qty, 0);
+                  // Total qty of this item sold by ANYONE in the same window
+                  const allTxsWindow = transactions.filter(t => {
+                    const ts = new Date(t.time).getTime();
+                    return t.item === topItemName && ts >= t0 && ts <= tEnd;
+                  });
+                  const totalQtyWindow = allTxsWindow.reduce((s, t) => s + t.qty, 0);
+                  const share = totalQtyWindow > 0 ? buyerQtyWindow / totalQtyWindow : 0;
+                  if (share > drainageMax.share && buyerQtyWindow >= 200) {
+                    drainageMax = { buyerQty: buyerQtyWindow, totalQty: totalQtyWindow, share };
+                  }
+                }
+                if (drainageMax.share >= 0.8 && drainageMax.buyerQty >= 300) {
+                  score += 4;
+                  signals.push(`drained ${drainageMax.buyerQty}× ${topItemName} in 1h (${Math.round(drainageMax.share*100)}% of all sales)`);
+                } else if (drainageMax.share >= 0.6 && drainageMax.buyerQty >= 200) {
+                  score += 3;
+                  signals.push(`bought ${drainageMax.buyerQty}× ${topItemName} in 1h (${Math.round(drainageMax.share*100)}% of all sales)`);
+                }
+
+                // 5. Long-term market share: >60% of all sales of an item
+                const marketShare = topItemBuyerQty / itemTotalQty[topItemName];
+                if (marketShare > 0.6 && itemTotalQty[topItemName] >= 100) {
+                  score += 2;
+                  signals.push(`owns ${Math.round(marketShare*100)}% of ${topItemName} market`);
+                }
+
+                // 6. Heavy frequency: ≥ 10 buys in last 7 days
+                const weekAgo = Date.now() - 7 * 86400000;
+                const recentCount = btxs.filter(t => new Date(t.time).getTime() >= weekAgo).length;
+                if (recentCount >= 10) {
+                  score += 1;
+                  signals.push(`${recentCount} buys this week`);
+                }
+
+                if (score >= 4) {
+                  candidates.push({ buyer, score, signals, totalQty, txCount: btxs.length });
+                }
+              });
+
+              candidates.sort((a, b) => b.score - a.score);
+
+              if (!candidates.length) return '';
+
+              return `
+                <div class="panel">
+                  <h3 class="panel-title">🚩 Suspicious activity</h3>
+                  <p style="font-size: 11px; color: var(--text-faint); margin: -6px 0 12px; font-family: 'JetBrains Mono', monospace; line-height: 1.5;">
+                    Buyers showing arbitrage/reseller patterns. Not proof, just signals worth watching.
+                  </p>
+                  ${candidates.map(c => {
+                    const level = c.score >= 7 ? 'high' : 'medium';
+                    const emoji = level === 'high' ? '🚩' : '⚠️';
+                    return `
+                      <div class="suspicion-card ${level}" onclick="showCustomerProfile('${c.buyer.replace(/'/g, "\\'")}')">
+                        ${avatarImg(c.buyer)}
+                        <div class="main">
+                          <div class="buyer-name">${c.buyer}</div>
+                          <div class="signals">
+                            ${c.signals.map(s => `<span class="signal-tag">${s}</span>`).join('')}
+                          </div>
+                        </div>
+                        <div class="suspicion-score ${level}">
+                          <div class="level">${emoji}</div>
+                          <div class="pts">${c.score} pts</div>
+                        </div>
+                      </div>`;
+                  }).join('')}
+                  <p style="font-size: 10px; color: var(--text-faint); margin: 10px 0 0; font-family: 'JetBrains Mono', monospace;">
+                    🚩 high · ⚠️ medium · tap to view profile
+                  </p>
+                </div>
+              `;
+            })()}
 
             <div class="panel">
               <h3 class="panel-title">🏆 Records & milestones</h3>
