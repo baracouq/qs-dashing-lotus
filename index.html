@@ -650,42 +650,71 @@
   }
 
   // ===== ITEM ICONS =====
-  // mcasset.cloud serves official Mojang textures. Items live under /item/,
-  // blocks under /block/. We convert "Sandstone Slab" → "sandstone_slab" and
-  // try item path first, falling back to block.
-  const MC_VERSION = '1.21.5';
-  const ITEM_CDN = `https://mcasset.cloud/${MC_VERSION}/assets/minecraft/textures`;
+  // jsDelivr serves PNG textures from InventivetalentDev/minecraft-assets repo.
+  // URL: cdn.jsdelivr.net/gh/USER/REPO@BRANCH/path
+  // Most items live under textures/item/, some under textures/block/.
+  const MC_VERSION = '1.21';
+  const ICON_BASE = `https://cdn.jsdelivr.net/gh/InventivetalentDev/minecraft-assets@${MC_VERSION}/assets/minecraft/textures`;
 
-  function itemSlug(itemName) {
-    if (!itemName) return '';
-    return itemName.toLowerCase()
-      .replace(/'/g, '')
-      .replace(/[^a-z0-9_]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-  }
-
-  // Some Minecraft items have non-obvious filenames. Map display name → slug.
   const ITEM_SLUG_OVERRIDES = {
+    // Wood / planks shortcuts
     'wood': 'oak_log',
     'log': 'oak_log',
     'plank': 'oak_planks',
     'planks': 'oak_planks',
-    'sandstone_slab': 'sandstone_slab',  // block category
+
+    // Items with names that don't match Minecraft's internal IDs
+    'redstone_dust': 'redstone',
+    'redstone': 'redstone',
+    'glowstone_dust': 'glowstone_dust',
+    'sugar_cane': 'sugar_cane',
+    'cocoa_beans': 'cocoa_beans',
+    'ink_sac': 'ink_sac',
+
+    // Slabs use the parent block texture (slabs have no item-specific texture)
+    'sandstone_slab': 'sandstone',
+    'stone_slab': 'stone',
+    'cobblestone_slab': 'cobblestone',
+    'oak_slab': 'oak_planks',
+    'birch_slab': 'birch_planks',
+    'spruce_slab': 'spruce_planks',
+    'dark_oak_slab': 'dark_oak_planks',
+    'jungle_slab': 'jungle_planks',
+    'acacia_slab': 'acacia_planks',
+    'smooth_stone_slab': 'smooth_stone',
+    'quartz_slab': 'quartz_block_side',
+
+    // Stairs use parent block texture
+    'sandstone_stairs': 'sandstone',
+    'stone_stairs': 'stone',
+    'cobblestone_stairs': 'cobblestone',
+    'oak_stairs': 'oak_planks',
   };
+
+  function resolveItemSlug(itemName) {
+    if (!itemName) return '';
+    const base = itemName.toLowerCase().trim();
+    const key = base.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    if (ITEM_SLUG_OVERRIDES[key]) return ITEM_SLUG_OVERRIDES[key];
+    return key;
+  }
 
   function itemIcon(itemName, size = 24) {
     if (!itemName) return '';
-    const slug = ITEM_SLUG_OVERRIDES[itemName.toLowerCase()] || itemSlug(itemName);
+    const slug = resolveItemSlug(itemName);
     if (!slug) return '';
-    // Try /item/ first, then /block/. The onerror chain handles both fallbacks.
-    const itemUrl = `${ITEM_CDN}/item/${slug}.png`;
-    const blockUrl = `${ITEM_CDN}/block/${slug}.png`;
+    const itemUrl = `${ICON_BASE}/item/${slug}.png`;
+    const blockUrl = `${ICON_BASE}/block/${slug}.png`;
+    // First try item path. On error, switch to block path. On second error,
+    // hide the broken image but keep the layout space.
     return `<img class="item-icon"
       src="${itemUrl}"
       loading="lazy"
       alt=""
-      width="${size}" height="${size}"
-      onerror="if(this.dataset.tried!=='block'){this.dataset.tried='block';this.src='${blockUrl}';}else{this.style.display='none';}" />`;
+      width="${size}"
+      height="${size}"
+      onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='${blockUrl}';}else{this.style.visibility='hidden';}"
+    />`;
   }
 
   // ===== STORAGE UTILITIES =====
