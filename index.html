@@ -280,6 +280,111 @@
   .badge.dead { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
   .badge.slow { background: rgba(210, 153, 34, 0.15); color: var(--warn); }
   .badge.hot { background: rgba(94, 196, 108, 0.15); color: var(--accent-2); }
+  .badge.vip { background: rgba(255, 209, 102, 0.18); color: var(--accent); }
+  .badge.new { background: rgba(88, 166, 255, 0.18); color: var(--info); }
+  .badge.regular { background: rgba(94, 196, 108, 0.15); color: var(--accent-2); }
+  .badge.churned { background: rgba(110, 118, 129, 0.25); color: var(--text-dim); }
+  .badge.custom { background: rgba(255, 209, 102, 0.12); color: var(--accent); cursor: pointer; }
+  .badge.custom .x { margin-left: 4px; opacity: 0.6; }
+  .badge.custom:hover .x { opacity: 1; }
+
+  /* Tags row */
+  .tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .tag-add {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--text-faint);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Notes textarea */
+  .notes-area {
+    width: 100%;
+    min-height: 70px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    resize: vertical;
+  }
+  .notes-area:focus { outline: none; border-color: var(--accent); }
+  .save-hint {
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .save-hint.saved { color: var(--accent-2); }
+
+  /* Stock prediction row */
+  .stock-row {
+    display: grid;
+    grid-template-columns: 1fr 90px 100px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .stock-row:last-child { border-bottom: none; }
+  .stock-row input {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    width: 100%;
+    text-align: right;
+  }
+  .stock-row input:focus { outline: none; border-color: var(--accent); }
+  .eta {
+    text-align: right;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .eta.urgent { color: var(--danger); }
+  .eta.soon { color: var(--warn); }
+  .eta.ok { color: var(--accent-2); }
+  .eta.unknown { color: var(--text-faint); }
+
+  /* Price advice cards */
+  .advice-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .advice-card.raise { background: rgba(94, 196, 108, 0.08); border: 1px solid rgba(94, 196, 108, 0.25); }
+  .advice-card.lower { background: rgba(210, 153, 34, 0.08); border: 1px solid rgba(210, 153, 34, 0.25); }
+  .advice-card.hold  { background: rgba(110, 118, 129, 0.08); border: 1px solid var(--border); }
+  .advice-card .label { font-weight: 700; color: var(--text); margin-bottom: 3px; font-size: 13px; }
+  .advice-card .reason { color: var(--text-dim); font-size: 11px; }
+  .advice-card .arrow { font-size: 22px; font-weight: 700; }
+  .advice-card.raise .arrow { color: var(--accent-2); }
+  .advice-card.lower .arrow { color: var(--warn); }
+  .advice-card.hold  .arrow { color: var(--text-faint); }
 
   .heatmap {
     display: grid;
@@ -368,6 +473,7 @@
       <button class="tab active" data-tab="overview">Overview</button>
       <button class="tab" data-tab="items">Items</button>
       <button class="tab" data-tab="customers">Customers</button>
+      <button class="tab" data-tab="stock">Stock</button>
       <button class="tab" data-tab="activity">Activity</button>
       <button class="tab" data-tab="recent">Recent</button>
     </div>
@@ -388,6 +494,163 @@
   let transactions = [];
   let charts = {};
   let activeTab = 'overview';
+
+  // ===== STORAGE UTILITIES =====
+  function loadStorage(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch { return fallback; }
+  }
+  function saveStorage(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); }
+    catch (e) { console.error('Storage save failed', e); }
+  }
+
+  // Customer notes/tags
+  function getCustomerData(name) {
+    const all = loadStorage('qs_customer_data', {});
+    return all[name] || { notes: '', tags: [] };
+  }
+  function setCustomerData(name, data) {
+    const all = loadStorage('qs_customer_data', {});
+    all[name] = data;
+    saveStorage('qs_customer_data', all);
+  }
+
+  // Stock levels per shop+item
+  function getStock(shop, item) {
+    const all = loadStorage('qs_stock', {});
+    const key = `${shop}::${item}`;
+    return all[key] || null; // { quantity, updatedAt }
+  }
+  function setStock(shop, item, quantity) {
+    const all = loadStorage('qs_stock', {});
+    const key = `${shop}::${item}`;
+    if (quantity === null || quantity === '' || isNaN(quantity)) {
+      delete all[key];
+    } else {
+      all[key] = { quantity: parseInt(quantity), updatedAt: new Date().toISOString() };
+    }
+    saveStorage('qs_stock', all);
+  }
+
+  // ===== AUTO-TAG LOGIC =====
+  function autoTagsFor(buyerName, txs) {
+    const tags = [];
+    if (!txs.length) return tags;
+    const total = txs.reduce((s, t) => s + t.net, 0);
+    const sorted = [...txs].sort((a, b) => new Date(a.time) - new Date(b.time));
+    const first = new Date(sorted[0].time);
+    const last = new Date(sorted[sorted.length - 1].time);
+    const daysSinceFirst = (Date.now() - first.getTime()) / 86400000;
+    const daysSinceLast = (Date.now() - last.getTime()) / 86400000;
+
+    if (total >= 1000) tags.push({ type: 'vip', label: '⭐ VIP' });
+    if (daysSinceFirst < 7) tags.push({ type: 'new', label: '🆕 New' });
+    if (txs.length >= 5 && daysSinceLast <= 7) tags.push({ type: 'regular', label: '🔁 Regular' });
+    if (daysSinceLast > 14 && txs.length >= 3) tags.push({ type: 'churned', label: '👻 Churned' });
+
+    return tags;
+  }
+
+  // ===== STOCK PREDICTION =====
+  function predictEmpty(shop, itemName) {
+    const stock = getStock(shop, itemName);
+    if (!stock) return null;
+
+    // Velocity: average qty sold per day, looking at last 14 days only
+    const cutoff = Date.now() - 14 * 86400000;
+    const recentTxs = transactions.filter(t =>
+      t.item === itemName && t.shop === shop && new Date(t.time).getTime() >= cutoff
+    );
+    if (!recentTxs.length) return { hoursLeft: null, velocity: 0 };
+
+    const totalQty = recentTxs.reduce((s, t) => s + t.qty, 0);
+    const firstTx = Math.min(...recentTxs.map(t => new Date(t.time).getTime()));
+    const daysSpan = Math.max(1, (Date.now() - firstTx) / 86400000);
+    const velocityPerDay = totalQty / daysSpan;
+
+    // Adjust stock for sales since the user-set timestamp
+    const stockSetAt = new Date(stock.updatedAt).getTime();
+    const soldSinceUpdate = transactions
+      .filter(t => t.item === itemName && t.shop === shop &&
+                   new Date(t.time).getTime() > stockSetAt)
+      .reduce((s, t) => s + t.qty, 0);
+    const currentEstimate = stock.quantity - soldSinceUpdate;
+
+    if (currentEstimate <= 0) return { hoursLeft: 0, velocity: velocityPerDay, currentEstimate };
+    if (velocityPerDay <= 0) return { hoursLeft: Infinity, velocity: 0, currentEstimate };
+
+    const hoursLeft = (currentEstimate / velocityPerDay) * 24;
+    return { hoursLeft, velocity: velocityPerDay, currentEstimate };
+  }
+
+  function formatEta(hours) {
+    if (hours === null) return 'no data';
+    if (!isFinite(hours)) return 'no recent sales';
+    if (hours <= 0) return 'EMPTY';
+    if (hours < 24) return `${Math.round(hours)}h`;
+    return `${Math.round(hours / 24)}d`;
+  }
+
+  function etaClass(hours) {
+    if (hours === null || !isFinite(hours)) return 'unknown';
+    if (hours <= 12) return 'urgent';
+    if (hours <= 48) return 'soon';
+    return 'ok';
+  }
+
+  // ===== PRICE ADVISOR =====
+  function priceAdvice(itemStats) {
+    // itemStats: { item, qty, revenue, count, lastSale, daysSince }
+    // Heuristics:
+    // - Very high velocity + many big-quantity transactions = probably underpriced
+    // - Very slow + days since last sale > 14 = probably overpriced
+    // - Otherwise hold
+    const daysSinceLast = itemStats.daysSince;
+    const totalQty = itemStats.qty;
+    const txCount = itemStats.count;
+    const avgQtyPerTx = totalQty / Math.max(1, txCount);
+
+    // Calc sales velocity: qty per day over last 14 days
+    const cutoff = Date.now() - 14 * 86400000;
+    const recent = transactions.filter(t =>
+      t.item === itemStats.item && new Date(t.time).getTime() >= cutoff
+    );
+    const recentQty = recent.reduce((s, t) => s + t.qty, 0);
+    const velocity = recentQty / 14; // per day
+
+    if (daysSinceLast > 21) {
+      return {
+        action: 'lower', arrow: '↓',
+        label: `Drop ${itemStats.item} price 20-30%`,
+        reason: `No sales in ${daysSinceLast}d — likely too expensive`,
+      };
+    }
+    if (daysSinceLast > 7 && txCount < 3) {
+      return {
+        action: 'lower', arrow: '↓',
+        label: `Try lowering ${itemStats.item} ~15%`,
+        reason: `Slow movement: ${txCount} sales total, last ${daysSinceLast}d ago`,
+      };
+    }
+    if (velocity >= 8 && avgQtyPerTx >= 16) {
+      return {
+        action: 'raise', arrow: '↑',
+        label: `Try raising ${itemStats.item} 10-15%`,
+        reason: `Hot: ${velocity.toFixed(1)}/day, buyers grab ${Math.round(avgQtyPerTx)}+ at a time`,
+      };
+    }
+    if (velocity >= 3 && txCount >= 8) {
+      return {
+        action: 'raise', arrow: '↑',
+        label: `Test +5-10% on ${itemStats.item}`,
+        reason: `Steady demand: ${velocity.toFixed(1)} sold/day across ${txCount} sales`,
+      };
+    }
+    return null;
+  }
 
   async function loadData() {
     try {
@@ -458,7 +721,7 @@
 
   let touchStartX = 0;
   let touchStartY = 0;
-  const tabOrder = ['overview', 'items', 'customers', 'activity', 'recent'];
+  const tabOrder = ['overview', 'items', 'customers', 'stock', 'activity', 'recent'];
 
   document.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
@@ -583,6 +846,33 @@
 
       <div class="tab-content" data-tab="items">
         <div class="panel">
+          <h3 class="panel-title">💡 Price advisor</h3>
+          <p style="font-size: 11px; color: var(--text-faint); margin: -6px 0 12px; font-family: 'JetBrains Mono', monospace; line-height: 1.5;">
+            Suggestions based on sales velocity. Test before committing.
+          </p>
+          ${(() => {
+            const advices = itemArr.slice(0, 15)
+              .map(i => priceAdvice({ ...i, daysSince: slowItems.find(s => s.item === i.item)?.daysSince ?? 0 }))
+              .filter(a => a !== null)
+              .slice(0, 6);
+            if (!advices.length) {
+              return `<p style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 12px;">
+                Everything looks balanced. No strong signals yet.
+              </p>`;
+            }
+            return advices.map(a => `
+              <div class="advice-card ${a.action}">
+                <div style="flex: 1;">
+                  <div class="label">${a.label}</div>
+                  <div class="reason">${a.reason}</div>
+                </div>
+                <div class="arrow">${a.arrow}</div>
+              </div>
+            `).join('');
+          })()}
+        </div>
+
+        <div class="panel">
           <h3 class="panel-title">Top items by revenue</h3>
           ${itemArr.slice(0,10).map(i => `
             <div class="list-row">
@@ -612,18 +902,101 @@
         </div>
       </div>
 
+      <div class="tab-content" data-tab="stock">
+        <div class="panel">
+          <h3 class="panel-title">🔮 Restock predictor</h3>
+          <p style="font-size: 11px; color: var(--text-faint); margin: -6px 0 14px; font-family: 'JetBrains Mono', monospace; line-height: 1.5;">
+            Type current stock per item. We predict when it runs out based on recent sales.
+          </p>
+          ${(() => {
+            // Get unique shop+item combos from transactions
+            const combos = {};
+            transactions.forEach(t => {
+              const key = `${t.shop}::${t.item}`;
+              if (!combos[key]) combos[key] = { shop: t.shop, item: t.item, lastSeen: 0 };
+              const ts = new Date(t.time).getTime();
+              if (ts > combos[key].lastSeen) combos[key].lastSeen = ts;
+            });
+            // Sort by most recent activity
+            const arr = Object.values(combos).sort((a, b) => b.lastSeen - a.lastSeen);
+            if (!arr.length) return `<p style="color: var(--text-dim);">No data yet.</p>`;
+            return arr.map(c => {
+              const stock = getStock(c.shop, c.item);
+              const pred = predictEmpty(c.shop, c.item);
+              const shopShort = c.shop.length > 20 ? c.shop.slice(0, 20) + '…' : c.shop;
+              const stockVal = stock ? stock.quantity : '';
+              const etaStr = pred ? formatEta(pred.hoursLeft) : '—';
+              const etaC = pred ? etaClass(pred.hoursLeft) : 'unknown';
+              return `<div class="stock-row">
+                <div class="main">
+                  <div>${c.item}</div>
+                  <div class="meta">${shopShort}</div>
+                </div>
+                <input type="number" min="0" placeholder="qty" value="${stockVal}"
+                  onchange="setStock('${c.shop.replace(/'/g, "\\'")}', '${c.item.replace(/'/g, "\\'")}', this.value); render(); setTimeout(()=>document.querySelector('.tab[data-tab=\\'stock\\']').click(), 0);" />
+                <div class="eta ${etaC}">${etaStr}</div>
+              </div>`;
+            }).join('');
+          })()}
+        </div>
+
+        <div class="panel">
+          <h3 class="panel-title">How it works</h3>
+          <p style="color: var(--text-dim); font-size: 12px; line-height: 1.6; font-family: 'JetBrains Mono', monospace;">
+            <b style="color: var(--accent);">Enter qty</b> to track a shop's stock.<br><br>
+            <b style="color: var(--accent);">ETA</b> updates as new sales come in — sold items are subtracted automatically.<br><br>
+            <span class="eta urgent">red</span> ≤ 12h ·
+            <span class="eta soon">yellow</span> ≤ 48h ·
+            <span class="eta ok">green</span> &gt; 48h
+          </p>
+        </div>
+      </div>
+
       <div class="tab-content" data-tab="customers">
         <div class="panel">
           <h3 class="panel-title">Top customers · tap for profile</h3>
-          ${buyerArr.map(b => `
-            <div class="list-row clickable" onclick="showCustomerProfile('${b.buyer.replace(/'/g, "\\'")}')">
+          ${buyerArr.map(b => {
+            const buyerTxs = transactions.filter(t => t.buyer === b.buyer);
+            const autoT = autoTagsFor(b.buyer, buyerTxs);
+            const tagsHtml = autoT.map(t => `<span class="badge ${t.type}">${t.label}</span>`).join(' ');
+            return `<div class="list-row clickable" onclick="showCustomerProfile('${b.buyer.replace(/'/g, "\\'")}')">
               <div class="main">
-                <div>${b.buyer}</div>
+                <div>${b.buyer} ${tagsHtml}</div>
                 <div class="meta">${b.count} purchases</div>
               </div>
               <div class="amount">$${b.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
               <div style="color: var(--text-faint); font-size: 14px; margin-left: 4px;">›</div>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
+        </div>
+
+        <div class="panel">
+          <h3 class="panel-title">Win-back candidates</h3>
+          <p style="font-size: 11px; color: var(--text-faint); margin: -6px 0 12px; font-family: 'JetBrains Mono', monospace; line-height: 1.5;">
+            Previously active customers who haven't bought in 14+ days.
+          </p>
+          ${(() => {
+            const winBack = buyerArr.map(b => {
+              const buyerTxs = transactions.filter(t => t.buyer === b.buyer);
+              const lastTx = Math.max(...buyerTxs.map(t => new Date(t.time).getTime()));
+              const days = Math.floor((Date.now() - lastTx) / 86400000);
+              return { ...b, days, txCount: buyerTxs.length };
+            }).filter(b => b.days >= 14 && b.txCount >= 3)
+              .sort((a, b) => b.revenue - a.revenue);
+            if (!winBack.length) {
+              return `<p style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 12px;">
+                All your regulars are still active. Nice work!
+              </p>`;
+            }
+            return winBack.slice(0, 8).map(b => `
+              <div class="list-row clickable" onclick="showCustomerProfile('${b.buyer.replace(/'/g, "\\'")}')">
+                <div class="main">
+                  <div>${b.buyer}</div>
+                  <div class="meta">last seen ${b.days}d ago · was worth $${b.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                </div>
+                <span class="badge churned">👻 ${b.days}d</span>
+              </div>`).join('');
+          })()}
         </div>
       </div>
 
@@ -854,6 +1227,10 @@
     const initial = buyerName.charAt(0).toUpperCase();
 
     const dash = document.getElementById('dashboard');
+    const customerData = getCustomerData(buyerName);
+    const autoTags = autoTagsFor(buyerName, txs);
+    const customTags = customerData.tags || [];
+
     dash.innerHTML = `
       <button class="profile-back" onclick="render()">← Back to dashboard</button>
 
@@ -861,6 +1238,14 @@
         <div class="avatar">${initial}</div>
         <div class="name">${buyerName}</div>
         <div class="subtitle">customer since ${firstPurchase.toISOString().slice(0,10)}</div>
+        <div class="tags-row" style="justify-content: center; margin-top: 12px;">
+          ${autoTags.map(t => `<span class="badge ${t.type}">${t.label}</span>`).join('')}
+          ${customTags.map((t, idx) => `
+            <span class="badge custom" onclick="removeCustomerTag('${buyerName.replace(/'/g, "\\'")}', ${idx})">
+              ${t}<span class="x">×</span>
+            </span>`).join('')}
+          <button class="tag-add" onclick="addCustomerTag('${buyerName.replace(/'/g, "\\'")}')">+ tag</button>
+        </div>
       </div>
 
       <div class="kpi-grid">
@@ -926,6 +1311,20 @@
       </div>
 
       <div class="panel">
+        <h3 class="panel-title">📝 Private notes</h3>
+        <p style="font-size: 11px; color: var(--text-faint); margin: -6px 0 10px; font-family: 'JetBrains Mono', monospace;">
+          Only visible on this browser/device.
+        </p>
+        <textarea
+          class="notes-area"
+          id="customer-notes"
+          placeholder="e.g. Buys 32 diamonds at a time, ask for bulk price..."
+          oninput="saveCustomerNote('${buyerName.replace(/'/g, "\\'")}', this.value)"
+        >${(customerData.notes || '').replace(/</g, '&lt;')}</textarea>
+        <div class="save-hint" id="notes-save-hint">Auto-saves while you type</div>
+      </div>
+
+      <div class="panel">
         <h3 class="panel-title">All purchases (${txs.length})</h3>
         ${[...txs].reverse().map(t => `
           <div class="list-row">
@@ -959,6 +1358,47 @@
 
     // Scroll to top so the profile is visible
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ===== TAG & NOTE MANAGEMENT =====
+  function addCustomerTag(buyerName) {
+    const tag = prompt('Add a tag (short label):');
+    if (!tag) return;
+    const trimmed = tag.trim().slice(0, 20);
+    if (!trimmed) return;
+    const data = getCustomerData(buyerName);
+    data.tags = data.tags || [];
+    if (!data.tags.includes(trimmed)) {
+      data.tags.push(trimmed);
+      setCustomerData(buyerName, data);
+    }
+    showCustomerProfile(buyerName);
+  }
+
+  function removeCustomerTag(buyerName, idx) {
+    const data = getCustomerData(buyerName);
+    data.tags = (data.tags || []).filter((_, i) => i !== idx);
+    setCustomerData(buyerName, data);
+    showCustomerProfile(buyerName);
+  }
+
+  let noteSaveTimer = null;
+  function saveCustomerNote(buyerName, value) {
+    const hint = document.getElementById('notes-save-hint');
+    if (hint) {
+      hint.textContent = 'saving...';
+      hint.classList.remove('saved');
+    }
+    clearTimeout(noteSaveTimer);
+    noteSaveTimer = setTimeout(() => {
+      const data = getCustomerData(buyerName);
+      data.notes = value;
+      setCustomerData(buyerName, data);
+      if (hint) {
+        hint.textContent = '✓ saved';
+        hint.classList.add('saved');
+      }
+    }, 400);
   }
 
   loadData();
