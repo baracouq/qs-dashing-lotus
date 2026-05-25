@@ -1500,7 +1500,7 @@
     const customTags = customerData.tags || [];
 
     dash.innerHTML = `
-      <button class="profile-back" onclick="render()">← Back to dashboard</button>
+      <button class="profile-back" onclick="backToCustomers()">← Back to customers</button>
 
       <div class="profile-header">
         ${avatarImg(buyerName, 'large')}
@@ -1629,6 +1629,13 @@
   }
 
   // ===== TAG & NOTE MANAGEMENT =====
+  function backToCustomers() {
+    render();
+    // After re-rendering, activate the Customers tab
+    const customersTab = document.querySelector('.tab[data-tab="customers"]');
+    if (customersTab) customersTab.click();
+  }
+
   function addCustomerTag(buyerName) {
     const tag = prompt('Add a tag (short label):');
     if (!tag) return;
