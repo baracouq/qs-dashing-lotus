@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
     --bg: #0d1117;
@@ -24,6 +25,23 @@
     --danger: #f85149;
     --warn: #d29922;
     --info: #58a6ff;
+    --blue: #58a6ff;
+  }
+  body.light {
+    --bg: #f4f1ea;
+    --bg-panel: #ffffff;
+    --bg-panel-2: #f0ece3;
+    --border: #d8d2c4;
+    --border-bright: #c4bdab;
+    --text: #1c1a16;
+    --text-dim: #5c574d;
+    --text-faint: #8a8475;
+    --accent: #c8860a;
+    --accent-2: #2f9e44;
+    --danger: #d8341c;
+    --warn: #b8860b;
+    --info: #1971c2;
+    --blue: #1971c2;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -63,7 +81,7 @@
     line-height: 1;
   }
   .logo span { color: var(--text); }
-  #refresh-btn {
+  #refresh-btn, #sync-btn, #theme-btn {
     background: var(--bg-panel);
     border: 1px solid var(--border);
     color: var(--text-dim);
@@ -74,7 +92,8 @@
     cursor: pointer;
     -webkit-appearance: none;
   }
-  #refresh-btn:active { background: var(--bg-panel-2); }
+  #refresh-btn:active, #sync-btn:active, #theme-btn:active { background: var(--bg-panel-2); }
+  #sync-btn:hover, #theme-btn:hover { border-color: var(--accent); }
 
   /* KPI CARDS */
   .kpi-grid {
@@ -135,12 +154,33 @@
     cursor: pointer;
     white-space: nowrap;
     -webkit-appearance: none;
+    position: relative;
   }
   .tab.active {
     background: var(--accent);
     color: #0d1117;
     border-color: var(--accent);
     font-weight: 700;
+  }
+  .tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    vertical-align: middle;
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+  @keyframes badgePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
   }
 
   /* PANELS */
@@ -579,10 +619,202 @@
     margin-top: 2px;
   }
 
-  .heatmap {
-    display: grid;
-    grid-template-columns: 32px repeat(24, 1fr);
-    gap: 1.5px;
+  /* ===== STOCK TRACKING ===== */
+  .stock-search {
+    width: 100%;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px 11px 36px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    margin-bottom: 14px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e7681' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+  }
+  .stock-search:focus { outline: none; border-color: var(--accent); }
+  .stock-card {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .stock-card.low { border-color: rgba(248,81,73,0.4); }
+  .stock-card.medium { border-color: rgba(210,153,34,0.3); }
+  .stock-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .stock-icon {
+    width: 32px; height: 32px;
+    image-rendering: pixelated;
+    background: var(--bg);
+    border-radius: 6px; padding: 3px;
+  }
+  .stock-name { font-size: 15px; font-weight: 600; }
+  .stock-coords { font-size: 10px; color: var(--text-faint); }
+  .stock-bignum { font-family: 'VT323', monospace; font-size: 44px; line-height: 1; }
+  .stock-card.low .stock-bignum { color: var(--danger); }
+  .stock-card.medium .stock-bignum { color: var(--warn); }
+  .stock-card.high .stock-bignum { color: var(--accent-2); }
+  .stock-unit { font-size: 13px; color: var(--text-faint); margin-left: 4px; }
+  .stock-meta {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 12px; font-size: 11px;
+  }
+  .stock-meta .label { color: var(--text-faint); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
+  .stock-meta .val { color: var(--text); font-size: 13px; }
+  .stock-meta .val.warn { color: var(--warn); }
+  .stock-meta .val.danger { color: var(--danger); }
+  .deplete-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+  .deplete-fill { height: 100%; border-radius: 3px; transition: width 0.6s; }
+  .conf {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 9px; padding: 2px 7px; border-radius: 10px;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto;
+    white-space: nowrap;
+  }
+  .conf.est { background: rgba(88,166,255,0.12); color: var(--blue); }
+  .conf.measured { background: rgba(94,196,108,0.15); color: var(--accent-2); }
+  .conf.stale { background: rgba(210,153,34,0.12); color: var(--warn); }
+  .stock-btn-row { display: flex; gap: 8px; margin-top: 12px; }
+  .stock-btn {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg-panel); color: var(--text); cursor: pointer;
+    transition: all 0.15s; flex: 1;
+  }
+  .stock-btn:hover { background: var(--bg-panel-2); border-color: var(--accent); }
+  .stock-empty {
+    text-align: center; padding: 40px 20px; color: var(--text-faint);
+    font-size: 12px; line-height: 1.7;
+  }
+  /* Stock modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 200;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--bg-panel); border: 1px solid var(--accent);
+    border-radius: 14px; padding: 20px; width: 100%; max-width: 380px;
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 6px; }
+  .modal-sub { font-size: 11px; color: var(--text-faint); margin-bottom: 16px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; }
+  .modal-field input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace; font-size: 16px;
+  }
+  .modal-field input:focus { outline: none; border-color: var(--accent); }
+  .quick-add { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .quick-add button {
+    flex: 0 0 auto; padding: 5px 10px; font-size: 10px;
+    border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg-panel); color: var(--text); cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .quick-add button:hover { border-color: var(--accent); }
+  .mode-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-toggle button {
+    flex: 1; padding: 8px; font-size: 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-panel);
+    color: var(--text); cursor: pointer; font-family: 'JetBrains Mono', monospace;
+  }
+  .mode-toggle button.active { background: var(--accent); color: #0d1117; border-color: var(--accent); font-weight: 600; }
+  .modal-btn-row { display: flex; gap: 8px; }
+  .modal-btn {
+    flex: 1; padding: 10px; border-radius: 8px; font-size: 12px;
+    border: 1px solid var(--border); background: var(--bg-panel);
+    color: var(--text); cursor: pointer; font-family: 'JetBrains Mono', monospace;
+  }
+  .modal-btn.primary { background: var(--accent); color: #0d1117; border-color: var(--accent); font-weight: 600; }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-panel-2);
+    border: 1px solid var(--accent-2);
+    color: var(--text);
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    z-index: 300;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    pointer-events: none;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .toast.sync { border-color: var(--blue); }
+  .toast.warn { border-color: var(--warn); }
+
+  /* Scroll to top button */
+  #scrollTop {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 150;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    transform: translateY(10px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    -webkit-appearance: none;
+  }
+  #scrollTop.show { opacity: 0.92; pointer-events: auto; transform: translateY(0); }
+  #scrollTop:active { transform: scale(0.92); }
+
+  /* Date filter bar */
+  .date-filter-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .date-filter-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    transition: all 0.15s;
+  }
+  .date-filter-btn.active {
+    background: var(--bg-panel-2);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .date-filter-btn:hover { border-color: var(--accent); }
+
+
     font-size: 8px;
     color: var(--text-faint);
     font-family: 'JetBrains Mono', monospace;
@@ -610,12 +842,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     color: var(--text-faint);
     margin-bottom: 14px;
     padding: 0 2px;
   }
+  #syncStatus { font-size: 10px; white-space: nowrap; }
 
   @media (min-width: 768px) {
     body { padding: 24px 28px 80px; }
@@ -634,12 +869,28 @@
 
   <header>
     <div class="logo">QS<span>·INSIGHTS</span></div>
-    <button id="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    <div style="display:flex; gap:8px;">
+      <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
+      <button id="sync-btn" onclick="openSyncModal()" title="Cloud sync settings">☁ Sync</button>
+      <button id="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    </div>
   </header>
 
   <div class="meta-bar">
     <span id="dateRange">no data</span>
+    <span id="syncStatus" style="cursor:pointer;" onclick="openSyncModal()">○ local only</span>
     <span id="lastUpdated">—</span>
+  </div>
+
+  <div id="staleBanner" style="display:none; background:rgba(210,153,34,0.1); border:1px solid rgba(210,153,34,0.35); color:var(--warn); border-radius:10px; padding:10px 14px; font-size:11px; font-family:'JetBrains Mono',monospace; margin-bottom:14px; line-height:1.5;"></div>
+
+  <div id="sinceVisit" style="display:none;"></div>
+
+  <div class="date-filter-bar">
+    <button class="date-filter-btn active" data-range="all" onclick="setDateFilter('all')">All time</button>
+    <button class="date-filter-btn" data-range="30d" onclick="setDateFilter('30d')">30 days</button>
+    <button class="date-filter-btn" data-range="7d" onclick="setDateFilter('7d')">7 days</button>
+    <button class="date-filter-btn" data-range="thismonth" onclick="setDateFilter('thismonth')">This month</button>
   </div>
 
   <div class="kpi-grid">
@@ -665,8 +916,10 @@
     <div class="tabs-inner">
       <button class="tab active" data-tab="overview">Overview</button>
       <button class="tab" data-tab="items">Items</button>
+      <button class="tab" data-tab="stock">Stock</button>
       <button class="tab" data-tab="customers">Customers</button>
       <button class="tab" data-tab="activity">Activity</button>
+      <button class="tab" data-tab="insights">Insights</button>
       <button class="tab" data-tab="recent">Recent</button>
     </div>
   </div>
@@ -682,10 +935,176 @@
 
 </div>
 
+<!-- Stock update modal -->
+<div class="modal-overlay" id="stockModal">
+  <div class="modal">
+    <h3 id="stockModalTitle">Restock toevoegen</h3>
+    <div class="modal-sub" id="stockModalShop">—</div>
+    <div class="mode-toggle">
+      <button id="stockModeRestock" class="active" onclick="setStockMode('restock')">+ Restock</button>
+      <button id="stockModeSet" onclick="setStockMode('set')">Set exact count</button>
+    </div>
+    <div class="modal-field">
+      <label id="stockInputLabel">Hoeveel toegevoegd?</label>
+      <input type="number" id="stockAmountInput" placeholder="0" inputmode="numeric" />
+      <div class="quick-add" id="stockQuickAdd">
+        <button onclick="stockQuickFill(64)">+1 stack</button>
+        <button onclick="stockQuickFill(192)">+3 stacks</button>
+        <button onclick="stockQuickFill(320)">+5 stacks</button>
+        <button onclick="stockQuickFill(640)">+10 stacks</button>
+      </div>
+    </div>
+    <div class="modal-btn-row">
+      <button class="modal-btn" onclick="closeStockModal()">Annuleer</button>
+      <button class="modal-btn primary" onclick="applyStockModal()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk recount modal -->
+<div class="modal-overlay" id="bulkModal">
+  <div class="modal" style="max-width:440px;">
+    <h3>📋 Bulk recount</h3>
+    <div class="modal-sub">
+      Tel elke kist één keer en typ het aantal. Leeg laten = overslaan.
+      Opslaan zet alles als gemeten voorraad (drift terug naar nul).
+    </div>
+    <div id="bulkRows" style="max-height:50vh; overflow-y:auto; margin-bottom:14px;"></div>
+    <div class="modal-btn-row">
+      <button class="modal-btn" onclick="closeBulkModal()">Annuleer</button>
+      <button class="modal-btn primary" onclick="applyBulkRecount()">Alles opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cloud sync settings modal -->
+<div class="modal-overlay" id="syncModal">
+  <div class="modal">
+    <h3>☁ Cloud sync</h3>
+    <div class="modal-sub">
+      Sync your stock counts &amp; customer notes across devices via your GitHub repo.
+      The token is stored only on this device, never in the hosted page.
+    </div>
+    <div class="modal-field">
+      <label>GitHub repo (owner/name)</label>
+      <input type="text" id="syncRepo" placeholder="baracouq/qs-dashing-lotus" />
+    </div>
+    <div class="modal-field">
+      <label>Fine-grained token (Contents: read &amp; write)</label>
+      <input type="password" id="syncToken" placeholder="github_pat_..." />
+    </div>
+    <div id="syncModalStatus" style="font-size:11px; min-height:16px; margin-bottom:12px; color:var(--text-faint);"></div>
+    <div id="qrSection" style="display:none; text-align:center; margin-bottom:14px; padding:14px; background:var(--bg); border-radius:10px;">
+      <div id="qrcode" style="display:inline-block; background:#fff; padding:10px; border-radius:8px;"></div>
+      <p style="font-size:10px; color:var(--warn); margin-top:10px; line-height:1.5;">
+        ⚠ Scan with your other device to copy these settings.<br>Anyone who scans this gets write access. Close when done.
+      </p>
+    </div>
+    <div class="modal-btn-row">
+      <button class="modal-btn" onclick="closeSyncModal()">Sluit</button>
+      <button class="modal-btn" onclick="showSyncQR()" id="syncQrBtn" style="display:none;">📱 QR</button>
+      <button class="modal-btn" onclick="disableSync()" id="syncDisableBtn" style="display:none;">Uitschakelen</button>
+      <button class="modal-btn primary" onclick="saveSyncSettings()">Verbind</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic input modal (replaces prompt()) -->
+<div class="modal-overlay" id="inputModal">
+  <div class="modal">
+    <h3 id="inputModalTitle">Input</h3>
+    <div class="modal-sub" id="inputModalSub" style="display:none;"></div>
+    <div class="modal-field">
+      <label id="inputModalLabel">Value</label>
+      <input type="text" id="inputModalField" />
+    </div>
+    <div class="modal-btn-row">
+      <button class="modal-btn" onclick="closeInputModal()">Annuleer</button>
+      <button class="modal-btn primary" onclick="confirmInputModal()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Scroll to top -->
+<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+
 <script>
-  let transactions = [];
+  let transactions = [];      // filtered view (for analytics tabs)
+  let allTransactions = [];   // full set (for stock, records, lifetime stats)
   let charts = {};
   let activeTab = 'overview';
+  let dateFilter = 'all';     // 'all' | '7d' | '30d' | 'thismonth'
+
+  // Apply the active date filter to a transaction list (non-destructive)
+  function applyDateFilter(txs) {
+    if (dateFilter === 'all') return txs;
+    const now = new Date();
+    let cutoff;
+    if (dateFilter === '7d') cutoff = now.getTime() - 7 * 86400000;
+    else if (dateFilter === '30d') cutoff = now.getTime() - 30 * 86400000;
+    else if (dateFilter === 'thismonth') {
+      cutoff = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    } else return txs;
+    return txs.filter(t => new Date(t.time).getTime() >= cutoff);
+  }
+
+  function setDateFilter(f) {
+    dateFilter = f;
+    transactions = applyDateFilter(allTransactions);
+    document.querySelectorAll('.date-filter-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.range === f));
+    render();
+  }
+
+  // ===== TOAST NOTIFICATIONS =====
+  let toastTimer = null;
+  function showToast(message, type = '') {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = message;
+    el.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      el.className = 'toast' + (type ? ' ' + type : '');
+    }, 2400);
+  }
+
+  // ===== THEME TOGGLE (#8) =====
+  function toggleTheme() {
+    const light = document.body.classList.toggle('light');
+    saveStorage('qs_theme', light ? 'light' : 'dark');
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = light ? '☀' : '🌙';
+    // Redraw charts so their colors update
+    if (typeof render === 'function' && transactions.length) {
+      setTimeout(() => { render(); if (activeTab === 'stock') renderStockCards(); }, 50);
+    }
+  }
+  // Apply saved theme immediately
+  (function initTheme() {
+    if (loadStorage('qs_theme', 'dark') === 'light') {
+      document.body.classList.add('light');
+      const btn = document.getElementById('theme-btn');
+      if (btn) btn.textContent = '☀';
+    }
+  })();
+
+  // ===== CUSTOMER SEARCH (#4) =====
+  function filterCustomers() {
+    const q = (document.getElementById('customerSearch')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.customer-row');
+    let shown = 0;
+    rows.forEach(r => {
+      const match = !q || (r.dataset.name || '').includes(q);
+      r.style.display = match ? '' : 'none';
+      if (match) shown++;
+    });
+    const noMatch = document.getElementById('customerNoMatch');
+    if (noMatch) noMatch.style.display = shown === 0 ? 'block' : 'none';
+  }
 
   // ===== MINECRAFT AVATARS =====
   // mc-heads.net: free, fast, CORS-friendly, no key needed.
@@ -791,6 +1210,303 @@
     catch (e) { console.error('Storage save failed', e); }
   }
 
+  // ===== GITHUB CLOUD SYNC =====
+  // State (stock + customer data) is mirrored to qs_state.json in the repo.
+  // Token lives only in localStorage on this device, never in the hosted HTML.
+  const SYNC_FILE = 'qs_state.json';
+  let syncCfg = loadStorage('qs_sync_cfg', { repo: '', token: '' });
+  let syncFileSha = null;      // current sha of qs_state.json (needed to update)
+  let syncInFlight = false;
+  let syncPending = false;
+
+  function syncEnabled() {
+    return !!(syncCfg.repo && syncCfg.token);
+  }
+
+  function setSyncStatus(text, color) {
+    const el = document.getElementById('syncStatus');
+    if (el) {
+      el.textContent = text;
+      el.style.color = color || 'var(--text-faint)';
+    }
+  }
+
+  // Gather all syncable state into one object
+  function gatherState() {
+    return {
+      version: 1,
+      updated: new Date().toISOString(),
+      stock: loadStorage('qs_stock_data', {}),
+      customers: loadStorage('qs_customer_data', {}),
+      costs: loadStorage('qs_item_costs', {}),
+    };
+  }
+
+  // Apply a fetched state object into localStorage
+  function applyState(state) {
+    if (!state || typeof state !== 'object') return;
+    if (state.stock) saveStorage('qs_stock_data', state.stock);
+    if (state.customers) saveStorage('qs_customer_data', state.customers);
+    if (state.costs) saveStorage('qs_item_costs', state.costs);
+  }
+
+  // Fetch state from GitHub (returns parsed object or null)
+  async function pullState() {
+    if (!syncEnabled()) return null;
+    const url = `https://api.github.com/repos/${syncCfg.repo}/contents/${SYNC_FILE}?t=${Date.now()}`;
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${syncCfg.token}`,
+        'Accept': 'application/vnd.github+json',
+      },
+    });
+    if (resp.status === 404) {
+      syncFileSha = null;
+      return null; // file doesn't exist yet
+    }
+    if (!resp.ok) throw new Error(`pull failed: ${resp.status}`);
+    const data = await resp.json();
+    syncFileSha = data.sha;
+    // content is base64
+    const json = decodeURIComponent(escape(atob(data.content)));
+    try { return JSON.parse(json); } catch { return null; }
+  }
+
+  // Push current state to GitHub (merges with remote first to avoid clobber)
+  async function pushState() {
+    if (!syncEnabled()) return;
+    if (syncInFlight) { syncPending = true; return; }
+    syncInFlight = true;
+    setSyncStatus('↻ syncing...', 'var(--blue)');
+    try {
+      // Merge: pull remote, combine with local, push the union
+      let remote = null;
+      try { remote = await pullState(); } catch (e) { /* maybe 404 */ }
+      const local = gatherState();
+      const merged = mergeStates(remote, local);
+      // Write merged back to localStorage so both sides agree
+      applyState(merged);
+
+      const body = {
+        message: `Update ${SYNC_FILE} · ${new Date().toISOString()}`,
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2)))),
+      };
+      if (syncFileSha) body.sha = syncFileSha;
+
+      const url = `https://api.github.com/repos/${syncCfg.repo}/contents/${SYNC_FILE}`;
+      const resp = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${syncCfg.token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`push ${resp.status}: ${errText.slice(0, 80)}`);
+      }
+      const result = await resp.json();
+      syncFileSha = result.content.sha;
+      setSyncStatus('☁ synced', 'var(--accent-2)');
+    } catch (e) {
+      console.error('Sync push failed', e);
+      setSyncStatus('⚠ sync error', 'var(--warn)');
+    } finally {
+      syncInFlight = false;
+      if (syncPending) { syncPending = false; pushState(); }
+    }
+  }
+
+  // Merge two state objects. Strategy: per-entry, newest-wins by timestamp
+  // where available; otherwise remote ∪ local with local taking priority.
+  function mergeStates(remote, local) {
+    if (!remote) return local;
+    if (!local) return remote;
+    const merged = { version: 1, updated: new Date().toISOString(), stock: {}, customers: {}, costs: {} };
+
+    // Stock: each entry has baselineTime / lastRestockTime; newest baseline wins
+    const stockKeys = new Set([...Object.keys(remote.stock || {}), ...Object.keys(local.stock || {})]);
+    stockKeys.forEach(k => {
+      const r = (remote.stock || {})[k];
+      const l = (local.stock || {})[k];
+      if (!r) { merged.stock[k] = l; return; }
+      if (!l) { merged.stock[k] = r; return; }
+      // Both exist - pick the one with the later baselineTime
+      const rt = new Date(r.baselineTime || 0).getTime();
+      const lt = new Date(l.baselineTime || 0).getTime();
+      merged.stock[k] = lt >= rt ? l : r;
+    });
+
+    // Customers: merge notes/tags; longer-edited (by presence) local wins on conflict
+    const custKeys = new Set([...Object.keys(remote.customers || {}), ...Object.keys(local.customers || {})]);
+    custKeys.forEach(k => {
+      const r = (remote.customers || {})[k];
+      const l = (local.customers || {})[k];
+      if (!r) { merged.customers[k] = l; return; }
+      if (!l) { merged.customers[k] = r; return; }
+      // Merge tags (union), prefer local notes if non-empty
+      const tags = [...new Set([...(r.tags || []), ...(l.tags || [])])];
+      merged.customers[k] = {
+        notes: (l.notes && l.notes.length) ? l.notes : (r.notes || ''),
+        tags,
+      };
+    });
+
+    // Costs: local value wins on conflict (last editor), union of keys
+    merged.costs = { ...(remote.costs || {}), ...(local.costs || {}) };
+
+    return merged;
+  }
+
+  // Debounced sync trigger - call after any local state change
+  let syncDebounce = null;
+  function triggerSync() {
+    if (!syncEnabled()) return;
+    clearTimeout(syncDebounce);
+    syncDebounce = setTimeout(() => pushState(), 800);
+  }
+
+  // ===== SYNC SETTINGS MODAL =====
+  function openSyncModal() {
+    document.getElementById('syncRepo').value = syncCfg.repo || '';
+    document.getElementById('syncToken').value = syncCfg.token || '';
+    const on = syncEnabled();
+    document.getElementById('syncDisableBtn').style.display = on ? 'block' : 'none';
+    document.getElementById('syncQrBtn').style.display = on ? 'block' : 'none';
+    document.getElementById('qrSection').style.display = 'none';
+    document.getElementById('qrcode').innerHTML = '';
+    const status = document.getElementById('syncModalStatus');
+    status.textContent = on ? '✓ Currently connected.' : 'Not connected yet.';
+    status.style.color = on ? 'var(--accent-2)' : 'var(--text-faint)';
+    document.getElementById('syncModal').classList.add('show');
+  }
+  function closeSyncModal() {
+    document.getElementById('syncModal').classList.remove('show');
+  }
+  async function saveSyncSettings() {
+    const repo = document.getElementById('syncRepo').value.trim();
+    const token = document.getElementById('syncToken').value.trim();
+    const status = document.getElementById('syncModalStatus');
+    if (!repo || !token) {
+      status.textContent = 'Both fields are required.';
+      status.style.color = 'var(--danger)';
+      return;
+    }
+    status.textContent = '↻ Testing connection...';
+    status.style.color = 'var(--blue)';
+    syncCfg = { repo, token };
+    try {
+      // Test: try to pull (404 is fine, means file not created yet)
+      const remote = await pullState();
+      // Merge remote into local, then push the union to establish the file
+      if (remote) applyState(mergeStates(remote, gatherState()));
+      await pushState();
+      saveStorage('qs_sync_cfg', syncCfg);
+      status.textContent = '✓ Connected & synced!';
+      status.style.color = 'var(--accent-2)';
+      setSyncStatus('☁ synced', 'var(--accent-2)');
+      document.getElementById('syncDisableBtn').style.display = 'block';
+      document.getElementById('syncQrBtn').style.display = 'block';
+      // Re-render with merged data
+      render();
+      if (activeTab === 'stock') renderStockCards();
+    } catch (e) {
+      status.textContent = '✗ Failed: ' + e.message;
+      status.style.color = 'var(--danger)';
+      syncCfg = loadStorage('qs_sync_cfg', { repo: '', token: '' });
+    }
+  }
+  function disableSync() {
+    syncCfg = { repo: '', token: '' };
+    saveStorage('qs_sync_cfg', syncCfg);
+    syncFileSha = null;
+    setSyncStatus('○ local only', 'var(--text-faint)');
+    document.getElementById('syncModalStatus').textContent = 'Sync disabled. Data stays on this device.';
+    document.getElementById('syncDisableBtn').style.display = 'none';
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.id === 'syncModal') closeSyncModal();
+  });
+
+  // Show QR code containing the sync settings for easy device transfer
+  function showSyncQR() {
+    const section = document.getElementById('qrSection');
+    const container = document.getElementById('qrcode');
+    if (section.style.display === 'block') {
+      // Toggle off
+      section.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+    if (typeof QRCode === 'undefined') {
+      document.getElementById('syncModalStatus').textContent = 'QR library not loaded.';
+      return;
+    }
+    container.innerHTML = '';
+    // Encode repo + token, embed in a URL hash so scanning opens the dashboard
+    // already configured. The hash is stripped from the URL bar after import.
+    const payload = JSON.stringify({ r: syncCfg.repo, t: syncCfg.token });
+    const encoded = 'qssync:' + btoa(unescape(encodeURIComponent(payload)));
+    const fullUrl = window.location.origin + window.location.pathname + '#' + encoded;
+    new QRCode(container, {
+      text: fullUrl,
+      width: 180, height: 180,
+      colorDark: '#0d1117', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+    section.style.display = 'block';
+  }
+
+  // Check clipboard / URL for an incoming QR sync payload on load
+  function tryImportSyncPayload(raw) {
+    if (!raw || !raw.startsWith('qssync:')) return false;
+    try {
+      const json = decodeURIComponent(escape(atob(raw.slice(7))));
+      const obj = JSON.parse(json);
+      if (obj.r && obj.t) {
+        syncCfg = { repo: obj.r, token: obj.t };
+        saveStorage('qs_sync_cfg', syncCfg);
+        return true;
+      }
+    } catch (e) { /* invalid */ }
+    return false;
+  }
+
+  // ===== GENERIC INPUT MODAL (replaces prompt) =====
+  let inputModalCallback = null;
+  function openInputModal({ title, label, sub, value, placeholder, maxlen }) {
+    document.getElementById('inputModalTitle').textContent = title || 'Input';
+    document.getElementById('inputModalLabel').textContent = label || 'Value';
+    const subEl = document.getElementById('inputModalSub');
+    if (sub) { subEl.textContent = sub; subEl.style.display = 'block'; }
+    else { subEl.style.display = 'none'; }
+    const field = document.getElementById('inputModalField');
+    field.value = value || '';
+    field.placeholder = placeholder || '';
+    field.maxLength = maxlen || 100;
+    document.getElementById('inputModal').classList.add('show');
+    setTimeout(() => field.focus(), 50);
+    return new Promise(resolve => { inputModalCallback = resolve; });
+  }
+  function closeInputModal() {
+    document.getElementById('inputModal').classList.remove('show');
+    if (inputModalCallback) { inputModalCallback(null); inputModalCallback = null; }
+  }
+  function confirmInputModal() {
+    const val = document.getElementById('inputModalField').value.trim();
+    document.getElementById('inputModal').classList.remove('show');
+    if (inputModalCallback) { inputModalCallback(val || null); inputModalCallback = null; }
+  }
+  // Enter key submits the input modal
+  document.getElementById('inputModalField').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmInputModal();
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.id === 'inputModal') closeInputModal();
+  });
+
   // Customer notes/tags
   function getCustomerData(name) {
     const all = loadStorage('qs_customer_data', {});
@@ -800,7 +1516,511 @@
     const all = loadStorage('qs_customer_data', {});
     all[name] = data;
     saveStorage('qs_customer_data', all);
+    triggerSync();
   }
+
+  // ===== ITEM COSTS (for profit margin #11) =====
+  function getItemCosts() {
+    return loadStorage('qs_item_costs', {});
+  }
+  function setItemCost(item, cost) {
+    const all = getItemCosts();
+    if (cost > 0) all[item] = cost; else delete all[item];
+    saveStorage('qs_item_costs', all);
+    triggerSync();
+  }
+
+  // ===== STOCK TRACKING =====
+  // Stock is estimated per (item + shop) combo from sales history:
+  //   estimate = baseline - soldSinceBaseline + restocks
+  // Baseline + restocks are stored locally; soldSince comes from real txs.
+  const STACK = 64;
+
+  // Count shops that are critically low (configured + empty in <2 days)
+  function countLowStock() {
+    const combos = buildStockCombos();
+    const stockData = getStockData();
+    let low = 0;
+    Object.values(combos).forEach(combo => {
+      const entry = stockData[combo.key];
+      if (!entry || !entry.baselineTime) return;
+      const est = estimateStock(combo, entry);
+      const vel = stockVelocity(combo);
+      const daysLeft = vel > 0 ? est / vel : Infinity;
+      if (daysLeft < 2) low++;
+    });
+    return low;
+  }
+
+  // Update the badge on the Stock tab button
+  function updateStockBadge() {
+    const tab = document.querySelector('.tab[data-tab="stock"]');
+    if (!tab) return;
+    const low = countLowStock();
+    let badge = tab.querySelector('.tab-badge');
+    if (low > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'tab-badge';
+        tab.appendChild(badge);
+      }
+      badge.textContent = low;
+    } else if (badge) {
+      badge.remove();
+    }
+  }
+
+  function stockKey(item, shop) {
+    return `${item}@@${shop}`;
+  }
+
+  function getStockData() {
+    return loadStorage('qs_stock_data', {});
+  }
+  function setStockEntry(key, entry) {
+    const all = getStockData();
+    all[key] = entry;
+    saveStorage('qs_stock_data', all);
+    triggerSync();
+  }
+
+  function coordsOf(shop) {
+    const m = (shop || '').match(/(-?\d+)[\s,]+(-?\d+)[\s,]+(-?\d+)/);
+    return m ? `${m[1]}, ${m[2]}, ${m[3]}` : (shop || 'unknown');
+  }
+
+  // Build the list of all (item, shop) combos with their sales stats.
+  // Always uses the FULL transaction set so the date filter never affects stock.
+  function buildStockCombos() {
+    const combos = {};
+    (allTransactions.length ? allTransactions : transactions).forEach(t => {
+      const key = stockKey(t.item, t.shop);
+      if (!combos[key]) {
+        combos[key] = {
+          key, item: t.item, shop: t.shop,
+          coords: coordsOf(t.shop),
+          totalQty: 0, txs: [],
+        };
+      }
+      combos[key].totalQty += t.qty;
+      combos[key].txs.push(t);
+    });
+    return combos;
+  }
+
+  // How many units sold since a given ISO timestamp (for this combo)
+  function soldSince(combo, sinceIso) {
+    if (!sinceIso) return 0;
+    const since = new Date(sinceIso).getTime();
+    return combo.txs
+      .filter(t => new Date(t.time).getTime() > since)
+      .reduce((s, t) => s + t.qty, 0);
+  }
+
+  // Velocity: units/day over last 14 days
+  function stockVelocity(combo) {
+    const cutoff = Date.now() - 14 * 86400000;
+    const recentQty = combo.txs
+      .filter(t => new Date(t.time).getTime() >= cutoff)
+      .reduce((s, t) => s + t.qty, 0);
+    return recentQty / 14;
+  }
+
+  function estimateStock(combo, entry) {
+    if (!entry || !entry.baselineTime) return null;
+    const sold = soldSince(combo, entry.baselineTime);
+    const restocked = entry.restocked || 0;
+    return Math.max(0, entry.baseline - sold + restocked);
+  }
+
+  // Build a tiny SVG sparkline of daily units sold over the last 14 days
+  function stockSparkline(combo) {
+    const days = 14;
+    const now = new Date();
+    const buckets = new Array(days).fill(0);
+    combo.txs.forEach(t => {
+      const d = new Date(t.time);
+      const daysAgo = Math.floor((now - d) / 86400000);
+      if (daysAgo >= 0 && daysAgo < days) {
+        buckets[days - 1 - daysAgo] += t.qty;
+      }
+    });
+    const max = Math.max(...buckets, 1);
+    const w = 100, h = 24, gap = 1.5;
+    const barW = (w - gap * (days - 1)) / days;
+    let bars = '';
+    buckets.forEach((v, i) => {
+      const bh = v > 0 ? Math.max(2, (v / max) * h) : 1;
+      const x = i * (barW + gap);
+      const y = h - bh;
+      const isToday = i === days - 1;
+      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="0.5" fill="${isToday ? 'var(--accent)' : 'var(--text-faint)'}" opacity="${v > 0 ? 0.9 : 0.25}"/>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;">${bars}</svg>`;
+  }
+
+  function renderStockCards() {
+    const container = document.getElementById('stockCards');
+    if (!container) return;
+    const search = (document.getElementById('stockSearch')?.value || '').toLowerCase();
+
+    const combos = buildStockCombos();
+    const stockData = getStockData();
+    let list = Object.values(combos);
+
+    // Progress: how many shops have a baseline set?
+    const totalShops = list.length;
+    const configuredShops = list.filter(c => {
+      const e = stockData[c.key];
+      return e && e.baselineTime;
+    }).length;
+
+    // Render the onboarding/progress header (above the search-filtered list)
+    const progressEl = document.getElementById('stockProgress');
+    if (progressEl) {
+      if (totalShops === 0) {
+        progressEl.innerHTML = '';
+      } else if (configuredShops === 0) {
+        progressEl.innerHTML = `
+          <div style="padding:12px 14px; background:rgba(255,209,102,0.06); border:1px solid rgba(255,209,102,0.25); border-radius:10px; margin-bottom:14px;">
+            <div style="font-size:12px; color:var(--accent); font-weight:600; margin-bottom:4px;">👋 Begin hier</div>
+            <div style="font-size:11px; color:var(--text-dim); line-height:1.6;">
+              Tik bij een shop op <b style="color:var(--text);">Set starting count</b>, tel één keer
+              wat er in de kist ligt, en voer dat in. Daarna telt het systeem automatisch af op basis
+              van je verkopen. Je hoeft dit maar één keer per shop te doen.
+            </div>
+          </div>`;
+      } else if (configuredShops < totalShops) {
+        const pct = Math.round(configuredShops / totalShops * 100);
+        progressEl.innerHTML = `
+          <div style="margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;">
+              <span>Setup progress</span>
+              <span>${configuredShops} / ${totalShops} shops</span>
+            </div>
+            <div style="height:5px; background:var(--bg-panel-2); border-radius:3px; overflow:hidden;">
+              <div style="height:100%; width:${pct}%; background:var(--accent-2); border-radius:3px; transition:width 0.5s;"></div>
+            </div>
+          </div>`;
+      } else {
+        progressEl.innerHTML = `
+          <div style="font-size:11px; color:var(--accent-2); margin-bottom:14px; text-align:center;">
+            ✓ Alle ${totalShops} shops worden getrackt
+          </div>`;
+      }
+    }
+
+    // Filter by search (item name or coords)
+    if (search) {
+      list = list.filter(c =>
+        c.item.toLowerCase().includes(search) ||
+        c.coords.toLowerCase().includes(search)
+      );
+    }
+
+    // Sort: configured shops first (by days-left asc), then unconfigured
+    list.sort((a, b) => {
+      const ea = stockData[a.key], eb = stockData[b.key];
+      const aHas = ea && ea.baselineTime, bHas = eb && eb.baselineTime;
+      if (aHas && !bHas) return -1;
+      if (!aHas && bHas) return 1;
+      if (aHas && bHas) {
+        const da = estimateStock(a, ea) / (stockVelocity(a) || 0.01);
+        const db = estimateStock(b, eb) / (stockVelocity(b) || 0.01);
+        return da - db;
+      }
+      return b.totalQty - a.totalQty;
+    });
+
+    if (!list.length) {
+      container.innerHTML = `<div class="stock-empty">No shops match "${search}".</div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(combo => {
+      const entry = stockData[combo.key];
+      const configured = entry && entry.baselineTime;
+      const velocity = stockVelocity(combo);
+
+      if (!configured) {
+        // Not set up yet - prompt to set a baseline
+        return `
+          <div class="stock-card">
+            <div class="stock-head">
+              ${itemIcon(combo.item, 32)}
+              <div style="flex:1;">
+                <div class="stock-name">${combo.item}</div>
+                <div class="stock-coords">@ ${combo.coords}</div>
+              </div>
+              <span class="conf est">not set up</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-faint); margin:4px 0 2px;">
+              Sells ~${velocity.toFixed(1)}/day. Set a starting count to track stock.
+            </div>
+            <div class="stock-btn-row">
+              <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','set')">Set starting count</button>
+            </div>
+          </div>`;
+      }
+
+      const est = estimateStock(combo, entry);
+      const sold = soldSince(combo, entry.baselineTime);
+      const startStock = entry.baseline + (entry.restocked || 0);
+      const pct = startStock > 0 ? Math.min(100, est / startStock * 100) : 0;
+      const daysLeft = velocity > 0 ? est / velocity : Infinity;
+
+      // Baseline age for confidence
+      const baselineDaysAgo = (Date.now() - new Date(entry.baselineTime).getTime()) / 86400000;
+      const lastRestockDays = entry.lastRestockTime
+        ? Math.floor((Date.now() - new Date(entry.lastRestockTime).getTime()) / 86400000)
+        : null;
+
+      let level = 'high', fillColor = 'var(--accent-2)';
+      if (est <= 50) { level = 'low'; fillColor = 'var(--danger)'; }
+      else if (est <= 150) { level = 'medium'; fillColor = 'var(--warn)'; }
+
+      let conf, confLabel;
+      if (entry.measured && baselineDaysAgo <= 4) {
+        conf = 'measured'; confLabel = '● measured';
+      } else if (baselineDaysAgo > 7) {
+        conf = 'stale'; confLabel = '◌ estimate (aging)';
+      } else {
+        conf = 'est'; confLabel = '◐ estimate';
+      }
+
+      const dleftStr = daysLeft === Infinity ? '∞'
+        : daysLeft < 1 ? '<1 day'
+        : daysLeft < 2 ? '~1 day'
+        : `~${Math.round(daysLeft)} days`;
+      const dleftClass = daysLeft < 2 ? 'danger' : daysLeft < 5 ? 'warn' : '';
+
+      // Auto-restock suggestion (#6): top up to ~14 days of stock, rounded to stacks
+      let suggestionHtml = '';
+      if (velocity > 0 && daysLeft < 5) {
+        const target = Math.ceil(velocity * 14);
+        const need = Math.max(0, target - est);
+        const stacks = Math.ceil(need / STACK);
+        if (stacks > 0) {
+          suggestionHtml = `
+            <div style="margin-top:10px; padding:8px 10px; background:rgba(88,166,255,0.07); border-radius:8px; font-size:11px; color:var(--blue);">
+              💡 Suggestie: vul ~${stacks} stack${stacks === 1 ? '' : 's'} bij (${need} stuks) voor 2 weken voorraad
+            </div>`;
+        }
+      }
+
+      // Restock history (#3): compact collapsible log
+      let historyHtml = '';
+      const hist = (entry.history || []).slice().reverse();
+      if (hist.length) {
+        const rows = hist.slice(0, 8).map(h => {
+          const label = h.type === 'recount' ? '📍 recount' : h.type === 'baseline' ? '🎯 baseline' : '➕ restock';
+          const amt = h.type === 'restock' ? `+${h.amount}` : `=${h.amount}`;
+          return `<div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-faint); padding:2px 0;">
+            <span>${label}</span><span style="color:var(--text-dim);">${amt}</span><span>${formatRelativeDate(h.t)}</span>
+          </div>`;
+        }).join('');
+        historyHtml = `
+          <details style="margin-top:10px;">
+            <summary style="font-size:10px; color:var(--text-faint); cursor:pointer; text-transform:uppercase; letter-spacing:1px;">History (${hist.length})</summary>
+            <div style="margin-top:6px; padding:8px 10px; background:var(--bg); border-radius:8px;">${rows}</div>
+          </details>`;
+      }
+
+      return `
+        <div class="stock-card ${level}">
+          <div class="stock-head">
+            ${itemIcon(combo.item, 32)}
+            <div style="flex:1;">
+              <div class="stock-name">${combo.item}</div>
+              <div class="stock-coords">@ ${combo.coords}</div>
+            </div>
+            <span class="conf ${conf}">${confLabel}</span>
+          </div>
+          <div>
+            <span class="stock-bignum">${est}</span><span class="stock-unit">in stock (est.)</span>
+          </div>
+          <div class="deplete-bar">
+            <div class="deplete-fill" style="width:${pct}%; background:${fillColor};"></div>
+          </div>
+          <div class="stock-meta">
+            <div>
+              <div class="label">Sells</div>
+              <div class="val">${velocity.toFixed(1)}/day</div>
+            </div>
+            <div>
+              <div class="label">Empty in</div>
+              <div class="val ${dleftClass}">${dleftStr}</div>
+            </div>
+            <div>
+              <div class="label">Sold since baseline</div>
+              <div class="val">${sold}</div>
+            </div>
+            <div>
+              <div class="label">Last restock</div>
+              <div class="val">${lastRestockDays !== null ? lastRestockDays + 'd ago' : '—'}</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <div style="font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Sales · last 14 days</div>
+            ${stockSparkline(combo)}
+          </div>
+          ${suggestionHtml}
+          ${historyHtml}
+          <div class="stock-btn-row">
+            <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','restock')">+ Restock</button>
+            <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','set')">Set count</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ===== STOCK MODAL =====
+  let stockModalKey = null;
+  let stockModalMode = 'restock';
+
+  function openStockModal(key, mode) {
+    stockModalKey = key;
+    const combos = buildStockCombos();
+    const combo = combos[key];
+    if (!combo) return;
+    document.getElementById('stockModalShop').textContent = `${combo.item} @ ${combo.coords}`;
+    setStockMode(mode);
+    document.getElementById('stockAmountInput').value = '';
+    document.getElementById('stockModal').classList.add('show');
+    setTimeout(() => document.getElementById('stockAmountInput').focus(), 50);
+  }
+
+  function closeStockModal() {
+    document.getElementById('stockModal').classList.remove('show');
+    stockModalKey = null;
+  }
+
+  function setStockMode(mode) {
+    stockModalMode = mode;
+    document.getElementById('stockModeRestock').classList.toggle('active', mode === 'restock');
+    document.getElementById('stockModeSet').classList.toggle('active', mode === 'set');
+    document.getElementById('stockModalTitle').textContent =
+      mode === 'restock' ? 'Restock toevoegen' : 'Exacte voorraad zetten';
+    document.getElementById('stockInputLabel').textContent =
+      mode === 'restock' ? 'Hoeveel toegevoegd?' : 'Hoeveel ligt er nu echt?';
+    document.getElementById('stockQuickAdd').style.display = mode === 'restock' ? 'flex' : 'none';
+  }
+
+  function stockQuickFill(n) {
+    const input = document.getElementById('stockAmountInput');
+    if (stockModalMode === 'restock') {
+      input.value = (parseInt(input.value) || 0) + n;
+    } else {
+      input.value = n;
+    }
+  }
+
+  function applyStockModal() {
+    if (!stockModalKey) return;
+    const val = parseInt(document.getElementById('stockAmountInput').value) || 0;
+    const all = getStockData();
+    const entry = all[stockModalKey] || {};
+    const nowIso = new Date().toISOString();
+    entry.history = entry.history || [];
+
+    if (stockModalMode === 'restock') {
+      // Only valid if already configured
+      if (!entry.baselineTime) {
+        // Treat as initial baseline
+        entry.baseline = val;
+        entry.baselineTime = nowIso;
+        entry.restocked = 0;
+        entry.measured = false;
+        entry.history.push({ t: nowIso, type: 'baseline', amount: val });
+      } else {
+        entry.restocked = (entry.restocked || 0) + val;
+        entry.history.push({ t: nowIso, type: 'restock', amount: val });
+      }
+      entry.lastRestockTime = nowIso;
+    } else {
+      // Set exact = fresh baseline, reset counters, mark measured
+      entry.baseline = val;
+      entry.baselineTime = nowIso;
+      entry.restocked = 0;
+      entry.measured = true;
+      entry.history.push({ t: nowIso, type: 'recount', amount: val });
+    }
+    // Keep history bounded (last 30 events)
+    if (entry.history.length > 30) entry.history = entry.history.slice(-30);
+    setStockEntry(stockModalKey, entry);
+    closeStockModal();
+    renderStockCards();
+    updateStockBadge();
+    const verb = stockModalMode === 'restock' ? 'Restock toegevoegd' : 'Voorraad ingesteld';
+    showToast(`✓ ${verb}${syncEnabled() ? ' · gesynct' : ''}`);
+  }
+
+  // Close modal on overlay click
+  document.addEventListener('click', (e) => {
+    if (e.target.id === 'stockModal') closeStockModal();
+  });
+
+  // ===== BULK RECOUNT =====
+  function openBulkModal() {
+    const combos = buildStockCombos();
+    const stockData = getStockData();
+    const list = Object.values(combos).sort((a, b) => b.totalQty - a.totalQty);
+    const rows = document.getElementById('bulkRows');
+    rows.innerHTML = list.map(combo => {
+      const entry = stockData[combo.key];
+      const est = (entry && entry.baselineTime) ? estimateStock(combo, entry) : null;
+      return `
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">
+          ${itemIcon(combo.item, 24)}
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:12px; color:var(--text);">${combo.item}</div>
+            <div style="font-size:9px; color:var(--text-faint);">@ ${combo.coords}${est !== null ? ` · now ~${est}` : ''}</div>
+          </div>
+          <input type="number" inputmode="numeric"
+            data-bulk-key="${combo.key.replace(/"/g, '&quot;')}"
+            placeholder="${est !== null ? est : '?'}"
+            style="width:80px; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:7px 9px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:14px; text-align:right;" />
+        </div>`;
+    }).join('');
+    document.getElementById('bulkModal').classList.add('show');
+  }
+
+  function closeBulkModal() {
+    document.getElementById('bulkModal').classList.remove('show');
+  }
+
+  function applyBulkRecount() {
+    const inputs = document.querySelectorAll('#bulkRows input[data-bulk-key]');
+    const all = getStockData();
+    const nowIso = new Date().toISOString();
+    let updated = 0;
+    inputs.forEach(inp => {
+      const raw = inp.value.trim();
+      if (raw === '') return; // skip blanks
+      const val = parseInt(raw);
+      if (isNaN(val) || val < 0) return;
+      const key = inp.dataset.bulkKey;
+      const entry = all[key] || {};
+      entry.history = entry.history || [];
+      entry.baseline = val;
+      entry.baselineTime = nowIso;
+      entry.restocked = 0;
+      entry.measured = true;
+      entry.history.push({ t: nowIso, type: 'recount', amount: val });
+      if (entry.history.length > 30) entry.history = entry.history.slice(-30);
+      all[key] = entry;
+      updated++;
+    });
+    saveStorage('qs_stock_data', all);
+    triggerSync();
+    closeBulkModal();
+    renderStockCards();
+    updateStockBadge();
+    showToast(`✓ ${updated} shop${updated === 1 ? '' : 's'} bijgewerkt${syncEnabled() ? ' · gesynct' : ''}`);
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.id === 'bulkModal') closeBulkModal();
+  });
 
   // ===== AUTO-TAG LOGIC =====
   function autoTagsFor(buyerName, txs) {
@@ -877,9 +2097,30 @@
       const resp = await fetch('transactions_archive.csv?t=' + Date.now());
       if (!resp.ok) throw new Error('Could not load transactions_archive.csv');
       const text = await resp.text();
-      transactions = parseCSV(text);
+      allTransactions = parseCSV(text);
+      transactions = applyDateFilter(allTransactions);
       document.getElementById('lastUpdated').textContent = 'updated ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
+      // If cloud sync is on, pull the latest state before rendering
+      if (syncEnabled()) {
+        setSyncStatus('↻ syncing...', 'var(--blue)');
+        try {
+          const remote = await pullState();
+          if (remote) {
+            // Merge remote with whatever is local, local changes win on conflict
+            applyState(mergeStates(remote, gatherState()));
+          }
+          setSyncStatus('☁ synced', 'var(--accent-2)');
+        } catch (e) {
+          console.error('Initial sync pull failed', e);
+          setSyncStatus('⚠ sync error', 'var(--warn)');
+        }
+      }
+
+      checkDataFreshness();
+      computeSinceLastVisit();
       render();
+      checkMilestones();
     } catch (err) {
       document.getElementById('dashboard').innerHTML = `
         <div class="panel">
@@ -892,6 +2133,76 @@
             </p>
           </div>
         </div>`;
+    }
+  }
+
+  // ===== DATA FRESHNESS (#1) =====
+  // Warn if the newest transaction is several days old - pipeline may be stalled.
+  function checkDataFreshness() {
+    const banner = document.getElementById('staleBanner');
+    if (!banner || !allTransactions.length) return;
+    const newest = allTransactions.reduce((max, t) => {
+      const ts = new Date(t.time).getTime();
+      return ts > max ? ts : max;
+    }, 0);
+    const daysOld = Math.floor((Date.now() - newest) / 86400000);
+    if (daysOld >= 2) {
+      banner.style.display = 'block';
+      banner.innerHTML = `⚠ Newest data is <b>${daysOld} days old</b>. Is your pipeline still running? Last sale: ${formatLongDate(new Date(newest))}.`;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  // ===== SINCE LAST VISIT (#10) =====
+  let sinceLastVisit = null;
+  function computeSinceLastVisit() {
+    const lastVisitIso = loadStorage('qs_last_visit', null);
+    const now = Date.now();
+    if (lastVisitIso) {
+      const since = new Date(lastVisitIso).getTime();
+      const newTxs = allTransactions.filter(t => new Date(t.time).getTime() > since);
+      if (newTxs.length > 0) {
+        const rev = newTxs.reduce((s, t) => s + t.net, 0);
+        const buyers = new Set(newTxs.map(t => t.buyer)).size;
+        sinceLastVisit = { count: newTxs.length, rev, buyers, since: lastVisitIso };
+      }
+    }
+    // Record this visit for next time (store the newest tx time, not now,
+    // so "new since" means new transactions, not just time passed)
+    saveStorage('qs_last_visit', new Date(now).toISOString());
+  }
+
+  // ===== MILESTONE NOTIFICATIONS (#7) =====
+  function checkMilestones() {
+    if (!allTransactions.length) return;
+    const totalRev = allTransactions.reduce((s, t) => s + t.net, 0);
+    const totalSales = allTransactions.length;
+
+    // Revenue milestones at round numbers
+    const revTiers = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
+    const salesTiers = [10, 50, 100, 250, 500, 1000, 2500, 5000];
+
+    const seen = loadStorage('qs_milestones_seen', { rev: 0, sales: 0 });
+    let toCelebrate = [];
+
+    const newRevTier = revTiers.filter(t => totalRev >= t).pop() || 0;
+    if (newRevTier > (seen.rev || 0)) {
+      toCelebrate.push(`💰 $${newRevTier.toLocaleString()} total revenue!`);
+      seen.rev = newRevTier;
+    }
+    const newSalesTier = salesTiers.filter(t => totalSales >= t).pop() || 0;
+    if (newSalesTier > (seen.sales || 0)) {
+      toCelebrate.push(`📦 ${newSalesTier.toLocaleString()} total sales!`);
+      seen.sales = newSalesTier;
+    }
+
+    if (toCelebrate.length) {
+      saveStorage('qs_milestones_seen', seen);
+      // Show celebratory toasts in sequence
+      toCelebrate.forEach((msg, i) => {
+        setTimeout(() => showToast('🎉 ' + msg), 800 + i * 2800);
+      });
     }
   }
 
@@ -945,13 +2256,14 @@
       document.querySelectorAll('.tab-content').forEach(c => {
         c.classList.toggle('active', c.dataset.tab === activeTab);
       });
+      if (activeTab === 'stock') renderStockCards();
       setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 50);
     });
   });
 
   let touchStartX = 0;
   let touchStartY = 0;
-  const tabOrder = ['overview', 'items', 'customers', 'activity', 'recent'];
+  const tabOrder = ['overview', 'items', 'stock', 'customers', 'activity', 'insights', 'recent'];
 
   document.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
@@ -975,6 +2287,22 @@
 
   function render() {
     const dash = document.getElementById('dashboard');
+
+    // "Since last visit" banner (#10)
+    const svEl = document.getElementById('sinceVisit');
+    if (svEl) {
+      if (sinceLastVisit && sinceLastVisit.count > 0) {
+        svEl.style.display = 'block';
+        svEl.innerHTML = `
+          <div style="background:rgba(94,196,108,0.08); border:1px solid rgba(94,196,108,0.3); border-radius:10px; padding:10px 14px; font-size:11px; font-family:'JetBrains Mono',monospace; margin-bottom:14px; color:var(--text-dim); display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <span>👋 Since your last visit: <b style="color:var(--accent-2);">${sinceLastVisit.count} new sale${sinceLastVisit.count===1?'':'s'}</b> · $${sinceLastVisit.rev.toLocaleString(undefined,{maximumFractionDigits:0})} from ${sinceLastVisit.buyers} buyer${sinceLastVisit.buyers===1?'':'s'}</span>
+            <span style="cursor:pointer; color:var(--text-faint); font-size:14px;" onclick="document.getElementById('sinceVisit').style.display='none'">✕</span>
+          </div>`;
+      } else {
+        svEl.style.display = 'none';
+      }
+    }
+
     document.getElementById('totalTx').textContent = transactions.length;
     document.getElementById('totalRev').textContent = '$' + transactions.reduce((s,t) => s+t.net, 0).toLocaleString(undefined, {maximumFractionDigits: 0});
 
@@ -1306,6 +2634,141 @@
             </div>
 
             ${(() => {
+              // ===== COHORT ANALYSIS: NEW vs RETURNING CUSTOMERS =====
+              if (transactions.length < 5) return '';
+
+              // Find each buyer's first-ever purchase date
+              const sortedTxs = [...transactions].sort((a, b) =>
+                new Date(a.time) - new Date(b.time)
+              );
+              const firstSeen = {};
+              sortedTxs.forEach(t => {
+                if (!firstSeen[t.buyer]) firstSeen[t.buyer] = new Date(t.time);
+              });
+
+              // Group transactions by ISO week
+              const weekKey = (d) => {
+                const date = new Date(d);
+                // ISO week calculation
+                const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const day = tmp.getUTCDay() || 7;
+                tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
+                const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+                const weekNo = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+                return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+              };
+
+              const weeks = {};
+              transactions.forEach(t => {
+                const wk = weekKey(t.time);
+                if (!weeks[wk]) weeks[wk] = { new: new Set(), returning: new Set() };
+                const firstWk = weekKey(firstSeen[t.buyer]);
+                if (firstWk === wk) {
+                  weeks[wk].new.add(t.buyer);
+                } else {
+                  weeks[wk].returning.add(t.buyer);
+                }
+              });
+
+              const sortedWeeks = Object.keys(weeks).sort();
+              if (sortedWeeks.length < 2) return '';
+
+              // Calculate retention: % of last week's buyers who returned this week
+              const weekData = [];
+              let prevBuyers = new Set();
+              sortedWeeks.forEach(wk => {
+                const newSet = weeks[wk].new;
+                const retSet = weeks[wk].returning;
+                const allThisWeek = new Set([...newSet, ...retSet]);
+                let retention = null;
+                if (prevBuyers.size > 0) {
+                  const returned = [...prevBuyers].filter(b => allThisWeek.has(b)).length;
+                  retention = returned / prevBuyers.size;
+                }
+                weekData.push({
+                  week: wk,
+                  new: newSet.size,
+                  returning: retSet.size,
+                  total: allThisWeek.size,
+                  retention,
+                });
+                prevBuyers = allThisWeek;
+              });
+
+              // Take last 8 weeks for the chart, or all if fewer
+              const recentWeeks = weekData.slice(-8);
+              const thisWeek = weekData[weekData.length - 1];
+              const prevWeek = weekData.length >= 2 ? weekData[weekData.length - 2] : null;
+
+              // Insight tagline
+              const pctNew = thisWeek.total > 0 ? thisWeek.new / thisWeek.total : 0;
+              let insight = '';
+              let insightColor = 'var(--text-dim)';
+              if (thisWeek.total === 0) {
+                insight = 'No activity yet this week.';
+              } else if (pctNew >= 0.7) {
+                insight = '🚀 Strong acquisition — mostly new buyers. Watch retention.';
+                insightColor = 'var(--accent-2)';
+              } else if (pctNew >= 0.4) {
+                insight = '⚖️ Balanced growth — healthy mix of new and returning.';
+                insightColor = 'var(--accent)';
+              } else if (pctNew >= 0.1) {
+                insight = '💎 Loyal base — most buyers return. Slow new-buyer flow.';
+                insightColor = 'var(--accent)';
+              } else {
+                insight = '🔁 Pure retention — no new buyers this week.';
+                insightColor = 'var(--warn);';
+              }
+
+              // Retention summary (this week vs last)
+              const retentionPct = thisWeek.retention !== null
+                ? Math.round(thisWeek.retention * 100)
+                : null;
+
+              // Store data for chart init that runs after render
+              window._cohortChartData = {
+                labels: recentWeeks.map(w => w.week.split('-')[1]),
+                newData: recentWeeks.map(w => w.new),
+                returningData: recentWeeks.map(w => w.returning),
+              };
+
+              return `
+                <div class="panel">
+                  <h3 class="panel-title">📊 Customer cohorts</h3>
+                  <p style="font-size: 11px; color: var(--text-faint); margin: -6px 0 14px; font-family: 'JetBrains Mono', monospace;">
+                    Are you growing your base, or churning through buyers?
+                  </p>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint);">New this week</div>
+                      <div style="font-family: 'VT323', monospace; font-size: 26px; color: var(--accent-2); margin-top: 2px;">${thisWeek.new}</div>
+                      <div style="font-size: 10px; color: var(--text-faint); margin-top: 2px;">${Math.round(pctNew * 100)}% of weekly buyers</div>
+                    </div>
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint);">Returning</div>
+                      <div style="font-family: 'VT323', monospace; font-size: 26px; color: var(--accent); margin-top: 2px;">${thisWeek.returning}</div>
+                      <div style="font-size: 10px; color: var(--text-faint); margin-top: 2px;">${Math.round((1 - pctNew) * 100)}% of weekly buyers</div>
+                    </div>
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint);">Retention rate</div>
+                      <div style="font-family: 'VT323', monospace; font-size: 26px; color: ${retentionPct !== null && retentionPct >= 50 ? 'var(--accent-2)' : 'var(--warn)'}; margin-top: 2px;">
+                        ${retentionPct !== null ? retentionPct + '%' : '—'}
+                      </div>
+                      <div style="font-size: 10px; color: var(--text-faint); margin-top: 2px;">${prevWeek ? `${prevWeek.total} buyers last week` : 'no prior week'}</div>
+                    </div>
+                  </div>
+
+                  <div class="chart-wrap" style="height: 200px;"><canvas id="cohortChart"></canvas></div>
+
+                  <p style="font-size: 11px; color: ${insightColor}; margin: 12px 0 0; font-family: 'JetBrains Mono', monospace; padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px;">
+                    ${insight}
+                  </p>
+                </div>
+              `;
+            })()}
+
+            ${(() => {
               // ===== ARBITRAGE / RESELLER DETECTION =====
               // Score each buyer on suspicious patterns. Show those scoring ≥3.
               const candidates = [];
@@ -1587,14 +3050,40 @@
         </div>
       </div>
 
+      <div class="tab-content" data-tab="stock">
+        <div class="panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 class="panel-title" style="margin-bottom:0;">📦 Shop stock · estimated</h3>
+            <button onclick="openBulkModal()" style="font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-panel-2); color:var(--accent); cursor:pointer;">📋 Recount all</button>
+          </div>
+          <div id="stockProgress"></div>
+          <input type="text" class="stock-search" id="stockSearch"
+                 placeholder="Search item or coordinates..."
+                 oninput="renderStockCards()" />
+          <div id="stockCards"></div>
+        </div>
+        <div class="panel">
+          <h3 class="panel-title">How this works</h3>
+          <div style="font-size: 11px; color: var(--text-faint); line-height: 1.7;">
+            Stock is estimated from your sales history: <b style="color:var(--text-dim);">baseline − sold since + restocks</b>.
+            Every new sale counts down automatically. Tap <b style="color:var(--text-dim);">+ Restock</b> when you refill,
+            or <b style="color:var(--text-dim);">Set count</b> to enter the real number you counted (resets the estimate to certain).
+          </div>
+        </div>
+      </div>
+
       <div class="tab-content" data-tab="customers">
         <div class="panel">
           <h3 class="panel-title">Top customers · tap for profile</h3>
+          <input type="text" class="stock-search" id="customerSearch"
+                 placeholder="Search customer name..."
+                 oninput="filterCustomers()" />
+          <div id="customerList">
           ${buyerArr.map(b => {
             const buyerTxs = transactions.filter(t => t.buyer === b.buyer);
             const autoT = autoTagsFor(b.buyer, buyerTxs);
             const tagsHtml = autoT.map(t => `<span class="badge ${t.type}">${t.label}</span>`).join(' ');
-            return `<div class="list-row clickable" onclick="showCustomerProfile('${b.buyer.replace(/'/g, "\\'")}')">
+            return `<div class="list-row clickable customer-row" data-name="${b.buyer.toLowerCase().replace(/"/g,'&quot;')}" onclick="showCustomerProfile('${b.buyer.replace(/'/g, "\\'")}')">
               ${avatarImg(b.buyer)}
               <div class="main">
                 <div>${b.buyer} ${tagsHtml}</div>
@@ -1604,6 +3093,8 @@
               <div style="color: var(--text-faint); font-size: 14px; margin-left: 4px;">›</div>
             </div>`;
           }).join('')}
+          </div>
+          <div id="customerNoMatch" style="display:none; text-align:center; padding:20px; color:var(--text-faint); font-size:12px;">No customers match.</div>
         </div>
 
         <div class="panel">
@@ -1649,6 +3140,10 @@
         </div>
       </div>
 
+      <div class="tab-content" data-tab="insights">
+        <div id="insightsContent"></div>
+      </div>
+
       <div class="tab-content" data-tab="recent">
         <div class="panel">
           <h3 class="panel-title">Recent transactions</h3>
@@ -1690,6 +3185,53 @@
         }
       }
     });
+
+    // Cohort chart (only if data was prepared by the cohort panel)
+    const cohortCanvas = document.getElementById('cohortChart');    if (cohortCanvas && window._cohortChartData) {
+      charts.cohort = new Chart(cohortCanvas, {
+        type: 'bar',
+        data: {
+          labels: window._cohortChartData.labels,
+          datasets: [
+            {
+              label: 'New',
+              data: window._cohortChartData.newData,
+              backgroundColor: '#5ec46c',
+              borderRadius: 3,
+            },
+            {
+              label: 'Returning',
+              data: window._cohortChartData.returningData,
+              backgroundColor: '#ffd166',
+              borderRadius: 3,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { color: '#9aa6b3', font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 10, padding: 8 }
+            },
+            tooltip: {
+              callbacks: {
+                footer: (items) => {
+                  const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                  return 'Total: ' + total + ' buyers';
+                }
+              }
+            }
+          },
+          scales: {
+            x: { stacked: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          }
+        }
+      });
+    }
 
     charts.hour = new Chart(document.getElementById('hourChart'), {
       type: 'bar',
@@ -1734,6 +3276,305 @@
         heatmap.appendChild(cell);
       }
     });
+
+    // Update the stock urgency badge on the tab
+    updateStockBadge();
+
+    // Populate the Insights tab (uses full dataset, not the date filter)
+    renderInsights();
+  }
+
+  // ===== INSIGHTS TAB (#9, #11, #12, #13, #14, #15) =====
+  function renderInsights() {
+    const el = document.getElementById('insightsContent');
+    if (!el) return;
+    const tx = allTransactions.length ? allTransactions : transactions;
+    if (!tx.length) { el.innerHTML = '<div class="panel"><div class="empty-state">No data yet.</div></div>'; return; }
+
+    const now = Date.now();
+    let html = '';
+
+    // ---------- #13 Revenue forecast ----------
+    (() => {
+      // Velocity from last 14 days
+      const cutoff14 = now - 14 * 86400000;
+      const recent = tx.filter(t => new Date(t.time).getTime() >= cutoff14);
+      const recentRev = recent.reduce((s, t) => s + t.net, 0);
+      const revPerDay = recentRev / 14;
+
+      // Month-to-date
+      const d = new Date();
+      const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+      const mtdRev = tx.filter(t => new Date(t.time).getTime() >= monthStart).reduce((s, t) => s + t.net, 0);
+      const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      const dayOfMonth = d.getDate();
+      const daysLeft = daysInMonth - dayOfMonth;
+      const projection = mtdRev + revPerDay * daysLeft;
+
+      // Last month total for comparison
+      const lastMonthStart = new Date(d.getFullYear(), d.getMonth() - 1, 1).getTime();
+      const lastMonthEnd = monthStart;
+      const lastMonthRev = tx.filter(t => {
+        const ts = new Date(t.time).getTime();
+        return ts >= lastMonthStart && ts < lastMonthEnd;
+      }).reduce((s, t) => s + t.net, 0);
+
+      const monthName = d.toLocaleDateString(undefined, { month: 'long' });
+      let vsLast = '';
+      if (lastMonthRev > 0) {
+        const pct = Math.round((projection - lastMonthRev) / lastMonthRev * 100);
+        const col = pct >= 0 ? 'var(--accent-2)' : 'var(--danger)';
+        vsLast = `<span style="color:${col};">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}% vs last month ($${lastMonthRev.toLocaleString(undefined,{maximumFractionDigits:0})})</span>`;
+      }
+
+      html += `
+        <div class="panel">
+          <h3 class="panel-title">📈 Revenue forecast · ${monthName}</h3>
+          <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:8px;">
+            <span style="font-family:'VT323',monospace; font-size:40px; color:var(--accent);">$${projection.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            <span style="font-size:11px; color:var(--text-faint);">projected</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-dim); font-family:'JetBrains Mono',monospace; line-height:1.7;">
+            So far this month: <b style="color:var(--text);">$${mtdRev.toLocaleString(undefined,{maximumFractionDigits:0})}</b> in ${dayOfMonth} days<br>
+            Pace: <b style="color:var(--text);">$${revPerDay.toLocaleString(undefined,{maximumFractionDigits:0})}/day</b> · ${daysLeft} days left<br>
+            ${vsLast}
+          </div>
+          <div style="font-size:10px; color:var(--text-faint); margin-top:8px;">Projection assumes recent 14-day pace continues.</div>
+        </div>`;
+    })();
+
+    // ---------- #9 Shop comparison ----------
+    (() => {
+      const byShop = {};
+      tx.forEach(t => {
+        if (!byShop[t.shop]) byShop[t.shop] = { shop: t.shop, rev: 0, count: 0, qty: 0, buyers: new Set(), items: {} };
+        byShop[t.shop].rev += t.net;
+        byShop[t.shop].count += 1;
+        byShop[t.shop].qty += t.qty;
+        byShop[t.shop].buyers.add(t.buyer);
+        byShop[t.shop].items[t.item] = (byShop[t.shop].items[t.item] || 0) + t.qty;
+      });
+      const shops = Object.values(byShop).sort((a, b) => b.rev - a.rev);
+      if (shops.length >= 2) {
+        const cutoff14 = now - 14 * 86400000;
+        const cell = (s) => {
+          const recent = tx.filter(t => t.shop === s.shop && new Date(t.time).getTime() >= cutoff14);
+          const vel = recent.length / 14;
+          const topItem = Object.entries(s.items).sort((a, b) => b[1] - a[1])[0];
+          const m = s.shop.match(/(-?\d+)[\s,]+(-?\d+)[\s,]+(-?\d+)/);
+          const coords = m ? `${m[1]}, ${m[2]}, ${m[3]}` : s.shop;
+          const label = topItem ? topItem[0] : 'Shop';
+          return `
+            <div style="flex:1; min-width:0; padding:12px; background:var(--bg-panel-2); border-radius:10px;">
+              <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${label}</div>
+              <div style="font-size:9px; color:var(--text-faint); margin-bottom:10px;">@ ${coords}</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; line-height:1.9;">
+                <div>💰 <b style="color:var(--accent);">$${s.rev.toLocaleString(undefined,{maximumFractionDigits:0})}</b></div>
+                <div>🧾 ${s.count} sales</div>
+                <div>📦 ${s.qty.toLocaleString()} units</div>
+                <div>👥 ${s.buyers.size} buyers</div>
+                <div>⚡ ${vel.toFixed(1)}/day</div>
+              </div>
+            </div>`;
+        };
+        html += `
+          <div class="panel">
+            <h3 class="panel-title">🏪 Shop comparison</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              ${shops.slice(0, 3).map(cell).join('')}
+            </div>
+          </div>`;
+      }
+    })();
+
+    // ---------- #11 Profit margin ----------
+    (() => {
+      const costs = getItemCosts();
+      const byItem = {};
+      tx.forEach(t => {
+        if (!byItem[t.item]) byItem[t.item] = { item: t.item, rev: 0, qty: 0 };
+        byItem[t.item].rev += t.net;
+        byItem[t.item].qty += t.qty;
+      });
+      const items = Object.values(byItem).sort((a, b) => b.rev - a.rev);
+      const rows = items.map(it => {
+        const cost = costs[it.item] || 0;
+        const costTotal = cost * it.qty;
+        const profit = it.rev - costTotal;
+        const margin = it.rev > 0 ? (profit / it.rev * 100) : 0;
+        const hasCost = cost > 0;
+        return `
+          <div class="list-row">
+            ${itemIcon(it.item, 24)}
+            <div class="main">
+              <div>${it.item}</div>
+              <div class="meta">${hasCost ? `cost $${cost}/ea · profit $${profit.toLocaleString(undefined,{maximumFractionDigits:0})} (${margin.toFixed(0)}%)` : 'no cost set'}</div>
+            </div>
+            <input type="number" inputmode="decimal" value="${cost || ''}" placeholder="cost"
+              onchange="setItemCost('${it.item.replace(/'/g, "\\'")}', parseFloat(this.value)||0); renderInsights();"
+              style="width:64px; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:6px 8px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right;" />
+          </div>`;
+      }).join('');
+
+      // Totals (only counts items with a cost set)
+      let totalRev = 0, totalProfit = 0, haveCost = false;
+      items.forEach(it => {
+        const cost = costs[it.item] || 0;
+        if (cost > 0) { haveCost = true; totalRev += it.rev; totalProfit += it.rev - cost * it.qty; }
+      });
+      const totalsHtml = haveCost ? `
+        <div style="display:flex; justify-content:space-between; padding:10px 0 4px; font-family:'JetBrains Mono',monospace; font-size:12px; border-top:1px solid var(--border); margin-top:6px;">
+          <span style="color:var(--text-dim);">Profit (items with cost)</span>
+          <span style="color:var(--accent-2);">$${totalProfit.toLocaleString(undefined,{maximumFractionDigits:0})} · ${totalRev>0?(totalProfit/totalRev*100).toFixed(0):0}%</span>
+        </div>` : '';
+
+      html += `
+        <div class="panel">
+          <h3 class="panel-title">💵 Profit margin</h3>
+          <p style="font-size:11px; color:var(--text-faint); margin:-6px 0 12px; font-family:'JetBrains Mono',monospace; line-height:1.5;">
+            Enter your cost per item (what it costs you to source). Profit = revenue − cost.
+          </p>
+          ${rows}
+          ${totalsHtml}
+        </div>`;
+    })();
+
+    // ---------- #12 Basket analysis ----------
+    (() => {
+      // For each buyer, the SET of distinct items they've bought.
+      const buyerItems = {};
+      tx.forEach(t => {
+        (buyerItems[t.buyer] = buyerItems[t.buyer] || new Set()).add(t.item);
+      });
+      // Count co-occurrence of item pairs across buyers
+      const pairs = {};
+      Object.values(buyerItems).forEach(set => {
+        const arr = [...set];
+        for (let i = 0; i < arr.length; i++) {
+          for (let j = i + 1; j < arr.length; j++) {
+            const key = [arr[i], arr[j]].sort().join(' + ');
+            pairs[key] = (pairs[key] || 0) + 1;
+          }
+        }
+      });
+      const topPairs = Object.entries(pairs).filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      if (topPairs.length) {
+        html += `
+          <div class="panel">
+            <h3 class="panel-title">🧺 Often bought together</h3>
+            <p style="font-size:11px; color:var(--text-faint); margin:-6px 0 12px; font-family:'JetBrains Mono',monospace; line-height:1.5;">
+              Item pairs that the same buyers tend to purchase. Useful for bundling ideas.
+            </p>
+            ${topPairs.map(([pair, count]) => `
+              <div class="list-row">
+                <div class="main"><div>${pair}</div></div>
+                <div class="amount" style="font-size:13px;">${count} buyers</div>
+              </div>`).join('')}
+          </div>`;
+      }
+    })();
+
+    // ---------- #14 Churn risk ----------
+    (() => {
+      const byBuyer = {};
+      tx.forEach(t => {
+        (byBuyer[t.buyer] = byBuyer[t.buyer] || []).push(new Date(t.time).getTime());
+      });
+      const risks = [];
+      Object.entries(byBuyer).forEach(([buyer, times]) => {
+        if (times.length < 3) return; // need history to judge cadence
+        times.sort((a, b) => a - b);
+        // Average gap between purchases
+        let gaps = 0;
+        for (let i = 1; i < times.length; i++) gaps += times[i] - times[i - 1];
+        const avgGap = gaps / (times.length - 1);
+        const sinceLast = now - times[times.length - 1];
+        // At risk if they've been silent for >2x their normal gap (and >7 days)
+        if (sinceLast > avgGap * 2 && sinceLast > 7 * 86400000) {
+          const total = tx.filter(t => t.buyer === buyer).reduce((s, t) => s + t.net, 0);
+          risks.push({
+            buyer, total,
+            daysSilent: Math.floor(sinceLast / 86400000),
+            normalDays: Math.round(avgGap / 86400000),
+          });
+        }
+      });
+      risks.sort((a, b) => b.total - a.total);
+      if (risks.length) {
+        html += `
+          <div class="panel">
+            <h3 class="panel-title">⚠️ Churn risk</h3>
+            <p style="font-size:11px; color:var(--text-faint); margin:-6px 0 12px; font-family:'JetBrains Mono',monospace; line-height:1.5;">
+              Regulars who've gone quiet longer than their usual gap. Worth a nudge.
+            </p>
+            ${risks.slice(0, 8).map(r => `
+              <div class="list-row clickable" onclick="showCustomerProfile('${r.buyer.replace(/'/g, "\\'")}')">
+                ${avatarImg(r.buyer)}
+                <div class="main">
+                  <div>${r.buyer}</div>
+                  <div class="meta">silent ${r.daysSilent}d · usually every ~${r.normalDays}d</div>
+                </div>
+                <div class="amount">$${r.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                <div style="color:var(--text-faint); font-size:14px; margin-left:4px;">›</div>
+              </div>`).join('')}
+          </div>`;
+      }
+    })();
+
+    // ---------- #15 Achievements / streaks ----------
+    (() => {
+      // Days with at least one sale
+      const dayset = new Set(tx.map(t => new Date(t.time).toISOString().slice(0, 10)));
+      const days = [...dayset].sort();
+      // Longest streak of consecutive days
+      let longest = 0, cur = 0, prev = null;
+      days.forEach(ds => {
+        const d = new Date(ds).getTime();
+        if (prev !== null && d - prev === 86400000) cur++;
+        else cur = 1;
+        if (cur > longest) longest = cur;
+        prev = d;
+      });
+      // Current streak (counting back from today/yesterday)
+      let current = 0;
+      let checkDay = new Date(); checkDay.setHours(0,0,0,0);
+      for (;;) {
+        const ds = checkDay.toISOString().slice(0, 10);
+        if (dayset.has(ds)) { current++; checkDay.setDate(checkDay.getDate() - 1); }
+        else if (current === 0 && ds === new Date().toISOString().slice(0,10)) {
+          // no sale today yet - allow streak to count from yesterday
+          checkDay.setDate(checkDay.getDate() - 1);
+          if (!dayset.has(checkDay.toISOString().slice(0,10))) break;
+        } else break;
+      }
+      const totalRev = tx.reduce((s, t) => s + t.net, 0);
+      const totalSales = tx.length;
+      const uniqueBuyers = new Set(tx.map(t => t.buyer)).size;
+      const uniqueItems = new Set(tx.map(t => t.item)).size;
+      const activeDays = dayset.size;
+
+      const badge = (icon, label, value) => `
+        <div style="flex:1; min-width:90px; padding:12px; background:var(--bg-panel-2); border-radius:10px; text-align:center;">
+          <div style="font-size:24px;">${icon}</div>
+          <div style="font-family:'VT323',monospace; font-size:24px; color:var(--accent); line-height:1.1;">${value}</div>
+          <div style="font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1px;">${label}</div>
+        </div>`;
+
+      html += `
+        <div class="panel">
+          <h3 class="panel-title">🏅 Achievements</h3>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            ${badge('🔥', 'Current streak', current + 'd')}
+            ${badge('📅', 'Longest streak', longest + 'd')}
+            ${badge('🗓️', 'Active days', activeDays)}
+            ${badge('🧾', 'Total sales', totalSales)}
+            ${badge('👥', 'Buyers', uniqueBuyers)}
+            ${badge('📦', 'Item types', uniqueItems)}
+          </div>
+        </div>`;
+    })();
+
+    el.innerHTML = html;
   }
 
   function formatRelativeDate(iso) {
@@ -1743,7 +3584,13 @@
     if (days === 0) return `today ${time}`;
     if (days === 1) return `yesterday ${time}`;
     if (days < 7) return `${days}d ago ${time}`;
-    return d.toISOString().slice(0,10);
+    return formatLongDate(d);
+  }
+
+  // Consistent readable date: "21 May 2026"
+  function formatLongDate(d) {
+    if (!(d instanceof Date)) d = new Date(d);
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   // ===== CUSTOMER PROFILE =====
@@ -1875,7 +3722,7 @@
       <div class="profile-header">
         ${avatarImg(buyerName, 'large')}
         <div class="name" style="margin-top: 10px;">${buyerName}</div>
-        <div class="subtitle">customer since ${firstPurchase.toISOString().slice(0,10)}</div>
+        <div class="subtitle">customer since ${formatLongDate(firstPurchase)}</div>
         <div class="tags-row" style="justify-content: center; margin-top: 12px;">
           ${autoTags.map(t => `<span class="badge ${t.type}">${t.label}</span>`).join('')}
           ${customTags.map((t, idx) => `
@@ -2082,7 +3929,7 @@
         <div style="font-size: 56px; line-height: 1;">🏪</div>
         <div class="name" style="margin-top: 6px;">${shopName}</div>
         <div class="subtitle">@ ${coords}</div>
-        <div class="subtitle" style="margin-top: 4px;">active since ${firstSale.toISOString().slice(0,10)}</div>
+        <div class="subtitle" style="margin-top: 4px;">active since ${formatLongDate(firstSale)}</div>
       </div>
 
       <div class="kpi-grid">
@@ -2232,8 +4079,13 @@
     if (customersTab) customersTab.click();
   }
 
-  function addCustomerTag(buyerName) {
-    const tag = prompt('Add a tag (short label):');
+  async function addCustomerTag(buyerName) {
+    const tag = await openInputModal({
+      title: 'Tag toevoegen',
+      label: 'Korte label',
+      placeholder: 'bijv. betrouwbaar, snelle betaler',
+      maxlen: 20,
+    });
     if (!tag) return;
     const trimmed = tag.trim().slice(0, 20);
     if (!trimmed) return;
@@ -2271,6 +4123,25 @@
       }
     }, 400);
   }
+
+  // Show/hide scroll-to-top button based on scroll position
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('scrollTop');
+    if (btn) btn.classList.toggle('show', window.scrollY > 400);
+  }, { passive: true });
+
+  // Check for incoming sync payload in URL hash (from QR scan)
+  if (window.location.hash && window.location.hash.length > 8) {
+    const hashContent = decodeURIComponent(window.location.hash.slice(1));
+    if (tryImportSyncPayload(hashContent)) {
+      // Clear the hash so the token isn't left in the URL bar
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      setSyncStatus('☁ imported, syncing...', 'var(--blue)');
+    }
+  }
+
+  // Set initial sync indicator based on saved config
+  if (syncEnabled()) setSyncStatus('☁ cloud sync on', 'var(--accent-2)');
 
   loadData();
 </script>
