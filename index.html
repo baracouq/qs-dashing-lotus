@@ -986,6 +986,10 @@
       The token is stored only on this device, never in the hosted page.
     </div>
     <div class="modal-field">
+      <label>Jouw naam (voor de andere eigenaren)</label>
+      <input type="text" id="syncName" placeholder="bijv. Syncora" maxlength="24" />
+    </div>
+    <div class="modal-field">
       <label>GitHub repo (owner/name)</label>
       <input type="text" id="syncRepo" placeholder="baracouq/qs-dashing-lotus" />
     </div>
@@ -1223,6 +1227,29 @@
     return !!(syncCfg.repo && syncCfg.token);
   }
 
+  // ===== USER IDENTITY (for shared-use attribution) =====
+  // Each co-owner sets their name once per device; it's stamped on updates.
+  function getUserName() {
+    return loadStorage('qs_user_name', '');
+  }
+  function setUserName(name) {
+    saveStorage('qs_user_name', (name || '').trim().slice(0, 24));
+  }
+  // Ask for a name if none is set yet (used before the first stock action)
+  async function ensureUserName() {
+    let name = getUserName();
+    if (name) return name;
+    name = await openInputModal({
+      title: 'Wie ben jij?',
+      label: 'Je naam (voor de andere eigenaren)',
+      sub: 'Zo zien jullie wie wat heeft bijgewerkt. Eenmalig per apparaat.',
+      placeholder: 'bijv. Syncora',
+      maxlen: 24,
+    });
+    if (name) { setUserName(name); return getUserName(); }
+    return '';
+  }
+
   function setSyncStatus(text, color) {
     const el = document.getElementById('syncStatus');
     if (el) {
@@ -1326,17 +1353,27 @@
     if (!local) return remote;
     const merged = { version: 1, updated: new Date().toISOString(), stock: {}, customers: {}, costs: {} };
 
-    // Stock: each entry has baselineTime / lastRestockTime; newest baseline wins
+    // Stock: newest baseline wins, but preserve capacity and merge history
+    // so concurrent edits by different co-owners don't lose data.
     const stockKeys = new Set([...Object.keys(remote.stock || {}), ...Object.keys(local.stock || {})]);
     stockKeys.forEach(k => {
       const r = (remote.stock || {})[k];
       const l = (local.stock || {})[k];
       if (!r) { merged.stock[k] = l; return; }
       if (!l) { merged.stock[k] = r; return; }
-      // Both exist - pick the one with the later baselineTime
       const rt = new Date(r.baselineTime || 0).getTime();
       const lt = new Date(l.baselineTime || 0).getTime();
-      merged.stock[k] = lt >= rt ? l : r;
+      // Base the current state on whichever was updated most recently
+      const winner = lt >= rt ? { ...l } : { ...r };
+      // Capacity = the largest "full" ever recorded on either side
+      winner.capacity = Math.max(r.capacity || 0, l.capacity || 0) || undefined;
+      // Merge history from both sides, dedup by timestamp, keep last 30
+      const seen = new Set();
+      const hist = [...(r.history || []), ...(l.history || [])]
+        .filter(h => { const key = h.t + h.type; if (seen.has(key)) return false; seen.add(key); return true; })
+        .sort((a, b) => new Date(a.t) - new Date(b.t));
+      winner.history = hist.slice(-30);
+      merged.stock[k] = winner;
     });
 
     // Customers: merge notes/tags; longer-edited (by presence) local wins on conflict
@@ -1370,6 +1407,7 @@
 
   // ===== SYNC SETTINGS MODAL =====
   function openSyncModal() {
+    document.getElementById('syncName').value = getUserName() || '';
     document.getElementById('syncRepo').value = syncCfg.repo || '';
     document.getElementById('syncToken').value = syncCfg.token || '';
     const on = syncEnabled();
@@ -1389,9 +1427,11 @@
     const repo = document.getElementById('syncRepo').value.trim();
     const token = document.getElementById('syncToken').value.trim();
     const status = document.getElementById('syncModalStatus');
+    // Always save the name, even if they haven't set up sync yet
+    setUserName(document.getElementById('syncName').value);
     if (!repo || !token) {
-      status.textContent = 'Both fields are required.';
-      status.style.color = 'var(--danger)';
+      status.textContent = 'Naam opgeslagen. Vul repo + token in voor sync.';
+      status.style.color = 'var(--text-faint)';
       return;
     }
     status.textContent = '↻ Testing connection...';
@@ -1813,10 +1853,14 @@
       const hist = (entry.history || []).slice().reverse();
       if (hist.length) {
         const rows = hist.slice(0, 8).map(h => {
-          const label = h.type === 'recount' ? '📍 recount' : h.type === 'baseline' ? '🎯 baseline' : '➕ restock';
+          const label = h.type === 'recount' ? '📍 recount'
+            : h.type === 'baseline' ? '🎯 baseline'
+            : h.type === 'fill' ? '✓ bijgevuld'
+            : '➕ bijgevuld';
           const amt = h.type === 'restock' ? `+${h.amount}` : `=${h.amount}`;
-          return `<div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-faint); padding:2px 0;">
-            <span>${label}</span><span style="color:var(--text-dim);">${amt}</span><span>${formatRelativeDate(h.t)}</span>
+          const by = h.by ? `<span style="color:var(--blue);">${h.by}</span> · ` : '';
+          return `<div style="display:flex; justify-content:space-between; gap:6px; font-size:10px; color:var(--text-faint); padding:2px 0;">
+            <span>${label}</span><span style="color:var(--text-dim);">${amt}</span><span style="text-align:right;">${by}${formatRelativeDate(h.t)}</span>
           </div>`;
         }).join('');
         historyHtml = `
@@ -1857,7 +1901,7 @@
             </div>
             <div>
               <div class="label">Last restock</div>
-              <div class="val">${lastRestockDays !== null ? lastRestockDays + 'd ago' : '—'}</div>
+              <div class="val">${lastRestockDays !== null ? lastRestockDays + 'd ago' : '—'}${entry.lastBy ? ` · ${entry.lastBy}` : ''}</div>
             </div>
           </div>
           <div style="margin-top:12px;">
@@ -1867,8 +1911,11 @@
           ${suggestionHtml}
           ${historyHtml}
           <div class="stock-btn-row">
-            <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','restock')">+ Restock</button>
-            <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','set')">Set count</button>
+            <button class="stock-btn" style="background:var(--accent); color:#0d1117; border-color:var(--accent); font-weight:600;" onclick="fillToFull('${combo.key.replace(/'/g, "\\'")}')">${entry.capacity ? `✓ Bijgevuld (tot ${entry.capacity})` : '✓ Bijgevuld'}</button>
+          </div>
+          <div class="stock-btn-row">
+            <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','restock')">+ Deel bij</button>
+            <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','set')">Tel exact</button>
           </div>
         </div>`;
     }).join('');
@@ -1915,9 +1962,10 @@
     }
   }
 
-  function applyStockModal() {
+  async function applyStockModal() {
     if (!stockModalKey) return;
     const val = parseInt(document.getElementById('stockAmountInput').value) || 0;
+    const who = await ensureUserName();
     const all = getStockData();
     const entry = all[stockModalKey] || {};
     const nowIso = new Date().toISOString();
@@ -1931,10 +1979,10 @@
         entry.baselineTime = nowIso;
         entry.restocked = 0;
         entry.measured = false;
-        entry.history.push({ t: nowIso, type: 'baseline', amount: val });
+        entry.history.push({ t: nowIso, type: 'baseline', amount: val, by: who });
       } else {
         entry.restocked = (entry.restocked || 0) + val;
-        entry.history.push({ t: nowIso, type: 'restock', amount: val });
+        entry.history.push({ t: nowIso, type: 'restock', amount: val, by: who });
       }
       entry.lastRestockTime = nowIso;
     } else {
@@ -1943,8 +1991,11 @@
       entry.baselineTime = nowIso;
       entry.restocked = 0;
       entry.measured = true;
-      entry.history.push({ t: nowIso, type: 'recount', amount: val });
+      entry.history.push({ t: nowIso, type: 'recount', amount: val, by: who });
     }
+    // Remember "full" capacity so next time is a one-tap refill
+    if (val > 0) entry.capacity = Math.max(entry.capacity || 0, val);
+    entry.lastBy = who;
     // Keep history bounded (last 30 events)
     if (entry.history.length > 30) entry.history = entry.history.slice(-30);
     setStockEntry(stockModalKey, entry);
@@ -1953,6 +2004,33 @@
     updateStockBadge();
     const verb = stockModalMode === 'restock' ? 'Restock toegevoegd' : 'Voorraad ingesteld';
     showToast(`✓ ${verb}${syncEnabled() ? ' · gesynct' : ''}`);
+  }
+
+  // One-tap "fill to full" using the shop's known capacity
+  async function fillToFull(key) {
+    const who = await ensureUserName();
+    const all = getStockData();
+    const entry = all[key] || {};
+    if (!entry.capacity) {
+      // No capacity known yet - open the modal so they set it once
+      openStockModal(key, 'set');
+      showToast('Stel eenmalig in hoeveel "vol" is');
+      return;
+    }
+    const nowIso = new Date().toISOString();
+    entry.history = entry.history || [];
+    entry.baseline = entry.capacity;
+    entry.baselineTime = nowIso;
+    entry.restocked = 0;
+    entry.measured = true;
+    entry.lastRestockTime = nowIso;
+    entry.lastBy = who;
+    entry.history.push({ t: nowIso, type: 'fill', amount: entry.capacity, by: who });
+    if (entry.history.length > 30) entry.history = entry.history.slice(-30);
+    setStockEntry(key, entry);
+    renderStockCards();
+    updateStockBadge();
+    showToast(`✓ Bijgevuld tot vol (${entry.capacity})${syncEnabled() ? ' · gesynct' : ''}`);
   }
 
   // Close modal on overlay click
@@ -1989,8 +2067,9 @@
     document.getElementById('bulkModal').classList.remove('show');
   }
 
-  function applyBulkRecount() {
+  async function applyBulkRecount() {
     const inputs = document.querySelectorAll('#bulkRows input[data-bulk-key]');
+    const who = await ensureUserName();
     const all = getStockData();
     const nowIso = new Date().toISOString();
     let updated = 0;
@@ -2006,7 +2085,9 @@
       entry.baselineTime = nowIso;
       entry.restocked = 0;
       entry.measured = true;
-      entry.history.push({ t: nowIso, type: 'recount', amount: val });
+      entry.lastBy = who;
+      if (val > 0) entry.capacity = Math.max(entry.capacity || 0, val);
+      entry.history.push({ t: nowIso, type: 'recount', amount: val, by: who });
       if (entry.history.length > 30) entry.history = entry.history.slice(-30);
       all[key] = entry;
       updated++;
