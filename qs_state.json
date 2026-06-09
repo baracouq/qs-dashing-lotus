@@ -1,7 +1,24 @@
 {
   "version": 1,
-  "updated": "2026-06-09T20:28:32.147Z",
-  "stock": {},
+  "updated": "2026-06-09T20:29:29.726Z",
+  "stock": {
+    "Purple Wool@@world 19977,75,-17192": {
+      "history": [
+        {
+          "t": "2026-06-09T20:29:28.647Z",
+          "type": "recount",
+          "amount": 1715,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 1715,
+      "baselineTime": "2026-06-09T20:29:28.647Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 1715,
+      "lastBy": "Neph"
+    }
+  },
   "customers": {},
   "costs": {}
 }
