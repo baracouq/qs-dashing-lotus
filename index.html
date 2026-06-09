@@ -871,7 +871,8 @@
     <div class="logo">QS<span>·INSIGHTS</span></div>
     <div style="display:flex; gap:8px;">
       <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
-      <button id="sync-btn" onclick="openSyncModal()" title="Cloud sync settings">☁ Sync</button>
+      <button id="lock-btn" onclick="toggleEditLock()" title="Bewerken ontgrendelen">🔒 Bekijken</button>
+      <button id="sync-btn" onclick="openSyncModal()" title="Beheer / instellingen" style="display:none;">⚙</button>
       <button id="refresh-btn" onclick="loadData()">↻ Refresh</button>
     </div>
   </header>
@@ -977,38 +978,42 @@
   </div>
 </div>
 
-<!-- Cloud sync settings modal -->
+<!-- Admin setup modal (one-time: set the shared edit password) -->
 <div class="modal-overlay" id="syncModal">
   <div class="modal">
-    <h3>☁ Cloud sync</h3>
+    <h3>⚙ Instellingen</h3>
     <div class="modal-sub">
-      Sync your stock counts &amp; customer notes across devices via your GitHub repo.
-      The token is stored only on this device, never in the hosted page.
+      Iedereen ziet de voorraad automatisch (alleen-lezen). Bewerken zit achter
+      een gedeeld wachtwoord, dat je hieronder eenmalig instelt.
     </div>
     <div class="modal-field">
       <label>Jouw naam (voor de andere eigenaren)</label>
       <input type="text" id="syncName" placeholder="bijv. Syncora" maxlength="24" />
     </div>
-    <div class="modal-field">
-      <label>GitHub repo (owner/name)</label>
-      <input type="text" id="syncRepo" placeholder="baracouq/qs-dashing-lotus" />
-    </div>
-    <div class="modal-field">
-      <label>Fine-grained token (Contents: read &amp; write)</label>
-      <input type="password" id="syncToken" placeholder="github_pat_..." />
-    </div>
+    <details style="margin:10px 0; border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
+      <summary style="cursor:pointer; font-size:12px; color:var(--text-dim);">Beheer · bewerk-wachtwoord instellen (eenmalig)</summary>
+      <div class="modal-sub" style="margin-top:8px;">
+        Plak een GitHub fine-grained token (Contents: read &amp; write) en kies een
+        wachtwoord. De token wordt versleuteld met het wachtwoord in <code>qs_auth.json</code>
+        gezet — daarna gebruiken je mede-eigenaren alleen het wachtwoord.
+      </div>
+      <div class="modal-field">
+        <label>Repo (auto-herkend, alleen invullen als het misgaat)</label>
+        <input type="text" id="syncRepo" placeholder="baracouq/qs-dashing-lotus" />
+      </div>
+      <div class="modal-field">
+        <label>GitHub token (Contents: read &amp; write)</label>
+        <input type="password" id="syncToken" placeholder="github_pat_..." />
+      </div>
+      <div class="modal-field">
+        <label>Kies een bewerk-wachtwoord (deel dit met je groep)</label>
+        <input type="password" id="syncEditPass" placeholder="min. 6 tekens" maxlength="64" />
+      </div>
+    </details>
     <div id="syncModalStatus" style="font-size:11px; min-height:16px; margin-bottom:12px; color:var(--text-faint);"></div>
-    <div id="qrSection" style="display:none; text-align:center; margin-bottom:14px; padding:14px; background:var(--bg); border-radius:10px;">
-      <div id="qrcode" style="display:inline-block; background:#fff; padding:10px; border-radius:8px;"></div>
-      <p style="font-size:10px; color:var(--warn); margin-top:10px; line-height:1.5;">
-        ⚠ Scan with your other device to copy these settings.<br>Anyone who scans this gets write access. Close when done.
-      </p>
-    </div>
     <div class="modal-btn-row">
       <button class="modal-btn" onclick="closeSyncModal()">Sluit</button>
-      <button class="modal-btn" onclick="showSyncQR()" id="syncQrBtn" style="display:none;">📱 QR</button>
-      <button class="modal-btn" onclick="disableSync()" id="syncDisableBtn" style="display:none;">Uitschakelen</button>
-      <button class="modal-btn primary" onclick="saveSyncSettings()">Verbind</button>
+      <button class="modal-btn primary" onclick="saveSyncSettings()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -1065,7 +1070,7 @@
 
   // ===== TOAST NOTIFICATIONS =====
   let toastTimer = null;
-  function showToast(message, type = '') {
+  function showToast(message, type = '', duration = 2400) {
     const el = document.getElementById('toast');
     if (!el) return;
     el.textContent = message;
@@ -1073,7 +1078,7 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
       el.className = 'toast' + (type ? ' ' + type : '');
-    }, 2400);
+    }, duration);
   }
 
   // ===== THEME TOGGLE (#8) =====
@@ -1214,17 +1219,76 @@
     catch (e) { console.error('Storage save failed', e); }
   }
 
-  // ===== GITHUB CLOUD SYNC =====
-  // State (stock + customer data) is mirrored to qs_state.json in the repo.
-  // Token lives only in localStorage on this device, never in the hosted HTML.
+  // ===== SHARED STATE + PASSWORD-GATED EDITING =====
+  // Reads are PUBLIC (anyone sees the shared stock, no setup, read-only).
+  // Editing is unlocked with a shared password, which decrypts a GitHub
+  // write-token stored (encrypted) in qs_auth.json in the repo.
   const SYNC_FILE = 'qs_state.json';
-  let syncCfg = loadStorage('qs_sync_cfg', { repo: '', token: '' });
-  let syncFileSha = null;      // current sha of qs_state.json (needed to update)
+  const AUTH_FILE = 'qs_auth.json';
+
+  // Repo is derived from the GitHub Pages URL (owner.github.io/repo/...),
+  // with an optional manual override saved locally.
+  function deriveRepo() {
+    const override = loadStorage('qs_repo_override', '');
+    if (override) return override;
+    try {
+      const host = location.hostname;            // baracouq.github.io
+      const owner = host.split('.')[0];
+      const seg = location.pathname.split('/').filter(Boolean)[0];
+      if (owner && host.endsWith('github.io')) {
+        return seg ? `${owner}/${seg}` : `${owner}/${owner}.github.io`;
+      }
+    } catch (e) {}
+    return '';
+  }
+  let REPO = deriveRepo();
+
+  // In-memory write token (decrypted on unlock). Mirrored to sessionStorage
+  // so a reload in the same tab stays unlocked; cleared when the tab closes.
+  let editToken = (function () {
+    try { return sessionStorage.getItem('qs_edit_token') || null; } catch (e) { return null; }
+  })();
+  function setEditToken(tok) {
+    editToken = tok || null;
+    try {
+      if (tok) sessionStorage.setItem('qs_edit_token', tok);
+      else sessionStorage.removeItem('qs_edit_token');
+    } catch (e) {}
+  }
+
+  let syncFileSha = null;
+  let authFileSha = null;
   let syncInFlight = false;
   let syncPending = false;
 
-  function syncEnabled() {
-    return !!(syncCfg.repo && syncCfg.token);
+  // Can the current device WRITE (i.e. has editing been unlocked)?
+  function canWrite() { return !!editToken && !!REPO; }
+  // Kept for existing call sites: now means "writing is possible".
+  function syncEnabled() { return canWrite(); }
+
+  // ===== CRYPTO (PBKDF2 + AES-GCM) =====
+  const _enc = new TextEncoder();
+  const _dec = new TextDecoder();
+  function _b64(buf) { let s = ''; const b = new Uint8Array(buf); for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
+  function _unb64(s) { const bin = atob(s); const b = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
+  async function _deriveKey(password, salt) {
+    const base = await crypto.subtle.importKey('raw', _enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    );
+  }
+  async function encryptToken(token, password) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await _deriveKey(password, salt);
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, _enc.encode(token));
+    return { v: 1, salt: _b64(salt), iv: _b64(iv), ct: _b64(ct) };
+  }
+  async function decryptToken(blob, password) {
+    const key = await _deriveKey(password, _unb64(blob.salt));
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: _unb64(blob.iv) }, key, _unb64(blob.ct));
+    return _dec.decode(pt);
   }
 
   // ===== USER IDENTITY (for shared-use attribution) =====
@@ -1269,21 +1333,47 @@
     };
   }
 
-  // Apply a fetched state object into localStorage
+  // Apply a fetched state object into localStorage.
+  // Safety: never let an EMPTY incoming section wipe a non-empty local one
+  // (protects shared-use data if a co-owner syncs a blank state).
   function applyState(state) {
     if (!state || typeof state !== 'object') return;
-    if (state.stock) saveStorage('qs_stock_data', state.stock);
-    if (state.customers) saveStorage('qs_customer_data', state.customers);
+    const nonEmpty = (obj) => obj && typeof obj === 'object' && Object.keys(obj).length > 0;
+    if (nonEmpty(state.stock) || !nonEmpty(getStockData())) {
+      if (state.stock) saveStorage('qs_stock_data', state.stock);
+    }
+    if (nonEmpty(state.customers) || !nonEmpty(loadStorage('qs_customer_data', {}))) {
+      if (state.customers) saveStorage('qs_customer_data', state.customers);
+    }
     if (state.costs) saveStorage('qs_item_costs', state.costs);
   }
 
-  // Fetch state from GitHub (returns parsed object or null)
+  // PUBLIC read of the shared state (no token) - this is how everyone sees
+  // the same stock with zero setup. Uses raw.githubusercontent (no rate limit,
+  // updates on every commit, CORS-enabled), trying the common branches.
+  async function pullStatePublic() {
+    if (!REPO) return null;
+    const branches = ['main', 'master'];
+    for (const br of branches) {
+      try {
+        const url = `https://raw.githubusercontent.com/${REPO}/${br}/${SYNC_FILE}?t=${Date.now()}`;
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (resp.ok) {
+          const json = await resp.text();
+          try { return JSON.parse(json); } catch { return null; }
+        }
+      } catch (e) { /* try next branch */ }
+    }
+    return null;
+  }
+
+  // Authenticated read (used when unlocked) - real-time and gives us the sha.
   async function pullState() {
-    if (!syncEnabled()) return null;
-    const url = `https://api.github.com/repos/${syncCfg.repo}/contents/${SYNC_FILE}?t=${Date.now()}`;
+    if (!canWrite()) return await pullStatePublic();
+    const url = `https://api.github.com/repos/${REPO}/contents/${SYNC_FILE}?t=${Date.now()}`;
     const resp = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${syncCfg.token}`,
+        'Authorization': `Bearer ${editToken}`,
         'Accept': 'application/vnd.github+json',
       },
     });
@@ -1294,14 +1384,13 @@
     if (!resp.ok) throw new Error(`pull failed: ${resp.status}`);
     const data = await resp.json();
     syncFileSha = data.sha;
-    // content is base64
     const json = decodeURIComponent(escape(atob(data.content)));
     try { return JSON.parse(json); } catch { return null; }
   }
 
   // Push current state to GitHub (merges with remote first to avoid clobber)
   async function pushState() {
-    if (!syncEnabled()) return;
+    if (!canWrite()) return;
     if (syncInFlight) { syncPending = true; return; }
     syncInFlight = true;
     setSyncStatus('↻ syncing...', 'var(--blue)');
@@ -1320,11 +1409,11 @@
       };
       if (syncFileSha) body.sha = syncFileSha;
 
-      const url = `https://api.github.com/repos/${syncCfg.repo}/contents/${SYNC_FILE}`;
+      const url = `https://api.github.com/repos/${REPO}/contents/${SYNC_FILE}`;
       const resp = await fetch(url, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${syncCfg.token}`,
+          'Authorization': `Bearer ${editToken}`,
           'Accept': 'application/vnd.github+json',
           'Content-Type': 'application/json',
         },
@@ -1336,10 +1425,10 @@
       }
       const result = await resp.json();
       syncFileSha = result.content.sha;
-      setSyncStatus('☁ synced', 'var(--accent-2)');
+      setSyncStatus('☁ opgeslagen voor iedereen', 'var(--accent-2)');
     } catch (e) {
       console.error('Sync push failed', e);
-      setSyncStatus('⚠ sync error', 'var(--warn)');
+      setSyncStatus('⚠ opslaan mislukt', 'var(--warn)');
     } finally {
       syncInFlight = false;
       if (syncPending) { syncPending = false; pushState(); }
@@ -1397,126 +1486,194 @@
     return merged;
   }
 
-  // Debounced sync trigger - call after any local state change
+  // Debounced sync trigger - call after any local write.
   let syncDebounce = null;
   function triggerSync() {
-    if (!syncEnabled()) return;
+    if (!canWrite()) return; // edits are gated by unlock; shouldn't reach here
     clearTimeout(syncDebounce);
     syncDebounce = setTimeout(() => pushState(), 800);
   }
 
-  // ===== SYNC SETTINGS MODAL =====
+  // ===== EDIT LOCK (password gate) =====
+  // Edits are read-only until the shared password unlocks the write-token.
+  function updateLockButton() {
+    const btn = document.getElementById('lock-btn');
+    const gear = document.getElementById('sync-btn');
+    if (btn) {
+      btn.textContent = canWrite() ? '🔓 Bewerken aan' : '🔒 Bekijken';
+      btn.title = canWrite() ? 'Klik om te vergrendelen' : 'Klik om bewerken te ontgrendelen';
+    }
+    if (gear) gear.style.display = canWrite() ? 'inline-block' : 'none';
+    const bulkBtn = document.getElementById('bulkRecountBtn');
+    if (bulkBtn) bulkBtn.style.display = canWrite() ? 'inline-block' : 'none';
+    setSyncStatus(canWrite() ? '🔓 bewerken ontgrendeld' : '🔒 alleen-lezen', canWrite() ? 'var(--accent-2)' : 'var(--text-faint)');
+  }
+
+  async function toggleEditLock() {
+    if (canWrite()) {
+      // Lock again
+      setEditToken(null);
+      syncFileSha = null;
+      updateLockButton();
+      showToast('🔒 Vergrendeld — weer alleen-lezen');
+      if (activeTab === 'stock') renderStockCards();
+      return;
+    }
+    await promptUnlock();
+  }
+
+  // Prompt for the password, fetch qs_auth.json, decrypt the token.
+  async function promptUnlock() {
+    if (!REPO) {
+      showToast('⚠ Geen repo gevonden. Open via je github.io-link.', 'warn', 5000);
+      return false;
+    }
+    const pass = await openInputModal({
+      title: '🔒 Bewerken ontgrendelen',
+      label: 'Wachtwoord',
+      sub: 'Voer het gedeelde wachtwoord in om voorraad te kunnen bijwerken.',
+      placeholder: 'wachtwoord',
+      maxlen: 64,
+      password: true,
+    });
+    if (!pass) return false;
+    setSyncStatus('↻ ontgrendelen...', 'var(--blue)');
+    try {
+      const blob = await fetchAuthBlob();
+      if (!blob) {
+        showToast('⚠ Nog geen wachtwoord ingesteld. Vraag de beheerder.', 'warn', 5000);
+        setSyncStatus('🔒 alleen-lezen', 'var(--text-faint)');
+        return false;
+      }
+      const token = await decryptToken(blob, pass);
+      // Verify the token actually works by pulling once
+      setEditToken(token);
+      await pullState(); // throws if token invalid
+      await ensureUserName();
+      updateLockButton();
+      showToast('🔓 Bewerken ontgrendeld');
+      if (activeTab === 'stock') renderStockCards();
+      return true;
+    } catch (e) {
+      setEditToken(null);
+      showToast('✗ Verkeerd wachtwoord', 'warn', 4000);
+      setSyncStatus('🔒 alleen-lezen', 'var(--text-faint)');
+      return false;
+    }
+  }
+
+  // Ensure editing is unlocked before a write action; returns true if ok.
+  async function ensureUnlocked() {
+    if (canWrite()) return true;
+    return await promptUnlock();
+  }
+
+  // Fetch the encrypted token blob (public, no auth)
+  async function fetchAuthBlob() {
+    if (!REPO) return null;
+    const branches = ['main', 'master'];
+    for (const br of branches) {
+      try {
+        const url = `https://raw.githubusercontent.com/${REPO}/${br}/${AUTH_FILE}?t=${Date.now()}`;
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (resp.ok) { try { return JSON.parse(await resp.text()); } catch { return null; } }
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  // ===== ADMIN SETUP MODAL (one-time: set the edit password) =====
   function openSyncModal() {
     document.getElementById('syncName').value = getUserName() || '';
-    document.getElementById('syncRepo').value = syncCfg.repo || '';
-    document.getElementById('syncToken').value = syncCfg.token || '';
-    const on = syncEnabled();
-    document.getElementById('syncDisableBtn').style.display = on ? 'block' : 'none';
-    document.getElementById('syncQrBtn').style.display = on ? 'block' : 'none';
-    document.getElementById('qrSection').style.display = 'none';
-    document.getElementById('qrcode').innerHTML = '';
+    document.getElementById('syncRepo').value = loadStorage('qs_repo_override', '') || REPO || '';
+    document.getElementById('syncToken').value = '';
+    document.getElementById('syncEditPass').value = '';
     const status = document.getElementById('syncModalStatus');
-    status.textContent = on ? '✓ Currently connected.' : 'Not connected yet.';
-    status.style.color = on ? 'var(--accent-2)' : 'var(--text-faint)';
+    status.textContent = REPO ? `Repo: ${REPO}` : 'Geen repo gevonden — vul handmatig in.';
+    status.style.color = 'var(--text-faint)';
     document.getElementById('syncModal').classList.add('show');
   }
   function closeSyncModal() {
     document.getElementById('syncModal').classList.remove('show');
   }
+
+  // Save name (everyone) and, if admin filled token+password, (re)create qs_auth.json
   async function saveSyncSettings() {
-    const repo = document.getElementById('syncRepo').value.trim();
-    const token = document.getElementById('syncToken').value.trim();
-    const status = document.getElementById('syncModalStatus');
-    // Always save the name, even if they haven't set up sync yet
     setUserName(document.getElementById('syncName').value);
-    if (!repo || !token) {
-      status.textContent = 'Naam opgeslagen. Vul repo + token in voor sync.';
-      status.style.color = 'var(--text-faint)';
+    const repoOverride = document.getElementById('syncRepo').value.trim();
+    if (repoOverride) { saveStorage('qs_repo_override', repoOverride); REPO = repoOverride; }
+    const token = document.getElementById('syncToken').value.trim();
+    const pass = document.getElementById('syncEditPass').value;
+    const status = document.getElementById('syncModalStatus');
+
+    if (!token && !pass) {
+      status.textContent = '✓ Naam opgeslagen.';
+      status.style.color = 'var(--accent-2)';
       return;
     }
-    status.textContent = '↻ Testing connection...';
+    if (!token || !pass) {
+      status.textContent = 'Voor het instellen van een wachtwoord heb je token én wachtwoord nodig.';
+      status.style.color = 'var(--warn)';
+      return;
+    }
+    if (pass.length < 6) {
+      status.textContent = 'Kies een wachtwoord van minstens 6 tekens.';
+      status.style.color = 'var(--warn)';
+      return;
+    }
+    status.textContent = '↻ Wachtwoord instellen...';
     status.style.color = 'var(--blue)';
-    syncCfg = { repo, token };
     try {
-      // Test: try to pull (404 is fine, means file not created yet)
+      // Encrypt the token with the chosen password
+      const blob = await encryptToken(token, pass);
+      // Write qs_auth.json to the repo using the token itself
+      setEditToken(token);
+      await writeAuthBlob(blob);
+      // Establish qs_state.json too (so reads work immediately)
       const remote = await pullState();
-      // Merge remote into local, then push the union to establish the file
       if (remote) applyState(mergeStates(remote, gatherState()));
       await pushState();
-      saveStorage('qs_sync_cfg', syncCfg);
-      status.textContent = '✓ Connected & synced!';
+      updateLockButton();
+      status.textContent = '✓ Wachtwoord ingesteld! Deel het wachtwoord + de link met je groep.';
       status.style.color = 'var(--accent-2)';
-      setSyncStatus('☁ synced', 'var(--accent-2)');
-      document.getElementById('syncDisableBtn').style.display = 'block';
-      document.getElementById('syncQrBtn').style.display = 'block';
-      // Re-render with merged data
-      render();
       if (activeTab === 'stock') renderStockCards();
     } catch (e) {
-      status.textContent = '✗ Failed: ' + e.message;
+      setEditToken(null);
+      status.textContent = '✗ Mislukt: ' + e.message;
       status.style.color = 'var(--danger)';
-      syncCfg = loadStorage('qs_sync_cfg', { repo: '', token: '' });
     }
   }
-  function disableSync() {
-    syncCfg = { repo: '', token: '' };
-    saveStorage('qs_sync_cfg', syncCfg);
-    syncFileSha = null;
-    setSyncStatus('○ local only', 'var(--text-faint)');
-    document.getElementById('syncModalStatus').textContent = 'Sync disabled. Data stays on this device.';
-    document.getElementById('syncDisableBtn').style.display = 'none';
+
+  // Write the encrypted token blob to qs_auth.json (needs the token)
+  async function writeAuthBlob(blob) {
+    // Get current sha if the file exists
+    let sha = null;
+    try {
+      const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${AUTH_FILE}?t=${Date.now()}`, {
+        headers: { 'Authorization': `Bearer ${editToken}`, 'Accept': 'application/vnd.github+json' },
+      });
+      if (r.ok) { const d = await r.json(); sha = d.sha; }
+    } catch (e) {}
+    const body = {
+      message: `Set edit password · ${new Date().toISOString()}`,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(blob, null, 2)))),
+    };
+    if (sha) body.sha = sha;
+    const resp = await fetch(`https://api.github.com/repos/${REPO}/contents/${AUTH_FILE}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${editToken}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) throw new Error(`auth write ${resp.status}: ${(await resp.text()).slice(0, 80)}`);
   }
+
   document.addEventListener('click', (e) => {
     if (e.target.id === 'syncModal') closeSyncModal();
   });
 
-  // Show QR code containing the sync settings for easy device transfer
-  function showSyncQR() {
-    const section = document.getElementById('qrSection');
-    const container = document.getElementById('qrcode');
-    if (section.style.display === 'block') {
-      // Toggle off
-      section.style.display = 'none';
-      container.innerHTML = '';
-      return;
-    }
-    if (typeof QRCode === 'undefined') {
-      document.getElementById('syncModalStatus').textContent = 'QR library not loaded.';
-      return;
-    }
-    container.innerHTML = '';
-    // Encode repo + token, embed in a URL hash so scanning opens the dashboard
-    // already configured. The hash is stripped from the URL bar after import.
-    const payload = JSON.stringify({ r: syncCfg.repo, t: syncCfg.token });
-    const encoded = 'qssync:' + btoa(unescape(encodeURIComponent(payload)));
-    const fullUrl = window.location.origin + window.location.pathname + '#' + encoded;
-    new QRCode(container, {
-      text: fullUrl,
-      width: 180, height: 180,
-      colorDark: '#0d1117', colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M,
-    });
-    section.style.display = 'block';
-  }
-
-  // Check clipboard / URL for an incoming QR sync payload on load
-  function tryImportSyncPayload(raw) {
-    if (!raw || !raw.startsWith('qssync:')) return false;
-    try {
-      const json = decodeURIComponent(escape(atob(raw.slice(7))));
-      const obj = JSON.parse(json);
-      if (obj.r && obj.t) {
-        syncCfg = { repo: obj.r, token: obj.t };
-        saveStorage('qs_sync_cfg', syncCfg);
-        return true;
-      }
-    } catch (e) { /* invalid */ }
-    return false;
-  }
-
   // ===== GENERIC INPUT MODAL (replaces prompt) =====
   let inputModalCallback = null;
-  function openInputModal({ title, label, sub, value, placeholder, maxlen }) {
+  function openInputModal({ title, label, sub, value, placeholder, maxlen, password }) {
     document.getElementById('inputModalTitle').textContent = title || 'Input';
     document.getElementById('inputModalLabel').textContent = label || 'Value';
     const subEl = document.getElementById('inputModalSub');
@@ -1526,6 +1683,7 @@
     field.value = value || '';
     field.placeholder = placeholder || '';
     field.maxLength = maxlen || 100;
+    field.type = password ? 'password' : 'text';
     document.getElementById('inputModal').classList.add('show');
     setTimeout(() => field.focus(), 50);
     return new Promise(resolve => { inputModalCallback = resolve; });
@@ -1797,9 +1955,10 @@
             <div style="font-size:11px; color:var(--text-faint); margin:4px 0 2px;">
               Sells ~${velocity.toFixed(1)}/day. Set a starting count to track stock.
             </div>
+            ${canWrite() ? `
             <div class="stock-btn-row">
               <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','set')">Set starting count</button>
-            </div>
+            </div>` : `<div style="font-size:10px; color:var(--text-faint); margin-top:8px;">🔒 Ontgrendel bovenaan om in te stellen</div>`}
           </div>`;
       }
 
@@ -1910,13 +2069,15 @@
           </div>
           ${suggestionHtml}
           ${historyHtml}
+          ${canWrite() ? `
           <div class="stock-btn-row">
             <button class="stock-btn" style="background:var(--accent); color:#0d1117; border-color:var(--accent); font-weight:600;" onclick="fillToFull('${combo.key.replace(/'/g, "\\'")}')">${entry.capacity ? `✓ Bijgevuld (tot ${entry.capacity})` : '✓ Bijgevuld'}</button>
           </div>
           <div class="stock-btn-row">
             <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','restock')">+ Deel bij</button>
             <button class="stock-btn" onclick="openStockModal('${combo.key.replace(/'/g, "\\'")}','set')">Tel exact</button>
-          </div>
+          </div>` : `
+          <div style="font-size:10px; color:var(--text-faint); margin-top:10px; text-align:center;">🔒 Ontgrendel bovenaan om bij te werken</div>`}
         </div>`;
     }).join('');
   }
@@ -1964,6 +2125,7 @@
 
   async function applyStockModal() {
     if (!stockModalKey) return;
+    if (!(await ensureUnlocked())) return;
     const val = parseInt(document.getElementById('stockAmountInput').value) || 0;
     const who = await ensureUserName();
     const all = getStockData();
@@ -2008,6 +2170,7 @@
 
   // One-tap "fill to full" using the shop's known capacity
   async function fillToFull(key) {
+    if (!(await ensureUnlocked())) return;
     const who = await ensureUserName();
     const all = getStockData();
     const entry = all[key] || {};
@@ -2068,6 +2231,7 @@
   }
 
   async function applyBulkRecount() {
+    if (!(await ensureUnlocked())) return;
     const inputs = document.querySelectorAll('#bulkRows input[data-bulk-key]');
     const who = await ensureUserName();
     const all = getStockData();
@@ -2182,21 +2346,19 @@
       transactions = applyDateFilter(allTransactions);
       document.getElementById('lastUpdated').textContent = 'updated ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 
-      // If cloud sync is on, pull the latest state before rendering
-      if (syncEnabled()) {
-        setSyncStatus('↻ syncing...', 'var(--blue)');
-        try {
-          const remote = await pullState();
-          if (remote) {
-            // Merge remote with whatever is local, local changes win on conflict
-            applyState(mergeStates(remote, gatherState()));
-          }
-          setSyncStatus('☁ synced', 'var(--accent-2)');
-        } catch (e) {
-          console.error('Initial sync pull failed', e);
-          setSyncStatus('⚠ sync error', 'var(--warn)');
+      // Always pull the shared state so everyone sees the same stock.
+      // Unlocked editors read via the authenticated API (real-time);
+      // everyone else reads the public file (no setup needed).
+      try {
+        const remote = canWrite() ? await pullState() : await pullStatePublic();
+        if (remote) {
+          // Merge remote with local; local edits win on conflict
+          applyState(mergeStates(remote, gatherState()));
         }
+      } catch (e) {
+        console.error('Initial shared pull failed', e);
       }
+      updateLockButton();
 
       checkDataFreshness();
       computeSinceLastVisit();
@@ -2215,6 +2377,34 @@
           </div>
         </div>`;
     }
+    startSharedPolling();
+  }
+
+  // ===== LIVE SHARED UPDATES =====
+  // Periodically pull the shared state so everyone (including read-only
+  // viewers) sees co-owners' changes without manually reloading.
+  let sharedPollTimer = null;
+  function startSharedPolling() {
+    if (sharedPollTimer) return; // already running
+    sharedPollTimer = setInterval(async () => {
+      if (!REPO) return;
+      if (document.hidden) return;     // don't poll a backgrounded tab
+      if (syncInFlight) return;        // don't fight an in-progress push
+      try {
+        const before = JSON.stringify(getStockData());
+        const remote = canWrite() ? await pullState() : await pullStatePublic();
+        if (remote) {
+          applyState(mergeStates(remote, gatherState()));
+          const after = JSON.stringify(getStockData());
+          // Only re-render if something actually changed (avoids flicker)
+          if (after !== before) {
+            if (activeTab === 'stock') renderStockCards();
+            updateStockBadge();
+            setSyncStatus(canWrite() ? '🔓 bijgewerkt' : '🔒 bijgewerkt', 'var(--accent-2)');
+          }
+        }
+      } catch (e) { /* transient; try again next tick */ }
+    }, 45000); // every 45s
   }
 
   // ===== DATA FRESHNESS (#1) =====
@@ -3135,7 +3325,7 @@
         <div class="panel">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 class="panel-title" style="margin-bottom:0;">📦 Shop stock · estimated</h3>
-            <button onclick="openBulkModal()" style="font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-panel-2); color:var(--accent); cursor:pointer;">📋 Recount all</button>
+            <button id="bulkRecountBtn" onclick="openBulkModal()" style="font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-panel-2); color:var(--accent); cursor:pointer; display:none;">📋 Recount all</button>
           </div>
           <div id="stockProgress"></div>
           <input type="text" class="stock-search" id="stockSearch"
@@ -4211,18 +4401,9 @@
     if (btn) btn.classList.toggle('show', window.scrollY > 400);
   }, { passive: true });
 
-  // Check for incoming sync payload in URL hash (from QR scan)
-  if (window.location.hash && window.location.hash.length > 8) {
-    const hashContent = decodeURIComponent(window.location.hash.slice(1));
-    if (tryImportSyncPayload(hashContent)) {
-      // Clear the hash so the token isn't left in the URL bar
-      history.replaceState(null, '', window.location.pathname + window.location.search);
-      setSyncStatus('☁ imported, syncing...', 'var(--blue)');
-    }
-  }
-
-  // Set initial sync indicator based on saved config
-  if (syncEnabled()) setSyncStatus('☁ cloud sync on', 'var(--accent-2)');
+  // Initialize the edit-lock button (read-only by default; sessionStorage may
+  // already hold a decrypted token if this tab was unlocked before a reload).
+  updateLockButton();
 
   loadData();
 </script>
