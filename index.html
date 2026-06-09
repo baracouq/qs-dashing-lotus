@@ -1768,8 +1768,10 @@
     }
   }
 
+  // Stock is keyed by item + COORDINATES (not the full shop string), so a shop
+  // keeps its identity even if the world-name prefix changes (e.g. world -> lotus).
   function stockKey(item, shop) {
-    return `${item}@@${shop}`;
+    return `${item}@@${coordsOf(shop)}`;
   }
 
   function getStockData() {
@@ -1780,6 +1782,48 @@
     all[key] = entry;
     saveStorage('qs_stock_data', all);
     triggerSync();
+  }
+
+  // Re-key any stock entries stored under the OLD full-shop-string keys to the
+  // new coordinate-based keys, so counts survive a world-name change. Idempotent:
+  // running it when keys are already coordinate-based is a no-op. Returns true if
+  // anything changed.
+  function migrateStockKeys() {
+    const all = getStockData();
+    let changed = false;
+    const out = {};
+    Object.keys(all).forEach(oldKey => {
+      const entry = all[oldKey];
+      const sep = oldKey.indexOf('@@');
+      let newKey = oldKey;
+      if (sep !== -1) {
+        const item = oldKey.slice(0, sep);
+        const shopPart = oldKey.slice(sep + 2);
+        const coords = coordsOf(shopPart);
+        if (coords && coords !== 'unknown') newKey = `${item}@@${coords}`;
+      }
+      if (newKey !== oldKey) changed = true;
+      if (out[newKey]) {
+        // Collision: keep the entry with the newer baseline, merge history/capacity
+        const a = out[newKey], b = entry;
+        const at = new Date(a.baselineTime || 0).getTime();
+        const bt = new Date(b.baselineTime || 0).getTime();
+        const winner = bt >= at ? { ...b } : { ...a };
+        winner.capacity = Math.max(a.capacity || 0, b.capacity || 0) || undefined;
+        const seen = new Set();
+        winner.history = [...(a.history || []), ...(b.history || [])]
+          .filter(h => { const k = h.t + h.type; if (seen.has(k)) return false; seen.add(k); return true; })
+          .sort((x, y) => new Date(x.t) - new Date(y.t))
+          .slice(-30);
+        out[newKey] = winner;
+      } else {
+        out[newKey] = entry;
+      }
+    });
+    if (changed) {
+      saveStorage('qs_stock_data', out);
+    }
+    return changed;
   }
 
   function coordsOf(shop) {
@@ -2358,6 +2402,10 @@
       } catch (e) {
         console.error('Initial shared pull failed', e);
       }
+      // Heal stock keys after a world-name change (world -> lotus etc.).
+      // Idempotent; if it changed anything and we can write, propagate it.
+      const migrated = migrateStockKeys();
+      if (migrated && canWrite()) triggerSync();
       updateLockButton();
 
       checkDataFreshness();
@@ -2395,6 +2443,7 @@
         const remote = canWrite() ? await pullState() : await pullStatePublic();
         if (remote) {
           applyState(mergeStates(remote, gatherState()));
+          migrateStockKeys();
           const after = JSON.stringify(getStockData());
           // Only re-render if something actually changed (avoids flicker)
           if (after !== before) {
