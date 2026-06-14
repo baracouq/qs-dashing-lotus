@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-14T22:47:21.070Z",
+  "updated": "2026-06-14T22:48:26.035Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -55,14 +55,22 @@
           "type": "recount",
           "amount": 1370,
           "by": "Neph"
+        },
+        {
+          "t": "2026-06-14T22:47:49.913Z",
+          "type": "recount",
+          "qty": 1436,
+          "by": "iemand",
+          "note": ""
         }
       ],
-      "baseline": 1370,
-      "baselineTime": "2026-06-09T21:46:45.173Z",
+      "baseline": 1436,
+      "baselineTime": "2026-06-14T22:47:49.913Z",
       "restocked": 0,
       "measured": true,
-      "capacity": 1370,
-      "lastBy": "Neph"
+      "capacity": 1436,
+      "lastBy": "iemand",
+      "lastType": "recount"
     },
     "Black Wool@@19977, 75, -17192": {
       "history": [
@@ -71,14 +79,22 @@
           "type": "recount",
           "amount": 1437,
           "by": "Neph"
+        },
+        {
+          "t": "2026-06-14T22:48:24.952Z",
+          "type": "recount",
+          "qty": 1444,
+          "by": "iemand",
+          "note": ""
         }
       ],
-      "baseline": 1437,
-      "baselineTime": "2026-06-09T21:46:54.096Z",
+      "baseline": 1444,
+      "baselineTime": "2026-06-14T22:48:24.952Z",
       "restocked": 0,
       "measured": true,
-      "capacity": 1437,
-      "lastBy": "Neph"
+      "capacity": 1444,
+      "lastBy": "iemand",
+      "lastType": "recount"
     },
     "Green Wool@@19977, 75, -17192": {
       "history": [
@@ -87,14 +103,22 @@
           "type": "recount",
           "amount": 548,
           "by": "Neph"
+        },
+        {
+          "t": "2026-06-14T22:48:05.548Z",
+          "type": "recount",
+          "qty": 597,
+          "by": "iemand",
+          "note": ""
         }
       ],
-      "baseline": 548,
-      "baselineTime": "2026-06-09T21:47:04.623Z",
+      "baseline": 597,
+      "baselineTime": "2026-06-14T22:48:05.548Z",
       "restocked": 0,
       "measured": true,
-      "capacity": 548,
-      "lastBy": "Neph"
+      "capacity": 597,
+      "lastBy": "iemand",
+      "lastType": "recount"
     },
     "Brown Wool@@19977, 75, -17192": {
       "history": [
@@ -103,14 +127,22 @@
           "type": "recount",
           "amount": 409,
           "by": "Neph"
+        },
+        {
+          "t": "2026-06-14T22:48:15.523Z",
+          "type": "recount",
+          "qty": 402,
+          "by": "iemand",
+          "note": ""
         }
       ],
-      "baseline": 409,
-      "baselineTime": "2026-06-09T21:47:10.250Z",
+      "baseline": 402,
+      "baselineTime": "2026-06-14T22:48:15.523Z",
       "restocked": 0,
       "measured": true,
       "capacity": 409,
-      "lastBy": "Neph"
+      "lastBy": "iemand",
+      "lastType": "recount"
     },
     "Cyan Wool@@19977, 75, -17192": {
       "history": [
@@ -126,15 +158,22 @@
           "qty": 158,
           "by": "iemand",
           "note": ""
+        },
+        {
+          "t": "2026-06-14T22:47:35.098Z",
+          "type": "recount",
+          "qty": 158,
+          "by": "iemand",
+          "note": ""
         }
       ],
       "baseline": 158,
-      "baselineTime": "2026-06-14T22:44:57.362Z",
+      "baselineTime": "2026-06-14T22:47:35.098Z",
       "restocked": 0,
       "measured": true,
       "capacity": 158,
       "lastBy": "iemand",
-      "lastType": "fill"
+      "lastType": "recount"
     },
     "Light Blue Wool@@19977, 75, -17192": {
       "history": [
@@ -143,14 +182,22 @@
           "type": "recount",
           "amount": 1260,
           "by": "Neph"
+        },
+        {
+          "t": "2026-06-14T22:47:29.551Z",
+          "type": "recount",
+          "qty": 1261,
+          "by": "iemand",
+          "note": ""
         }
       ],
-      "baseline": 1260,
-      "baselineTime": "2026-06-09T21:47:52.465Z",
+      "baseline": 1261,
+      "baselineTime": "2026-06-14T22:47:29.551Z",
       "restocked": 0,
       "measured": true,
-      "capacity": 1260,
-      "lastBy": "Neph"
+      "capacity": 1261,
+      "lastBy": "iemand",
+      "lastType": "recount"
     }
   },
   "notes": {}
