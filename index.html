@@ -1041,11 +1041,23 @@
 <button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
 
 <script>
-  let transactions = [];      // filtered view (for analytics tabs)
-  let allTransactions = [];   // full set (for stock, records, lifetime stats)
+  let transactions = [];      // filtered view (for analytics tabs, excludes co-owners)
+  let allTransactions = [];   // full set incl. co-owners (for stock + shop discovery only)
+  let analyticsAll = [];      // full set MINUS co-owners (basis for all customer analytics)
   let charts = {};
   let activeTab = 'overview';
   let dateFilter = 'all';     // 'all' | '7d' | '30d' | 'thismonth'
+
+  // Co-owners: their purchases keep shops visible and decrement stock, but they
+  // should NOT show up as customers anywhere in the analytics.
+  const EXCLUDED_BUYERS = new Set(['syncora', 'geertje', 'j_grubby', '_grouch']);
+  function isExcludedBuyer(name) {
+    return EXCLUDED_BUYERS.has((name || '').trim().toLowerCase());
+  }
+  // Build the customer-analytics set (everyone except the co-owners)
+  function rebuildAnalyticsSet() {
+    analyticsAll = allTransactions.filter(t => !isExcludedBuyer(t.buyer));
+  }
 
   // Apply the active date filter to a transaction list (non-destructive)
   function applyDateFilter(txs) {
@@ -1062,7 +1074,7 @@
 
   function setDateFilter(f) {
     dateFilter = f;
-    transactions = applyDateFilter(allTransactions);
+    transactions = applyDateFilter(analyticsAll);
     document.querySelectorAll('.date-filter-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.range === f));
     render();
@@ -2387,7 +2399,8 @@
       if (!resp.ok) throw new Error('Could not load transactions_archive.csv');
       const text = await resp.text();
       allTransactions = parseCSV(text);
-      transactions = applyDateFilter(allTransactions);
+      rebuildAnalyticsSet();
+      transactions = applyDateFilter(analyticsAll);
       document.getElementById('lastUpdated').textContent = 'updated ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 
       // Always pull the shared state so everyone sees the same stock.
@@ -2481,7 +2494,7 @@
     const now = Date.now();
     if (lastVisitIso) {
       const since = new Date(lastVisitIso).getTime();
-      const newTxs = allTransactions.filter(t => new Date(t.time).getTime() > since);
+      const newTxs = analyticsAll.filter(t => new Date(t.time).getTime() > since);
       if (newTxs.length > 0) {
         const rev = newTxs.reduce((s, t) => s + t.net, 0);
         const buyers = new Set(newTxs.map(t => t.buyer)).size;
@@ -2495,9 +2508,9 @@
 
   // ===== MILESTONE NOTIFICATIONS (#7) =====
   function checkMilestones() {
-    if (!allTransactions.length) return;
-    const totalRev = allTransactions.reduce((s, t) => s + t.net, 0);
-    const totalSales = allTransactions.length;
+    if (!analyticsAll.length) return;
+    const totalRev = analyticsAll.reduce((s, t) => s + t.net, 0);
+    const totalSales = analyticsAll.length;
 
     // Revenue milestones at round numbers
     const revTiers = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
@@ -3608,7 +3621,7 @@
   function renderInsights() {
     const el = document.getElementById('insightsContent');
     if (!el) return;
-    const tx = allTransactions.length ? allTransactions : transactions;
+    const tx = analyticsAll.length ? analyticsAll : transactions;
     if (!tx.length) { el.innerHTML = '<div class="panel"><div class="empty-state">No data yet.</div></div>'; return; }
 
     const now = Date.now();
