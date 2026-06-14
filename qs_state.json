@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-14T22:48:26.035Z",
+  "updated": "2026-06-14T22:58:16.479Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -198,6 +198,50 @@
       "capacity": 1261,
       "lastBy": "iemand",
       "lastType": "recount"
+    },
+    "Gunpowder@@20008, 75, -17140": {
+      "baseline": 1728,
+      "baselineTime": "2026-06-14T22:48:45.471Z",
+      "capacity": 1728,
+      "history": [
+        {
+          "t": "2026-06-14T22:48:45.472Z",
+          "type": "set",
+          "qty": 1728,
+          "by": "iemand",
+          "note": ""
+        }
+      ],
+      "lastBy": "iemand",
+      "lastType": "set"
+    },
+    "Egg@@20008, 75, -17140": {
+      "deletedAt": "2026-06-14T22:57:03.511Z",
+      "history": [
+        {
+          "t": "2026-06-14T22:57:03.511Z",
+          "type": "delete",
+          "qty": 0,
+          "by": "Neph",
+          "note": ""
+        }
+      ],
+      "lastBy": "Neph",
+      "lastType": "delete"
+    },
+    "Netherite Scrap@@20008, 75, -17140": {
+      "deletedAt": "2026-06-14T22:58:15.316Z",
+      "history": [
+        {
+          "t": "2026-06-14T22:58:15.316Z",
+          "type": "delete",
+          "qty": 0,
+          "by": "Neph",
+          "note": ""
+        }
+      ],
+      "lastBy": "Neph",
+      "lastType": "delete"
     }
   },
   "notes": {}
