@@ -181,6 +181,23 @@
   .divider { height: 1px; background: var(--border); margin: 18px 0; }
   .small-note { font-size: 11px; color: var(--text-faint); line-height: 1.5; }
 
+  /* Customer profile: bottom sheet on phones, centered card on desktop */
+  .prof-scroll { max-height: 220px; overflow-y: auto; }
+  .prof-scroll.tall { max-height: 300px; }
+  #profileModal { align-items: flex-end; padding: 0; }
+  #profileModal .modal { max-width: 100%; width: 100%; border-radius: 20px 20px 0 0; max-height: 92vh; padding: 14px 16px calc(18px + env(safe-area-inset-bottom)); animation: sheetUp .28s cubic-bezier(.22, 1, .36, 1); }
+  #profileModal .modal::before { content: ''; display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--border); margin: 2px auto 14px; }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+  @media (max-width: 639px) {
+    /* one smooth scroll for the whole sheet instead of nested scroll boxes */
+    #profileModal .prof-scroll, #profileModal .prof-scroll.tall { max-height: none; overflow: visible; }
+  }
+  @media (min-width: 640px) {
+    #profileModal { align-items: center; padding: 18px; }
+    #profileModal .modal { max-width: 470px; width: 100%; border-radius: 16px; max-height: 88vh; padding: 22px; animation: none; }
+    #profileModal .modal::before { display: none; }
+  }
+
   #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--bg-panel-2); border: 1px solid var(--border); color: var(--text); padding: 11px 18px; border-radius: 10px; font-size: 13px; box-shadow: var(--shadow); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; max-width: 90vw; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   #toast.green { border-color: var(--accent-2); } #toast.red { border-color: var(--red); } #toast.amber { border-color: var(--accent); }
@@ -200,6 +217,14 @@
   .fact .fi { font-size: 18px; line-height: 1.2; flex-shrink: 0; }
   .fact b { color: var(--accent); font-weight: 600; }
   .fact-shuffle { margin-left: auto; flex: 0 0 auto !important; padding: 5px 10px !important; font-size: 11px !important; }
+
+  .tz-est { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .tz-flag { font-size: 30px; line-height: 1; flex-shrink: 0; }
+  .tz-region { font-size: 15px; font-weight: 600; color: var(--text); }
+  .tzspark { display: flex; align-items: flex-end; gap: 1px; height: 26px; margin-top: 6px; }
+  .tzspark .tzbar { flex: 1; background: var(--accent); opacity: 0.4; border-radius: 1px; min-height: 2px; }
+  .tzspark .tzbar.peak { opacity: 1; }
+  .tzaxis { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-faint); margin-top: 3px; font-family: var(--mono); }
 
   @media (min-width: 768px) {
     body { padding: 26px 30px 80px; }
@@ -222,6 +247,7 @@
     </div>
     <div class="actions">
       <button class="icon-btn" id="lockBtn" onclick="toggleEditLock()">🔒 Bekijken</button>
+      <button class="icon-btn" id="langBtn" onclick="toggleLang()">EN</button>
       <button class="icon-btn" onclick="openSettings()">⚙</button>
       <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">☀</button>
     </div>
@@ -230,23 +256,23 @@
   <div class="metabar">
     <div class="sync readonly" id="sync"><span class="led"></span><span id="syncText">verbinden…</span></div>
     <div class="filters">
-      <button class="filter-btn active" data-range="all" onclick="setDateFilter('all')">Alles</button>
-      <button class="filter-btn" data-range="1d" onclick="setDateFilter('1d')">Vandaag</button>
+      <button class="filter-btn active" data-range="all" data-i18n="fAll" onclick="setDateFilter('all')">Alles</button>
+      <button class="filter-btn" data-range="1d" data-i18n="fToday" onclick="setDateFilter('1d')">Vandaag</button>
       <button class="filter-btn" data-range="7d" onclick="setDateFilter('7d')">7d</button>
       <button class="filter-btn" data-range="30d" onclick="setDateFilter('30d')">30d</button>
       <button class="filter-btn" data-range="90d" onclick="setDateFilter('90d')">90d</button>
-      <button class="filter-btn" data-range="custom" onclick="openCustomRange()">Aangepast</button>
+      <button class="filter-btn" data-range="custom" data-i18n="fCustom" onclick="openCustomRange()">Aangepast</button>
     </div>
   </div>
 
   <div class="tabs" id="tabs">
-    <button class="tab active" data-tab="overview" onclick="switchTab('overview')">Overzicht</button>
-    <button class="tab" data-tab="items" onclick="switchTab('items')">Items</button>
-    <button class="tab" data-tab="stock" onclick="switchTab('stock')">Voorraad</button>
-    <button class="tab" data-tab="customers" onclick="switchTab('customers')">Klanten</button>
-    <button class="tab" data-tab="activity" onclick="switchTab('activity')">Activiteit</button>
-    <button class="tab" data-tab="insights" onclick="switchTab('insights')">Inzichten</button>
-    <button class="tab" data-tab="recent" onclick="switchTab('recent')">Recent</button>
+    <button class="tab active" data-tab="overview" data-i18n="tabOverview" onclick="switchTab('overview')">Overzicht</button>
+    <button class="tab" data-tab="items" data-i18n="tabItems" onclick="switchTab('items')">Items</button>
+    <button class="tab" data-tab="stock" data-i18n="tabStock" onclick="switchTab('stock')">Voorraad</button>
+    <button class="tab" data-tab="customers" data-i18n="tabCustomers" onclick="switchTab('customers')">Klanten</button>
+    <button class="tab" data-tab="activity" data-i18n="tabActivity" onclick="switchTab('activity')">Activiteit</button>
+    <button class="tab" data-tab="insights" data-i18n="tabInsights" onclick="switchTab('insights')">Inzichten</button>
+    <button class="tab" data-tab="recent" data-i18n="tabRecent" onclick="switchTab('recent')">Recent</button>
   </div>
 
   <div id="dashboard"></div>
@@ -254,21 +280,27 @@
 
 <div class="modal-bg" id="settingsModal">
   <div class="modal">
-    <h3>Instellingen</h3>
-    <div class="desc">Je naam wordt bij voorraad-updates getoond, zodat mede-eigenaren zien wie heeft bijgevuld.</div>
-    <label>Jouw naam</label>
-    <input type="text" id="nameInput" placeholder="bv. Syncora" />
+    <h3 data-i18n="setTitle">Instellingen</h3>
+    <div class="desc" data-i18n="setNameDesc">Je naam wordt bij voorraad-updates getoond, zodat mede-eigenaren zien wie heeft bijgevuld.</div>
+    <label data-i18n="setNameLabel">Jouw naam</label>
+    <input type="text" id="nameInput" data-i18n-ph="setNamePh" placeholder="bv. Syncora" />
     <div class="divider"></div>
-    <h3 style="font-size:14px;">Bewerken inschakelen (eenmalig, beheerder)</h3>
-    <div class="desc">Plak een GitHub-token (Contents: read &amp; write) en kies een wachtwoord. De token wordt <b>versleuteld</b> opgeslagen; mede-eigenaren ontgrendelen bewerken met alleen het wachtwoord.</div>
-    <label>GitHub token</label>
+    <label data-i18n="langLabel">Taal / Language</label>
+    <div class="modal-actions" style="margin-top:6px">
+      <button class="btn" id="langNl" onclick="setLang('nl')">Nederlands</button>
+      <button class="btn" id="langEn" onclick="setLang('en')">English</button>
+    </div>
+    <div class="divider"></div>
+    <h3 style="font-size:14px;" data-i18n="setAdminTitle">Bewerken inschakelen (eenmalig, beheerder)</h3>
+    <div class="desc" data-i18n-html="setAdminDesc">Plak een GitHub-token (Contents: read &amp; write) en kies een wachtwoord. De token wordt <b>versleuteld</b> opgeslagen; mede-eigenaren ontgrendelen bewerken met alleen het wachtwoord.</div>
+    <label data-i18n="setTokenLabel">GitHub token</label>
     <input type="password" id="adminToken" placeholder="github_pat_…" autocomplete="off" />
-    <label>Wachtwoord instellen</label>
-    <input type="password" id="adminPass" placeholder="kies een wachtwoord" autocomplete="off" />
+    <label data-i18n="setPassLabel">Wachtwoord instellen</label>
+    <input type="password" id="adminPass" data-i18n-ph="setPassPh" placeholder="kies een wachtwoord" autocomplete="off" />
     <div class="err" id="adminErr"></div>
     <div class="modal-actions">
-      <button class="btn" onclick="closeSettings()">Sluiten</button>
-      <button class="btn primary" onclick="saveSettings()">Opslaan</button>
+      <button class="btn" onclick="closeSettings()" data-i18n="close">Sluiten</button>
+      <button class="btn primary" onclick="saveSettings()" data-i18n="save">Opslaan</button>
     </div>
     <div class="divider"></div>
     <div class="small-note" id="repoNote"></div>
@@ -282,7 +314,7 @@
     <input type="number" id="imInput" inputmode="decimal" />
     <div class="err" id="imErr"></div>
     <div class="modal-actions">
-      <button class="btn" onclick="closeInputModal()">Annuleer</button>
+      <button class="btn" onclick="closeInputModal()" data-i18n="cancel">Annuleer</button>
       <button class="btn primary" id="imOk">OK</button>
     </div>
   </div>
@@ -304,6 +336,7 @@ let charts = {};
 let activeTab = 'overview';
 let dateFilter = 'all';
 let customFrom = null, customTo = null;
+let lang = 'nl';
 let sinceLastVisit = null;
 let pollTimer = null;
 let syncInFlight = false;
@@ -313,6 +346,181 @@ let syncInFlight = false;
 const EXCLUDED_BUYERS = new Set(['syncora', 'geertje', 'j_grubby', '_grouch']);
 const isExcludedBuyer = (name) => EXCLUDED_BUYERS.has((name || '').trim().toLowerCase());
 function rebuildAnalyticsSet() { analyticsAll = allTransactions.filter(t => !isExcludedBuyer(t.buyer)); }
+
+/* ============ i18n ============ */
+const I18N = {
+  nl: {
+    view: 'Bekijken', editOn: 'Bewerken aan',
+    syncConnecting: 'verbinden…', syncLiveEdit: 'live · bewerken aan', syncLiveRead: 'live · alleen-lezen', syncLocal: 'lokaal', syncError: 'sync-fout', syncSaving: 'opslaan…',
+    fAll: 'Alles', fToday: 'Vandaag', fCustom: 'Aangepast',
+    tabOverview: 'Overzicht', tabItems: 'Items', tabStock: 'Voorraad', tabCustomers: 'Klanten', tabActivity: 'Activiteit', tabInsights: 'Inzichten', tabRecent: 'Recent',
+    cancel: 'Annuleer', close: 'Sluiten', save: 'Opslaan',
+    setTitle: 'Instellingen', setNameDesc: 'Je naam wordt bij voorraad-updates getoond, zodat mede-eigenaren zien wie heeft bijgevuld.', setNameLabel: 'Jouw naam', setNamePh: 'bv. Syncora',
+    setAdminTitle: 'Bewerken inschakelen (eenmalig, beheerder)', setAdminDesc: 'Plak een GitHub-token (Contents: read &amp; write) en kies een wachtwoord. De token wordt <b>versleuteld</b> opgeslagen; mede-eigenaren ontgrendelen bewerken met alleen het wachtwoord.',
+    setTokenLabel: 'GitHub token', setPassLabel: 'Wachtwoord instellen', setPassPh: 'kies een wachtwoord', langLabel: 'Taal / Language',
+    setRepoConnected: (r) => `Verbonden met <b>${r}</b>. Voorraad wordt gedeeld via qs_state.json.`, setRepoNone: 'Kon de repo niet automatisch bepalen. Host dit op GitHub Pages.',
+    errPassShort: 'Kies een wachtwoord van minstens 4 tekens.', errSaveFail: (m) => 'Opslaan mislukt: ' + m, errTokenPass: 'Vul zowel een token als een wachtwoord in.',
+    toastEditSet: 'Bewerken ingesteld en ingeschakeld', toastSaved: 'Opgeslagen',
+    toastView: 'Terug naar bekijken', toastNoPass: 'Nog geen wachtwoord ingesteld — zie ⚙ Instellingen',
+    unlockTitle: 'Bewerken ontgrendelen', unlockDesc: 'Voer het gedeelde wachtwoord in om de voorraad te kunnen bijwerken.', unlockPh: 'wachtwoord', unlockBtn: 'Ontgrendel',
+    toastEditOn: 'Bewerken ingeschakeld', errWrongPass: 'Verkeerd wachtwoord', toastLockFirst: 'Ontgrendel eerst bovenaan met 🔒', imInvalid: 'Voer een geldig getal in.',
+    ovTodayEyebrow: 'Vandaag', ovSales: 'verkopen', ovCustomers: 'klanten', ovWoW: 'week vs week',
+    kpiRevenue: 'Omzet', kpiRevSub: 'netto na 1% tax', kpiSales: 'Verkopen', kpiSalesSub: 'transacties', kpiCustomers: 'Klanten', kpiCustSub: 'unieke kopers', kpiAvg: 'Gem. verkoop', kpiAvgSub: 'per transactie',
+    ovRev14: 'Omzet · laatste 14 dagen', ovBreakdown: 'Verdeling', ovGross: 'Bruto', ovTax: 'Tax (1%)', ovNet: 'Netto', ovTopSellers: 'Topverkopers',
+    ovDidYouKnow: '🎲 Wist je dat…', factOneMore: 'nog een 🎲',
+    periodAll: 'totaal', periodToday: 'vandaag', period7: '7 dagen', period30: '30 dagen', period90: '90 dagen',
+    itemsSub: (q, o, p, s) => `${q} verkocht · ${o} orders · ${p}/stuk · ${s} shop${s === 1 ? '' : 's'}`,
+    stockSearchPh: 'Zoek item of coördinaten…', stockFillAll: '✓ Alles bijgevuld tot vol', stockLockedNote: '🔒 Ontgrendel bovenaan (🔒 Bekijken) om de voorraad bij te werken',
+    stockHowTitle: 'Hoe werkt dit', stockHowBody: 'Voorraad wordt geschat uit je verkoophistorie: <b>begin-aantal − verkocht sindsdien</b>. Elke nieuwe verkoop telt automatisch af. Tik <b>✓ Bijgevuld</b> na het bijvullen, of <b>Tel exact</b> om het echte getelde aantal in te voeren. Shops verschijnen vanzelf zodra ze hun eerste verkoop hebben. Updates zijn meteen zichtbaar voor alle mede-eigenaren.',
+    stockOnHand: 'op voorraad', stockFilled: '✓ Bijgevuld', stockRestock: '+ Deel bij', stockCountBtn: 'Tel exact', stockSetBaseline: 'Begin-aantal instellen', stockNotSet: '🔒 nog niet ingesteld',
+    stockEverSold: (n) => `${n} ooit verkocht`, confMeasured: 'gemeten', confEstimate: 'schatting', confStale: 'verouderd',
+    stockEmptyWord: 'leeg', stockDaysLeft: (d) => `nog ~${d} dag${d === 1 ? '' : 'en'}`, stock60plus: '60+ dagen', stockFull: (n) => `vol = ${n}`, stockLastBy: (n) => `laatste: ${n}`,
+    stockShopsCount: (n) => `${n} shop${n === 1 ? '' : 's'}`, stockNoShops: 'Geen shops gevonden.', stockNoShopsHint: 'Shops verschijnen zodra ze hun eerste verkoop hebben.',
+    mFillAllNoCap: 'Nog geen shops met een "vol"-waarde', mFillAllDone: (n) => `${n} shops bijgevuld tot vol`, mFilledTo: (i, n) => `${i} bijgevuld tot ${n}`,
+    mRestockTitle: 'Deel bijvullen', mRestockDesc: (i) => `Hoeveel ${i} heb je bijgevuld?`, mRestockPh: 'aantal', mRestockOk: 'Bijvullen', mRestockToast: (n, i) => `+${n} ${i}`,
+    mBaselineTitle: 'Begin-aantal instellen', mBaselineDesc: (i) => `Hoeveel ${i} liggen er nu in de shop? Dit wordt ook de "vol"-waarde.`,
+    mCountTitle: 'Exact tellen', mCountDesc: (i) => `Voer het werkelijke aantal ${i} in dat je geteld hebt.`, mCountOk: 'Opslaan', mCountToast: (i, n) => `${i} op ${n} gezet`,
+    custSearchPh: 'Zoek klant…', custLabelsTitle: 'Labels',
+    custLabelsBody: '<span class="badge amber">VIP</span> hoge besteder · <span class="badge green">stamklant</span> 5+ orders · <span class="badge blue">nieuw</span> eerste week · <span class="badge red">blijft weg</span> 30+ dagen stil · <span class="badge gray">groothandel</span> grote orders',
+    tagVIP: 'VIP', tagRegular: 'stamklant', tagNew: 'nieuw', tagGone: 'blijft weg', tagWholesale: 'groothandel',
+    custRow: (o, i, fav) => `${o} orders · ${i} items${fav ? ' · vaakst: ' + fav : ''}`, custRow2: (a, s, l) => `ø ${a}/order · ${s}% van omzet · laatst ${l}`, custNoneFound: 'Geen klanten gevonden.',
+    pBesteed: 'Besteed', pOrders: 'Orders', pItems: 'Items', pAvgOrder: 'ø per order', pShare: 'Aandeel omzet', pBuys: 'Koopt',
+    pFreqOrder1: '1 order', pFreqMonth: (v) => `${v}/maand`, pFreqWeek: (v) => `${v}/week`,
+    pCustSince: (d, l, shop) => `Klant sinds ${d} · laatst ${l}${shop ? ' · favoriete shop @ ' + shop : ''}`, pRankOf: (r, t) => `#${r} van ${t}`, pTagClient: 'klant',
+    pMonthly: 'Besteed per maand', pNote: 'Notitie', pNotePh: 'bv. vaste klant, wil korting…', pNoteSave: 'Notitie opslaan', pNoteLockedEmpty: 'Geen notitie. Ontgrendel bovenaan om er een toe te voegen.', pHistory: 'Geschiedenis', pNoteSaved: 'Notitie opgeslagen',
+    tzTitle: '🌍 Geschatte regio', tzCaveat: 'Geschat uit hun aankooptijden (jouw klok). Speelse indicatie, geen exacte locatie.', tzTooFew: (n) => `Nog te weinig aankopen (${n}) om de regio te schatten.`,
+    confLow: 'lage zekerheid', confRough: 'ruwe schatting', confFair: 'redelijk zeker',
+    regEU: 'West-/Centraal-Europa', regEUsub: 'zelfde tijdzone als jij', regEEast: 'Oost-Europa / Midden-Oosten', regEEastSub: 'iets vóór op jou', regAsia: 'Azië', regAsiaSub: 'ver vóór op jou',
+    regOcea: 'Oost-Azië / Oceanië', regOceaSub: 'andere kant van de wereld', regWEur: 'West-Europa / Atlantisch', regWEurSub: 'iets achter op jou', regAmer: 'Noord-/Zuid-Amerika', regAmerSub: 'achter op jou',
+    tzSameTime: 'ongeveer jouw tijd', tzBehind: (h) => `~${h} uur achter op jou`, tzAhead: (h) => `~${h} uur vóór op jou`,
+    suspTitle: '⚡ Opvallende orders', suspDesc: (a) => `Ongewoon grote aankopen (meer dan ${a}). Meestal gewoon goede klanten — handig om in de gaten te houden voor je voorraad.`,
+    recentTitle: 'Recente verkopen', recentBought: (b, q, i) => `${b} kocht ${q}× ${i}`, recentNone: 'Geen recente verkopen voor deze periode.',
+    insNoData: 'Nog geen inzichten — er zijn nog geen klant-verkopen.', factsTitle: '🎲 Leuke feitjes', factsMore: 'andere 🎲', factsTooFew: 'Nog te weinig data voor feitjes — kom terug na een paar verkopen.',
+    insShopsTitle: 'Shops vergeleken', insShopSub: (q, k) => `${q} items · ${k} soorten`, insBasket: 'Vaak samen gekocht',
+    insForecast: 'Prognose', insLast30: 'Laatste 30 dagen', insLast30Sub: (n) => `${n} verkopen`, insNext30: 'Verwacht komende 30d', insNext30Sub: 'bij gelijk tempo',
+    insChurnTitle: 'Klanten die wegblijven', insChurnDesc: 'Vaste klanten die al 3+ weken niets kochten.', insChurnRow: (o, l) => `${o} orders · laatst ${l}`,
+    insRegionTitle: '🌍 Klanten per regio', insRegionEstimated: 'geschat', insRegionDesc: (e, t) => `Geschat uit aankooptijden van klanten met genoeg orders (${e} van ${t}). Speelse indicatie.`,
+    insAchTitle: '🏆 Prestaties', insBestDay: 'Beste dag ooit', insTotalRev: 'Totale omzet', insAllTime: 'aller tijden', insLongStreak: 'Langste streak', insStreakDays: (n) => `${n} dag${n === 1 ? '' : 'en'}`, insStreakSub: 'op rij actief', insBestCust: 'Beste klant',
+    actPeakTitle: '⏰ Drukke tijden', actBusiestDay: 'Drukste dag', actBusiestHour: 'Drukste uur', actHottest: 'Heetste moment', actSalesCount: (n) => `${n} verkopen`, actInOneHour: (n) => `${n} in 1 uur`,
+    actPeakNote: 'Wanneer je klanten echt kopen — handig om bij te vullen vóór de drukte.', actByWeekday: 'Verkopen per weekdag', actByHour: 'Verkopen per uur', actHeatmap: 'Dag × uur heatmap', actHeatNote: 'Donkerder = meer verkopen · hover voor het aantal', actNone: 'Geen activiteit voor deze periode.',
+    dayNamesFull: ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'], dayShort: ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'], weekdayMon: ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'],
+    emptyNoSales: 'Nog geen verkopen.', emptyNoSalesHint: 'Draai de pipeline en upload transactions_archive.csv naar de repo.', emptyNoItems: 'Geen item-data voor deze periode.', emptyNoCustomers: 'Geen klant-data voor deze periode.',
+    milestone: (a) => `🎉 Mijlpaal bereikt: ${a} omzet!`, sinceVisit: (c, n) => `Sinds je laatste bezoek: ${c} verkopen · ${n}`,
+    rangeTitle: 'Aangepaste periode', rangeDesc: 'Kies een begin- en einddatum. Alle analyses (niet de voorraad) gebruiken dan dit bereik.', rangeFrom: 'Van', rangeTo: 'Tot', rangeApply: 'Toepassen', rangeErrBoth: 'Kies beide datums.', rangeErrOrder: 'De begindatum ligt na de einddatum.',
+    relNow: 'zojuist', relMin: (m) => `${m}m geleden`, relHour: (h) => `${h}u geleden`, relYesterday: 'gisteren', relDay: (d) => `${d}d geleden`, relWeek: (w) => `${w}w geleden`,
+    facts: {
+      bestseller: (i, n) => `Bestseller: <b>${i}</b> — ${n} stuks verkocht.`,
+      topFan: (b, m) => `Grootste fan: <b>${b}</b> besteedde ${m} bij jullie.`,
+      loyal: (b, n) => `<b>${b}</b> kwam ${n} keer langs — trouwste klant.`,
+      bigOrder: (q, i, m, b) => `Grootste order ooit: <b>${q}× ${i}</b> voor ${m} door ${b}.`,
+      chests: (n, c) => `Je verkocht ${n} items — genoeg voor <b>${c} dubbelkisten</b>.`,
+      stacks: (n) => `Dat zijn ~<b>${n} volle stacks</b>.`,
+      busyHour: (h) => `Rond <b>${h}</b> is het het drukst.`,
+      quietHour: (h) => `Rond <b>${h}</b> koopt bijna niemand.`,
+      tax: (m) => `Je droeg al <b>${m}</b> belasting af aan de server.`,
+      avgCust: (m) => `Een gemiddelde klant besteedt <b>${m}</b>.`,
+      firstSale: (q, i, b, d) => `Je allereerste verkoop: <b>${q}× ${i}</b> aan ${b} op ${d}.`,
+      recordDay: (m, d) => `Recordverkoopdag: <b>${m}</b> op ${d}.`,
+      repeat: (p) => `<b>${p}%</b> van je klanten kwam meer dan eens terug.`,
+      uniqueCust: (n) => `<b>${n}</b> verschillende klanten kochten bij jullie.`,
+      shopCount: (n) => `Jullie runnen <b>${n}</b> shop${n === 1 ? '' : 's'} op de map.`,
+      topDay: (d) => `<b>${d}</b> is jullie topdag.`,
+      rarest: (i, n) => `Zeldzaamst verkocht: <b>${i}</b> (maar ${n}× gekocht).`,
+      oneItem: (b, i) => `<b>${b}</b> koopt eigenlijk alleen maar ${i}.`,
+      lover: (b, i, n) => `<b>${b}</b> is dol op ${i} — kocht er ${n}.`,
+      streak: (n) => `Langste reeks: <b>${n} dagen op rij</b> verkopen.`
+    }
+  },
+  en: {
+    view: 'Viewing', editOn: 'Editing on',
+    syncConnecting: 'connecting…', syncLiveEdit: 'live · editing on', syncLiveRead: 'live · read-only', syncLocal: 'local', syncError: 'sync error', syncSaving: 'saving…',
+    fAll: 'All', fToday: 'Today', fCustom: 'Custom',
+    tabOverview: 'Overview', tabItems: 'Items', tabStock: 'Stock', tabCustomers: 'Customers', tabActivity: 'Activity', tabInsights: 'Insights', tabRecent: 'Recent',
+    cancel: 'Cancel', close: 'Close', save: 'Save',
+    setTitle: 'Settings', setNameDesc: 'Your name is shown on stock updates so co-owners can see who restocked.', setNameLabel: 'Your name', setNamePh: 'e.g. Syncora',
+    setAdminTitle: 'Enable editing (one-time, admin)', setAdminDesc: 'Paste a GitHub token (Contents: read &amp; write) and choose a password. The token is stored <b>encrypted</b>; co-owners unlock editing with just the password.',
+    setTokenLabel: 'GitHub token', setPassLabel: 'Set password', setPassPh: 'choose a password', langLabel: 'Taal / Language',
+    setRepoConnected: (r) => `Connected to <b>${r}</b>. Stock is shared via qs_state.json.`, setRepoNone: "Couldn't auto-detect the repo. Host this on GitHub Pages.",
+    errPassShort: 'Choose a password of at least 4 characters.', errSaveFail: (m) => 'Save failed: ' + m, errTokenPass: 'Enter both a token and a password.',
+    toastEditSet: 'Editing set up and enabled', toastSaved: 'Saved',
+    toastView: 'Back to viewing', toastNoPass: 'No password set yet — see ⚙ Settings',
+    unlockTitle: 'Unlock editing', unlockDesc: 'Enter the shared password to update stock.', unlockPh: 'password', unlockBtn: 'Unlock',
+    toastEditOn: 'Editing enabled', errWrongPass: 'Wrong password', toastLockFirst: 'Unlock first at the top with 🔒', imInvalid: 'Enter a valid number.',
+    ovTodayEyebrow: 'Today', ovSales: 'sales', ovCustomers: 'customers', ovWoW: 'week vs week',
+    kpiRevenue: 'Revenue', kpiRevSub: 'net after 1% tax', kpiSales: 'Sales', kpiSalesSub: 'transactions', kpiCustomers: 'Customers', kpiCustSub: 'unique buyers', kpiAvg: 'Avg. sale', kpiAvgSub: 'per transaction',
+    ovRev14: 'Revenue · last 14 days', ovBreakdown: 'Breakdown', ovGross: 'Gross', ovTax: 'Tax (1%)', ovNet: 'Net', ovTopSellers: 'Top sellers',
+    ovDidYouKnow: '🎲 Did you know…', factOneMore: 'another 🎲',
+    periodAll: 'total', periodToday: 'today', period7: '7 days', period30: '30 days', period90: '90 days',
+    itemsSub: (q, o, p, s) => `${q} sold · ${o} orders · ${p}/ea · ${s} shop${s === 1 ? '' : 's'}`,
+    stockSearchPh: 'Search item or coordinates…', stockFillAll: '✓ Mark all filled to full', stockLockedNote: '🔒 Unlock at the top (🔒 Viewing) to update stock',
+    stockHowTitle: 'How this works', stockHowBody: 'Stock is estimated from your sales history: <b>starting count − sold since</b>. Every new sale counts down automatically. Tap <b>✓ Filled</b> after restocking, or <b>Count exact</b> to enter the real measured amount. Shops appear automatically once they have their first sale. Updates are instantly visible to all co-owners.',
+    stockOnHand: 'in stock', stockFilled: '✓ Filled', stockRestock: '+ Add stock', stockCountBtn: 'Count exact', stockSetBaseline: 'Set starting count', stockNotSet: '🔒 not set yet',
+    stockEverSold: (n) => `${n} sold all-time`, confMeasured: 'measured', confEstimate: 'estimate', confStale: 'stale',
+    stockEmptyWord: 'empty', stockDaysLeft: (d) => `~${d} day${d === 1 ? '' : 's'} left`, stock60plus: '60+ days', stockFull: (n) => `full = ${n}`, stockLastBy: (n) => `last: ${n}`,
+    stockShopsCount: (n) => `${n} shop${n === 1 ? '' : 's'}`, stockNoShops: 'No shops found.', stockNoShopsHint: 'Shops appear as soon as they have their first sale.',
+    mFillAllNoCap: 'No shops with a "full" value yet', mFillAllDone: (n) => `${n} shops filled to full`, mFilledTo: (i, n) => `${i} filled to ${n}`,
+    mRestockTitle: 'Add stock', mRestockDesc: (i) => `How much ${i} did you add?`, mRestockPh: 'amount', mRestockOk: 'Add', mRestockToast: (n, i) => `+${n} ${i}`,
+    mBaselineTitle: 'Set starting count', mBaselineDesc: (i) => `How much ${i} is in the shop now? This also becomes the "full" value.`,
+    mCountTitle: 'Count exact', mCountDesc: (i) => `Enter the actual ${i} count you measured.`, mCountOk: 'Save', mCountToast: (i, n) => `${i} set to ${n}`,
+    custSearchPh: 'Search customer…', custLabelsTitle: 'Labels',
+    custLabelsBody: '<span class="badge amber">VIP</span> high spender · <span class="badge green">regular</span> 5+ orders · <span class="badge blue">new</span> first week · <span class="badge red">churning</span> 30+ days quiet · <span class="badge gray">wholesale</span> large orders',
+    tagVIP: 'VIP', tagRegular: 'regular', tagNew: 'new', tagGone: 'churning', tagWholesale: 'wholesale',
+    custRow: (o, i, fav) => `${o} orders · ${i} items${fav ? ' · most: ' + fav : ''}`, custRow2: (a, s, l) => `ø ${a}/order · ${s}% of revenue · last ${l}`, custNoneFound: 'No customers found.',
+    pBesteed: 'Spent', pOrders: 'Orders', pItems: 'Items', pAvgOrder: 'ø per order', pShare: 'Revenue share', pBuys: 'Buys',
+    pFreqOrder1: '1 order', pFreqMonth: (v) => `${v}/month`, pFreqWeek: (v) => `${v}/week`,
+    pCustSince: (d, l, shop) => `Customer since ${d} · last ${l}${shop ? ' · favorite shop @ ' + shop : ''}`, pRankOf: (r, t) => `#${r} of ${t}`, pTagClient: 'customer',
+    pMonthly: 'Spent per month', pNote: 'Note', pNotePh: 'e.g. regular, wants a discount…', pNoteSave: 'Save note', pNoteLockedEmpty: 'No note. Unlock at the top to add one.', pHistory: 'History', pNoteSaved: 'Note saved',
+    tzTitle: '🌍 Estimated region', tzCaveat: 'Estimated from their purchase times (your clock). A playful hint, not an exact location.', tzTooFew: (n) => `Too few purchases (${n}) to estimate the region.`,
+    confLow: 'low confidence', confRough: 'rough estimate', confFair: 'fairly confident',
+    regEU: 'Western/Central Europe', regEUsub: 'same timezone as you', regEEast: 'Eastern Europe / Middle East', regEEastSub: 'a bit ahead of you', regAsia: 'Asia', regAsiaSub: 'far ahead of you',
+    regOcea: 'East Asia / Oceania', regOceaSub: 'other side of the world', regWEur: 'Western Europe / Atlantic', regWEurSub: 'a bit behind you', regAmer: 'North/South America', regAmerSub: 'behind you',
+    tzSameTime: 'about your time', tzBehind: (h) => `~${h}h behind you`, tzAhead: (h) => `~${h}h ahead of you`,
+    suspTitle: '⚡ Notable orders', suspDesc: (a) => `Unusually large purchases (over ${a}). Usually just good customers — handy to keep an eye on for your stock.`,
+    recentTitle: 'Recent sales', recentBought: (b, q, i) => `${b} bought ${q}× ${i}`, recentNone: 'No recent sales for this period.',
+    insNoData: 'No insights yet — there are no customer sales.', factsTitle: '🎲 Fun facts', factsMore: 'more 🎲', factsTooFew: 'Not enough data for facts yet — come back after a few sales.',
+    insShopsTitle: 'Shops compared', insShopSub: (q, k) => `${q} items · ${k} kinds`, insBasket: 'Often bought together',
+    insForecast: 'Forecast', insLast30: 'Last 30 days', insLast30Sub: (n) => `${n} sales`, insNext30: 'Expected next 30d', insNext30Sub: 'at the same pace',
+    insChurnTitle: 'Customers going quiet', insChurnDesc: "Regulars who haven't bought in 3+ weeks.", insChurnRow: (o, l) => `${o} orders · last ${l}`,
+    insRegionTitle: '🌍 Customers by region', insRegionEstimated: 'estimated', insRegionDesc: (e, t) => `Estimated from purchase times of customers with enough orders (${e} of ${t}). A playful hint.`,
+    insAchTitle: '🏆 Achievements', insBestDay: 'Best day ever', insTotalRev: 'Total revenue', insAllTime: 'all time', insLongStreak: 'Longest streak', insStreakDays: (n) => `${n} day${n === 1 ? '' : 's'}`, insStreakSub: 'active in a row', insBestCust: 'Best customer',
+    actPeakTitle: '⏰ Peak times', actBusiestDay: 'Busiest day', actBusiestHour: 'Busiest hour', actHottest: 'Hottest window', actSalesCount: (n) => `${n} sales`, actInOneHour: (n) => `${n} in 1 hour`,
+    actPeakNote: 'When your customers actually buy — handy to restock before the rush.', actByWeekday: 'Sales by weekday', actByHour: 'Sales by hour', actHeatmap: 'Day × hour heatmap', actHeatNote: 'Darker = more sales · hover for the count', actNone: 'No activity for this period.',
+    dayNamesFull: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], dayShort: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'], weekdayMon: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    emptyNoSales: 'No sales yet.', emptyNoSalesHint: 'Run the pipeline and upload transactions_archive.csv to the repo.', emptyNoItems: 'No item data for this period.', emptyNoCustomers: 'No customer data for this period.',
+    milestone: (a) => `🎉 Milestone reached: ${a} revenue!`, sinceVisit: (c, n) => `Since your last visit: ${c} sales · ${n}`,
+    rangeTitle: 'Custom period', rangeDesc: 'Pick a start and end date. All analytics (not the stock) then use this range.', rangeFrom: 'From', rangeTo: 'To', rangeApply: 'Apply', rangeErrBoth: 'Pick both dates.', rangeErrOrder: 'The start date is after the end date.',
+    relNow: 'just now', relMin: (m) => `${m}m ago`, relHour: (h) => `${h}h ago`, relYesterday: 'yesterday', relDay: (d) => `${d}d ago`, relWeek: (w) => `${w}w ago`,
+    facts: {
+      bestseller: (i, n) => `Bestseller: <b>${i}</b> — ${n} units sold.`,
+      topFan: (b, m) => `Biggest fan: <b>${b}</b> spent ${m} with you.`,
+      loyal: (b, n) => `<b>${b}</b> came back ${n} times — most loyal customer.`,
+      bigOrder: (q, i, m, b) => `Biggest order ever: <b>${q}× ${i}</b> for ${m} by ${b}.`,
+      chests: (n, c) => `You sold ${n} items — enough for <b>${c} double chests</b>.`,
+      stacks: (n) => `That's ~<b>${n} full stacks</b>.`,
+      busyHour: (h) => `Around <b>${h}</b> it's busiest.`,
+      quietHour: (h) => `Around <b>${h}</b> almost nobody buys.`,
+      tax: (m) => `You've already paid <b>${m}</b> in tax to the server.`,
+      avgCust: (m) => `An average customer spends <b>${m}</b>.`,
+      firstSale: (q, i, b, d) => `Your very first sale: <b>${q}× ${i}</b> to ${b} on ${d}.`,
+      recordDay: (m, d) => `Record sales day: <b>${m}</b> on ${d}.`,
+      repeat: (p) => `<b>${p}%</b> of your customers came back more than once.`,
+      uniqueCust: (n) => `<b>${n}</b> different customers bought from you.`,
+      shopCount: (n) => `You run <b>${n}</b> shop${n === 1 ? '' : 's'} on the map.`,
+      topDay: (d) => `<b>${d}</b> is your top day.`,
+      rarest: (i, n) => `Rarest sold: <b>${i}</b> (only ${n}× bought).`,
+      oneItem: (b, i) => `<b>${b}</b> really only buys ${i}.`,
+      lover: (b, i, n) => `<b>${b}</b> loves ${i} — bought ${n} of them.`,
+      streak: (n) => `Longest run: <b>${n} days straight</b> of sales.`
+    }
+  }
+};
+function L() { return I18N[lang] || I18N.nl; }
+function t(k, ...args) {
+  const dict = L(); let v = (k in dict) ? dict[k] : I18N.nl[k];
+  if (v == null) return k;
+  return typeof v === 'function' ? v(...args) : v;
+}
+function dloc() { return lang === 'en' ? 'en-US' : 'nl-NL'; }
 
 function loadStorage(key, fb) { try { const v = localStorage.getItem(key); return v == null ? fb : JSON.parse(v); } catch (e) { return fb; } }
 function saveStorage(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
@@ -408,15 +616,15 @@ function canWrite() { return !!(getRepo() && getEditToken()); }
 
 function ensureUnlocked() {
   if (canWrite()) return true;
-  showToast('Ontgrendel eerst bovenaan met 🔒', 'amber');
+  showToast(t('toastLockFirst'), 'amber');
   return false;
 }
 
 function updateLockButton() {
   const btn = document.getElementById('lockBtn');
   if (!btn) return;
-  if (canWrite()) { btn.textContent = '🔓 Bewerken aan'; btn.classList.add('unlocked'); }
-  else { btn.textContent = '🔒 Bekijken'; btn.classList.remove('unlocked'); }
+  if (canWrite()) { btn.textContent = '🔓 ' + t('editOn'); btn.classList.add('unlocked'); }
+  else { btn.textContent = '🔒 ' + t('view'); btn.classList.remove('unlocked'); }
   updateSyncStatus();
 }
 
@@ -424,29 +632,29 @@ async function toggleEditLock() {
   if (canWrite()) {
     clearEditToken();
     updateLockButton();
-    showToast('Terug naar bekijken', '');
+    showToast(t('toastView'), '');
     render();
     return;
   }
   const auth = await readPublicJson('qs_auth.json');
   if (!auth || !auth.ct) {
-    showToast('Nog geen wachtwoord ingesteld — zie ⚙ Instellingen', 'amber');
+    showToast(t('toastNoPass'), 'amber');
     openSettings();
     return;
   }
   openInputModal({
-    title: 'Bewerken ontgrendelen', desc: 'Voer het gedeelde wachtwoord in om de voorraad te kunnen bijwerken.',
-    type: 'password', placeholder: 'wachtwoord', okLabel: 'Ontgrendel',
+    title: t('unlockTitle'), desc: t('unlockDesc'),
+    type: 'password', placeholder: t('unlockPh'), okLabel: t('unlockBtn'),
     onOk: async (val) => {
       try {
         const token = await decryptToken(auth, val);
         setEditToken(token);
         updateLockButton();
-        showToast('Bewerken ingeschakeld', 'green');
+        showToast(t('toastEditOn'), 'green');
         await pullAndRender(true);
         return true;
       } catch (e) {
-        return 'Verkeerd wachtwoord';
+        return t('errWrongPass');
       }
     }
   });
@@ -459,9 +667,7 @@ function openSettings() {
   document.getElementById('adminPass').value = '';
   document.getElementById('adminErr').textContent = '';
   const repo = getRepo();
-  document.getElementById('repoNote').innerHTML = repo
-    ? `Verbonden met <b>${repo}</b>. Voorraad wordt gedeeld via qs_state.json.`
-    : 'Kon de repo niet automatisch bepalen. Host dit op GitHub Pages.';
+  document.getElementById('repoNote').innerHTML = repo ? t('setRepoConnected', repo) : t('setRepoNone');
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
@@ -474,26 +680,26 @@ async function saveSettings() {
   const errEl = document.getElementById('adminErr');
   errEl.textContent = '';
   if (token && pass) {
-    if (pass.length < 4) { errEl.textContent = 'Kies een wachtwoord van minstens 4 tekens.'; return; }
+    if (pass.length < 4) { errEl.textContent = t('errPassShort'); return; }
     try {
       const blob = await encryptToken(token, pass);
       setEditToken(token); // so this admin is immediately unlocked + can write
       await writeJson('qs_auth.json', blob, 'set edit password');
       updateLockButton();
-      showToast('Bewerken ingesteld en ingeschakeld', 'green');
+      showToast(t('toastEditSet'), 'green');
       closeSettings();
       await pullAndRender(true);
       return;
     } catch (e) {
       clearEditToken();
-      errEl.textContent = 'Opslaan mislukt: ' + e.message;
+      errEl.textContent = t('errSaveFail', e.message);
       return;
     }
   } else if (token || pass) {
-    errEl.textContent = 'Vul zowel een token als een wachtwoord in.';
+    errEl.textContent = t('errTokenPass');
     return;
   }
-  showToast('Opgeslagen', 'green');
+  showToast(t('toastSaved'), 'green');
   closeSettings();
   render();
 }
@@ -507,6 +713,26 @@ function toggleTheme() {
   saveStorage('qs_theme', next);
   if (allTransactions.length) render();
 }
+
+/* ============ LANGUAGE ============ */
+function applyLanguage() {
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  const lb = document.getElementById('langBtn'); if (lb) lb.textContent = lang === 'nl' ? 'EN' : 'NL';
+  const ln = document.getElementById('langNl'), le = document.getElementById('langEn');
+  if (ln && le) { ln.classList.toggle('primary', lang === 'nl'); le.classList.toggle('primary', lang === 'en'); }
+  updateLockButton();
+  updateSyncStatus();
+}
+function setLang(l) {
+  if (l !== 'nl' && l !== 'en') return;
+  lang = l; saveStorage('qs_lang', l);
+  applyLanguage();
+  if (allTransactions.length) render();
+}
+function toggleLang() { setLang(lang === 'nl' ? 'en' : 'nl'); }
 
 /* ============ TOAST ============ */
 let toastTimer = null;
@@ -547,7 +773,7 @@ function closeInputModal() { document.getElementById('inputModal').classList.rem
 async function _imSubmit() {
   const input = document.getElementById('imInput');
   const raw = input.type === 'password' ? input.value : parseFloat(input.value);
-  if (input.type !== 'password' && (isNaN(raw) || raw < 0)) { document.getElementById('imErr').textContent = 'Voer een geldig getal in.'; return; }
+  if (input.type !== 'password' && (isNaN(raw) || raw < 0)) { document.getElementById('imErr').textContent = t('imInvalid'); return; }
   if (_imHandler) {
     const res = await _imHandler(raw);
     if (res === true || res == null) closeInputModal();
@@ -611,14 +837,14 @@ function fmtNum(n) { return Math.round(n).toLocaleString('en-US'); }
 function formatRelativeDate(iso) {
   const d = new Date(iso), now = new Date();
   const diff = (now - d) / 1000;
-  if (diff < 60) return 'zojuist';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm geleden';
-  if (diff < 86400) return Math.floor(diff / 3600) + 'u geleden';
+  if (diff < 60) return t('relNow');
+  if (diff < 3600) return t('relMin', Math.floor(diff / 60));
+  if (diff < 86400) return t('relHour', Math.floor(diff / 3600));
   const days = Math.floor(diff / 86400);
-  if (days === 1) return 'gisteren';
-  if (days < 7) return days + 'd geleden';
-  if (days < 31) return Math.floor(days / 7) + 'w geleden';
-  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+  if (days === 1) return t('relYesterday');
+  if (days < 7) return t('relDay', days);
+  if (days < 31) return t('relWeek', Math.floor(days / 7));
+  return d.toLocaleDateString(dloc(), { day: 'numeric', month: 'short' });
 }
 
 /* ============ STOCK CORE ============ */
@@ -692,11 +918,11 @@ function stockVelocity(combo) { // units sold per day over last 14 days
   return s / 14;
 }
 function stockConfidence(entry) {
-  if (!entry || !entry.baselineTime) return { label: 'schatting', cls: 'amber' };
+  if (!entry || !entry.baselineTime) return { label: t('confEstimate'), cls: 'amber' };
   const ageDays = (Date.now() - new Date(entry.baselineTime).getTime()) / 86400000;
-  if ((entry.lastType === 'recount' || entry.lastType === 'fill' || entry.lastType === 'set') && ageDays < 1) return { label: 'gemeten', cls: 'green' };
-  if (ageDays > 14) return { label: 'verouderd', cls: 'gray' };
-  return { label: 'schatting', cls: 'amber' };
+  if ((entry.lastType === 'recount' || entry.lastType === 'fill' || entry.lastType === 'set') && ageDays < 1) return { label: t('confMeasured'), cls: 'green' };
+  if (ageDays > 14) return { label: t('confStale'), cls: 'gray' };
+  return { label: t('confEstimate'), cls: 'amber' };
 }
 
 /* ---- stock actions (all gated by ensureUnlocked) ---- */
@@ -714,14 +940,14 @@ function fillToFull(key, combo) {
   entry.baseline = entry.capacity; entry.baselineTime = new Date().toISOString();
   _pushHistory(entry, 'fill', entry.capacity);
   all[key] = entry; saveStockData(all); triggerSync();
-  showToast(`${combo.item} bijgevuld tot ${entry.capacity}`, 'green');
+  showToast(t('mFilledTo', combo.item, entry.capacity), 'green');
   renderStock();
 }
 function addRestock(key, combo) {
   if (!ensureUnlocked()) return;
   combo = combo || buildStockCombos()[key]; if (!combo) return;
   openInputModal({
-    title: 'Deel bijvullen', desc: `Hoeveel ${combo.item} heb je bijgevuld?`, placeholder: 'aantal', okLabel: 'Bijvullen',
+    title: t('mRestockTitle'), desc: t('mRestockDesc', combo.item), placeholder: t('mRestockPh'), okLabel: t('mRestockOk'),
     onOk: (amount) => {
       const all = getStockData(); const entry = all[key] || {};
       const est = estimateStock(entry, combo) || 0;
@@ -729,7 +955,7 @@ function addRestock(key, combo) {
       entry.capacity = Math.max(entry.capacity || 0, entry.baseline);
       _pushHistory(entry, 'restock', amount);
       all[key] = entry; saveStockData(all); triggerSync();
-      showToast(`+${amount} ${combo.item}`, 'green'); renderStock(); return true;
+      showToast(t('mRestockToast', amount, combo.item), 'green'); renderStock(); return true;
     }
   });
 }
@@ -738,16 +964,16 @@ function setExactCount(key, combo, alsoSetsCapacity) {
   combo = combo || buildStockCombos()[key]; if (!combo) return;
   const all = getStockData(); const cur = all[key] || {};
   openInputModal({
-    title: alsoSetsCapacity ? 'Begin-aantal instellen' : 'Exact tellen',
-    desc: alsoSetsCapacity ? `Hoeveel ${combo.item} liggen er nu in de shop? Dit wordt ook de "vol"-waarde.` : `Voer het werkelijke aantal ${combo.item} in dat je geteld hebt.`,
-    value: cur.capacity || '', placeholder: 'aantal', okLabel: 'Opslaan',
+    title: alsoSetsCapacity ? t('mBaselineTitle') : t('mCountTitle'),
+    desc: alsoSetsCapacity ? t('mBaselineDesc', combo.item) : t('mCountDesc', combo.item),
+    value: cur.capacity || '', placeholder: t('mRestockPh'), okLabel: t('mCountOk'),
     onOk: (count) => {
       const a = getStockData(); const entry = a[key] || {};
       entry.baseline = count; entry.baselineTime = new Date().toISOString();
       entry.capacity = Math.max(entry.capacity || 0, count);
       _pushHistory(entry, alsoSetsCapacity ? 'set' : 'recount', count);
       a[key] = entry; saveStockData(a); triggerSync();
-      showToast(`${combo.item} op ${count} gezet`, 'green'); renderStock(); return true;
+      showToast(t('mCountToast', combo.item, count), 'green'); renderStock(); return true;
     }
   });
 }
@@ -759,8 +985,8 @@ function fillAllToCapacity() {
     const e = all[c.key];
     if (e && e.capacity) { e.baseline = e.capacity; e.baselineTime = new Date().toISOString(); _pushHistory(e, 'fill', e.capacity); all[c.key] = e; n++; }
   });
-  if (n) { saveStockData(all); triggerSync(); showToast(`${n} shops bijgevuld tot vol`, 'green'); renderStock(); }
-  else showToast('Nog geen shops met een "vol"-waarde', 'amber');
+  if (n) { saveStockData(all); triggerSync(); showToast(t('mFillAllDone', n), 'green'); renderStock(); }
+  else showToast(t('mFillAllNoCap'), 'amber');
 }
 
 /* ============ STATE SYNC (qs_state.json) ============ */
@@ -849,10 +1075,10 @@ function updateSyncStatus(state) {
   const el = document.getElementById('sync'); const txt = document.getElementById('syncText');
   if (!el) return;
   el.className = 'sync';
-  if (state === 'error') { el.classList.add('error'); txt.textContent = 'sync-fout'; return; }
-  if (state === 'pushing') { el.classList.add('live'); txt.textContent = 'opslaan…'; return; }
-  if (canWrite()) { el.classList.add('live'); txt.textContent = 'live · bewerken aan'; }
-  else { el.classList.add('readonly'); txt.textContent = getRepo() ? 'live · alleen-lezen' : 'lokaal'; }
+  if (state === 'error') { el.classList.add('error'); txt.textContent = t('syncError'); return; }
+  if (state === 'pushing') { el.classList.add('live'); txt.textContent = t('syncSaving'); return; }
+  if (canWrite()) { el.classList.add('live'); txt.textContent = t('syncLiveEdit'); }
+  else { el.classList.add('readonly'); txt.textContent = getRepo() ? t('syncLiveRead') : t('syncLocal'); }
 }
 
 /* ============ DATE FILTER ============ */
@@ -888,26 +1114,26 @@ function openCustomRange() {
   el.className = 'modal-bg open'; el.id = 'rangeModal';
   el.onclick = (e) => { if (e.target === el) el.remove(); };
   el.innerHTML = `<div class="modal">
-    <h3>Aangepaste periode</h3>
-    <div class="desc">Kies een begin- en einddatum. Alle analyses (niet de voorraad) gebruiken dan dit bereik.</div>
-    <label>Van</label><input type="date" id="rangeFrom" value="${fromDefault}" max="${todayStr}" />
-    <label>Tot</label><input type="date" id="rangeTo" value="${toDefault}" max="${todayStr}" />
+    <h3>${t('rangeTitle')}</h3>
+    <div class="desc">${t('rangeDesc')}</div>
+    <label>${t('rangeFrom')}</label><input type="date" id="rangeFrom" value="${fromDefault}" max="${todayStr}" />
+    <label>${t('rangeTo')}</label><input type="date" id="rangeTo" value="${toDefault}" max="${todayStr}" />
     <div class="err" id="rangeErr"></div>
     <div class="modal-actions">
-      <button class="btn" onclick="document.getElementById('rangeModal').remove()">Annuleer</button>
-      <button class="btn primary" onclick="applyCustomRange()">Toepassen</button>
+      <button class="btn" onclick="document.getElementById('rangeModal').remove()">${t('cancel')}</button>
+      <button class="btn primary" onclick="applyCustomRange()">${t('rangeApply')}</button>
     </div>
   </div>`;
   document.body.appendChild(el);
 }
 function applyCustomRange() {
   const f = document.getElementById('rangeFrom').value;
-  const t = document.getElementById('rangeTo').value;
+  const toV = document.getElementById('rangeTo').value;
   const err = document.getElementById('rangeErr');
-  if (!f || !t) { err.textContent = 'Kies beide datums.'; return; }
+  if (!f || !toV) { err.textContent = t('rangeErrBoth'); return; }
   const from = new Date(f + 'T00:00:00').getTime();
-  const to = new Date(t + 'T23:59:59').getTime();
-  if (from > to) { err.textContent = 'De begindatum ligt na de einddatum.'; return; }
+  const to = new Date(toV + 'T23:59:59').getTime();
+  if (from > to) { err.textContent = t('rangeErrOrder'); return; }
   customFrom = from; customTo = to; dateFilter = 'custom';
   transactions = applyDateFilter(analyticsAll);
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.range === 'custom'));
@@ -919,7 +1145,7 @@ function applyCustomRange() {
 function render() {
   const dash = document.getElementById('dashboard');
   if (!allTransactions.length) {
-    dash.innerHTML = `<div class="panel"><div class="empty"><div class="art">[ ⛏ ]</div><p>Nog geen verkopen.</p><p class="hint">Draai de pipeline en upload transactions_archive.csv naar de repo.</p></div></div>`;
+    dash.innerHTML = `<div class="panel"><div class="empty"><div class="art">[ ⛏ ]</div><p>${t('emptyNoSales')}</p><p class="hint">${t('emptyNoSalesHint')}</p></div></div>`;
     updateSyncStatus(); return;
   }
   dash.innerHTML =
@@ -973,35 +1199,35 @@ function renderOverview() {
   const wowPct = lwNet > 0 ? Math.round((twNet - lwNet) / lwNet * 100) : (twNet > 0 ? 100 : 0);
 
   const periodLabel = (dateFilter === 'custom' && customFrom && customTo)
-    ? new Date(customFrom).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) + ' – ' + new Date(customTo).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
-    : ({ all: 'totaal', '1d': 'vandaag', '7d': '7 dagen', '30d': '30 dagen', '90d': '90 dagen' }[dateFilter]);
+    ? new Date(customFrom).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' }) + ' – ' + new Date(customTo).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' })
+    : ({ all: t('periodAll'), '1d': t('periodToday'), '7d': t('period7'), '30d': t('period30'), '90d': t('period90') }[dateFilter]);
 
   let html = `
     <div class="hero">
-      <div class="eyebrow">Vandaag</div>
+      <div class="eyebrow">${t('ovTodayEyebrow')}</div>
       <div class="big">${fmtMoney(todayNet).replace('$', '<span class="cur">$</span>')}</div>
       <div class="row">
-        <div class="stat"><div class="n">${todayTx.length}</div><div class="l">verkopen</div></div>
-        <div class="stat"><div class="n">${todayBuyers}</div><div class="l">klanten</div></div>
-        <div class="stat"><div class="n ${wowPct >= 0 ? 'delta up' : 'delta down'}" style="font-family:var(--mono)">${wowPct >= 0 ? '+' : ''}${wowPct}%</div><div class="l">week vs week</div></div>
+        <div class="stat"><div class="n">${todayTx.length}</div><div class="l">${t('ovSales')}</div></div>
+        <div class="stat"><div class="n">${todayBuyers}</div><div class="l">${t('ovCustomers')}</div></div>
+        <div class="stat"><div class="n ${wowPct >= 0 ? 'delta up' : 'delta down'}" style="font-family:var(--mono)">${wowPct >= 0 ? '+' : ''}${wowPct}%</div><div class="l">${t('ovWoW')}</div></div>
       </div>
     </div>
     <div class="kpis">
-      <div class="kpi green"><div class="label">Omzet (${esc(periodLabel)})</div><div class="value">${fmtMoney(total)}</div><div class="sub">netto na 1% tax</div></div>
-      <div class="kpi"><div class="label">Verkopen</div><div class="value">${fmtNum(count)}</div><div class="sub">transacties</div></div>
-      <div class="kpi blue"><div class="label">Klanten</div><div class="value">${fmtNum(buyers)}</div><div class="sub">unieke kopers</div></div>
-      <div class="kpi"><div class="label">Gem. verkoop</div><div class="value">${fmtMoney(avg)}</div><div class="sub">per transactie</div></div>
+      <div class="kpi green"><div class="label">${t('kpiRevenue')} (${esc(periodLabel)})</div><div class="value">${fmtMoney(total)}</div><div class="sub">${t('kpiRevSub')}</div></div>
+      <div class="kpi"><div class="label">${t('kpiSales')}</div><div class="value">${fmtNum(count)}</div><div class="sub">${t('kpiSalesSub')}</div></div>
+      <div class="kpi blue"><div class="label">${t('kpiCustomers')}</div><div class="value">${fmtNum(buyers)}</div><div class="sub">${t('kpiCustSub')}</div></div>
+      <div class="kpi"><div class="label">${t('kpiAvg')}</div><div class="value">${fmtMoney(avg)}</div><div class="sub">${t('kpiAvgSub')}</div></div>
     </div>
     <div class="panel">
-      <div class="panel-title">Omzet · laatste 14 dagen</div>
+      <div class="panel-title">${t('ovRev14')}</div>
       <div class="chart-wrap"><canvas id="revChart"></canvas></div>
     </div>
     <div class="panel">
-      <div class="panel-title">Verdeling</div>
+      <div class="panel-title">${t('ovBreakdown')}</div>
       <div class="grid-3">
-        <div class="mini-card"><div class="ml">Bruto</div><div class="mv" style="color:var(--text)">${fmtMoney(grossT)}</div></div>
-        <div class="mini-card"><div class="ml">Tax (1%)</div><div class="mv" style="color:var(--red)">${fmtMoney(taxT)}</div></div>
-        <div class="mini-card"><div class="ml">Netto</div><div class="mv">${fmtMoney(total)}</div></div>
+        <div class="mini-card"><div class="ml">${t('ovGross')}</div><div class="mv" style="color:var(--text)">${fmtMoney(grossT)}</div></div>
+        <div class="mini-card"><div class="ml">${t('ovTax')}</div><div class="mv" style="color:var(--red)">${fmtMoney(taxT)}</div></div>
+        <div class="mini-card"><div class="ml">${t('ovNet')}</div><div class="mv">${fmtMoney(total)}</div></div>
       </div>
     </div>`;
 
@@ -1010,12 +1236,12 @@ function renderOverview() {
   transactions.forEach(t => { (byItem[t.item] = byItem[t.item] || { item: t.item, net: 0, qty: 0 }); byItem[t.item].net += t.net; byItem[t.item].qty += t.qty; });
   const topItems = Object.values(byItem).sort((a, b) => b.net - a.net).slice(0, 5);
   const maxNet = Math.max(1, ...topItems.map(i => i.net));
-  html += `<div class="panel"><div class="panel-title">Topverkopers</div>`;
+  html += `<div class="panel"><div class="panel-title">${t('ovTopSellers')}</div>`;
   topItems.forEach(it => {
     html += `<div class="row-item">${itemIcon(it.item)}<div class="main"><div class="t1">${esc(it.item)}</div><div class="bar-track"><div class="bar-fill green" style="width:${(it.net / maxNet * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(it.net)}</div></div>`;
   });
   html += `</div>`;
-  html += `<div class="panel"><div class="panel-title">🎲 Wist je dat… <button class="btn ghost fact-shuffle" onclick="fillFacts('ovFact',1)">nog een 🎲</button></div><div id="ovFact"></div></div>`;
+  html += `<div class="panel"><div class="panel-title">${t('ovDidYouKnow')} <button class="btn ghost fact-shuffle" onclick="fillFacts('ovFact',1)">${t('factOneMore')}</button></div><div id="ovFact"></div></div>`;
   return html;
 }
 
@@ -1027,12 +1253,12 @@ function renderItems() {
     o.net += t.net; o.qty += t.qty; o.count += 1; o.shops.add(coordsOf(t.shop));
   });
   const arr = Object.values(byItem).sort((a, b) => b.net - a.net);
-  if (!arr.length) return emptyPanel('Geen item-data voor deze periode.');
+  if (!arr.length) return emptyPanel(t('emptyNoItems'));
   const maxQty = Math.max(1, ...arr.map(i => i.qty));
-  let html = `<div class="panel"><div class="panel-title">Items <span class="count">${arr.length}</span></div>`;
+  let html = `<div class="panel"><div class="panel-title">${t('tabItems')} <span class="count">${arr.length}</span></div>`;
   arr.forEach(it => {
     const avgP = it.qty ? it.net / it.qty : 0;
-    html += `<div class="row-item">${itemIcon(it.item)}<div class="main"><div class="t1">${esc(it.item)}</div><div class="t2">${fmtNum(it.qty)} verkocht · ${it.count} orders · ${fmtMoney(avgP)}/stuk · ${it.shops.size} shop${it.shops.size === 1 ? '' : 's'}</div><div class="bar-track"><div class="bar-fill" style="width:${(it.qty / maxQty * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(it.net)}</div></div>`;
+    html += `<div class="row-item">${itemIcon(it.item)}<div class="main"><div class="t1">${esc(it.item)}</div><div class="t2">${t('itemsSub', fmtNum(it.qty), it.count, fmtMoney(avgP), it.shops.size)}</div><div class="bar-track"><div class="bar-fill" style="width:${(it.qty / maxQty * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(it.net)}</div></div>`;
   });
   html += `</div>`;
   return html;
@@ -1043,16 +1269,16 @@ function stockShell() {
   const unlocked = canWrite();
   return `
     <div class="panel">
-      <div class="panel-title">Voorraad <span class="count" id="stockCount"></span></div>
-      <input class="search" id="stockSearch" placeholder="Zoek item of coördinaten…" oninput="renderStock()" />
+      <div class="panel-title">${t('tabStock')} <span class="count" id="stockCount"></span></div>
+      <input class="search" id="stockSearch" data-i18n-ph="stockSearchPh" placeholder="${t('stockSearchPh')}" oninput="renderStock()" />
       ${unlocked
-        ? `<button class="btn primary" style="margin-bottom:12px;width:100%" onclick="fillAllToCapacity()">✓ Alles bijgevuld tot vol</button>`
-        : `<div class="locked-note">🔒 Ontgrendel bovenaan (🔒 Bekijken) om de voorraad bij te werken</div>`}
+        ? `<button class="btn primary" style="margin-bottom:12px;width:100%" onclick="fillAllToCapacity()">${t('stockFillAll')}</button>`
+        : `<div class="locked-note">${t('stockLockedNote')}</div>`}
       <div id="stockCards"></div>
     </div>
     <div class="panel">
-      <div class="panel-title">Hoe werkt dit</div>
-      <div class="small-note">Voorraad wordt geschat uit je verkoophistorie: <b>begin-aantal − verkocht sindsdien</b>. Elke nieuwe verkoop telt automatisch af. Tik <b>✓ Bijgevuld</b> na het bijvullen, of <b>Tel exact</b> om het echte getelde aantal in te voeren. Shops verschijnen vanzelf zodra ze hun eerste verkoop hebben. Updates zijn meteen zichtbaar voor alle mede-eigenaren.</div>
+      <div class="panel-title">${t('stockHowTitle')}</div>
+      <div class="small-note">${t('stockHowBody')}</div>
     </div>`;
 }
 
@@ -1080,9 +1306,9 @@ function renderStock() {
   });
 
   const cnt = document.getElementById('stockCount');
-  if (cnt) cnt.textContent = list.length + ' shop' + (list.length === 1 ? '' : 's');
+  if (cnt) cnt.textContent = t('stockShopsCount', list.length);
 
-  if (!list.length) { host.innerHTML = `<div class="empty"><p>Geen shops gevonden.</p><p class="hint">Shops verschijnen zodra ze hun eerste verkoop hebben.</p></div>`; return; }
+  if (!list.length) { host.innerHTML = `<div class="empty"><p>${t('stockNoShops')}</p><p class="hint">${t('stockNoShopsHint')}</p></div>`; return; }
 
   const unlocked = canWrite();
   host.innerHTML = list.map(c => {
@@ -1090,9 +1316,9 @@ function renderStock() {
     const k = jsStr(c.key);
     if (!c._configured) {
       return `<div class="stock-card">
-        <div class="stock-head">${itemIcon(c.item, 30)}<div class="info"><div class="name">${esc(c.item)}</div><div class="coords">@ ${esc(c.coords)} · ${fmtNum(c.totalQty)} ooit verkocht</div></div>
+        <div class="stock-head">${itemIcon(c.item, 30)}<div class="info"><div class="name">${esc(c.item)}</div><div class="coords">@ ${esc(c.coords)} · ${t('stockEverSold', fmtNum(c.totalQty))}</div></div>
         <div class="stock-est"><div class="num" style="color:var(--text-faint);font-size:20px">—</div></div></div>
-        ${unlocked ? `<div class="stock-actions"><button class="btn primary" onclick="setExactCount('${k}', null, true)">Begin-aantal instellen</button></div>` : `<div class="locked-note">🔒 nog niet ingesteld</div>`}
+        ${unlocked ? `<div class="stock-actions"><button class="btn primary" onclick="setExactCount('${k}', null, true)">${t('stockSetBaseline')}</button></div>` : `<div class="locked-note">${t('stockNotSet')}</div>`}
       </div>`;
     }
     const est = c._est;
@@ -1103,14 +1329,14 @@ function renderStock() {
     let daysTxt = '';
     if (c._vel > 0 && est != null) {
       const d = Math.round(c._days);
-      daysTxt = d <= 0 ? 'leeg' : (d > 60 ? '60+ dagen' : `nog ~${d} dag${d === 1 ? '' : 'en'}`);
+      daysTxt = d <= 0 ? t('stockEmptyWord') : (d > 60 ? t('stock60plus') : t('stockDaysLeft', d));
     }
-    const lastBy = e.lastBy ? ` · laatste: ${esc(e.lastBy)}` : '';
-    const capTxt = e.capacity ? `vol = ${fmtNum(e.capacity)}` : '';
+    const lastBy = e.lastBy ? ` · ${t('stockLastBy', esc(e.lastBy))}` : '';
+    const capTxt = e.capacity ? t('stockFull', fmtNum(e.capacity)) : '';
     return `<div class="stock-card ${cls}">
       <div class="stock-head">${itemIcon(c.item, 30)}
         <div class="info"><div class="name">${esc(c.item)}</div><div class="coords">@ ${esc(c.coords)}</div></div>
-        <div class="stock-est"><div class="num ${numCls}">${fmtNum(est)}</div><div class="unit">op voorraad</div></div>
+        <div class="stock-est"><div class="num ${numCls}">${fmtNum(est)}</div><div class="unit">${t('stockOnHand')}</div></div>
       </div>
       <div class="stock-meta">
         <span class="badge ${conf.cls}">${conf.label}</span>
@@ -1118,9 +1344,9 @@ function renderStock() {
         ${capTxt ? `<span>${capTxt}</span>` : ''}${lastBy ? `<span>${lastBy}</span>` : ''}
       </div>
       ${unlocked ? `<div class="stock-actions">
-        <button class="btn primary" onclick="fillToFull('${k}')">✓ Bijgevuld</button>
-        <button class="btn" onclick="addRestock('${k}')">+ Deel bij</button>
-        <button class="btn" onclick="setExactCount('${k}')">Tel exact</button>
+        <button class="btn primary" onclick="fillToFull('${k}')">${t('stockFilled')}</button>
+        <button class="btn" onclick="addRestock('${k}')">${t('stockRestock')}</button>
+        <button class="btn" onclick="setExactCount('${k}')">${t('stockCountBtn')}</button>
       </div>` : ''}
     </div>`;
   }).join('');
@@ -1170,23 +1396,23 @@ function buildCharts() {
     charts.hour = new Chart(hourC, {
       type: 'bar',
       data: { labels: Array.from({ length: 24 }, (_, i) => i), datasets: [{ data: hourly, backgroundColor: '#5b8cff', borderRadius: 2 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => i.parsed.y + ' verkopen' } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, precision: 0 }, grid: { color: grid } } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => t('actSalesCount', i.parsed.y) } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, precision: 0 }, grid: { color: grid } } } }
     });
   }
   const wkC = document.getElementById('weekdayChart');
   if (wkC) {
-    const order = [1, 2, 3, 4, 5, 6, 0], labels = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+    const order = [1, 2, 3, 4, 5, 6, 0], labels = L().weekdayMon;
     charts.weekday = new Chart(wkC, {
       type: 'bar',
       data: { labels, datasets: [{ data: order.map(d => dayTotals[d]), backgroundColor: order.map(d => d === busiestDayIdx ? '#ffd166' : '#5b8cff'), borderRadius: 3 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => i.parsed.y + ' verkopen' } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, precision: 0 }, grid: { color: grid } } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => t('actSalesCount', i.parsed.y) } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, precision: 0 }, grid: { color: grid } } } }
     });
   }
   // Heatmap
   const hm = document.getElementById('heatmap');
   if (hm) {
     const max = Math.max(1, ...heat.flat());
-    const days = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+    const days = L().dayShort;
     let cells = `<div></div>`;
     for (let h = 0; h < 24; h++) cells += `<div class="hlabel">${h % 4 === 0 ? h : ''}</div>`;
     for (let di = 0; di < 7; di++) {
@@ -1209,26 +1435,26 @@ function activityShell() {
   const heat = Array.from({ length: 7 }, () => Array(24).fill(0));
   transactions.forEach(t => { const d = new Date(t.time); heat[d.getDay()][d.getHours()]++; });
   const dayTotals = heat.map(r => r.reduce((s, v) => s + v, 0));
-  const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
+  const dayNames = L().dayNamesFull;
   const bDay = dayTotals.some(v => v > 0) ? dayTotals.indexOf(Math.max(...dayTotals)) : -1;
   const bHour = hourly.some(v => v > 0) ? hourly.indexOf(Math.max(...hourly)) : -1;
   let hv = 0, hd = -1, hh = -1;
   heat.forEach((r, di) => r.forEach((v, h) => { if (v > hv) { hv = v; hd = di; hh = h; } }));
   const fmtH = (h) => h < 0 ? '—' : String(h).padStart(2, '0') + ':00';
-  if (!transactions.length) return emptyPanel('Geen activiteit voor deze periode.');
+  if (!transactions.length) return emptyPanel(t('actNone'));
   return `
     <div class="panel">
-      <div class="panel-title">⏰ Drukke tijden</div>
+      <div class="panel-title">${t('actPeakTitle')}</div>
       <div class="grid-3">
-        <div class="mini-card"><div class="ml">Drukste dag</div><div class="mv">${bDay >= 0 ? dayNames[bDay] : '—'}</div><div class="ms">${bDay >= 0 ? dayTotals[bDay] + ' verkopen' : ''}</div></div>
-        <div class="mini-card"><div class="ml">Drukste uur</div><div class="mv">${fmtH(bHour)}</div><div class="ms">${bHour >= 0 ? hourly[bHour] + ' verkopen' : ''}</div></div>
-        <div class="mini-card"><div class="ml">Heetste moment</div><div class="mv" style="color:var(--accent)">${hd >= 0 ? dayNames[hd].slice(0, 2) + ' ' + fmtH(hh) : '—'}</div><div class="ms">${hd >= 0 ? hv + ' in 1 uur' : ''}</div></div>
+        <div class="mini-card"><div class="ml">${t('actBusiestDay')}</div><div class="mv">${bDay >= 0 ? dayNames[bDay] : '—'}</div><div class="ms">${bDay >= 0 ? t('actSalesCount', dayTotals[bDay]) : ''}</div></div>
+        <div class="mini-card"><div class="ml">${t('actBusiestHour')}</div><div class="mv">${fmtH(bHour)}</div><div class="ms">${bHour >= 0 ? t('actSalesCount', hourly[bHour]) : ''}</div></div>
+        <div class="mini-card"><div class="ml">${t('actHottest')}</div><div class="mv" style="color:var(--accent)">${hd >= 0 ? L().dayShort[hd] + ' ' + fmtH(hh) : '—'}</div><div class="ms">${hd >= 0 ? t('actInOneHour', hv) : ''}</div></div>
       </div>
-      <div class="small-note" style="margin-top:12px">Wanneer je klanten echt kopen — handig om bij te vullen vóór de drukte.</div>
+      <div class="small-note" style="margin-top:12px">${t('actPeakNote')}</div>
     </div>
-    <div class="panel"><div class="panel-title">Verkopen per weekdag</div><div class="chart-wrap"><canvas id="weekdayChart"></canvas></div></div>
-    <div class="panel"><div class="panel-title">Verkopen per uur</div><div class="chart-wrap"><canvas id="hourChart"></canvas></div></div>
-    <div class="panel"><div class="panel-title">Dag × uur heatmap</div><div id="heatmap" class="heatmap"></div><div class="small-note" style="margin-top:10px">Donkerder = meer verkopen · hover voor het aantal</div></div>`;
+    <div class="panel"><div class="panel-title">${t('actByWeekday')}</div><div class="chart-wrap"><canvas id="weekdayChart"></canvas></div></div>
+    <div class="panel"><div class="panel-title">${t('actByHour')}</div><div class="chart-wrap"><canvas id="hourChart"></canvas></div></div>
+    <div class="panel"><div class="panel-title">${t('actHeatmap')}</div><div id="heatmap" class="heatmap"></div><div class="small-note" style="margin-top:10px">${t('actHeatNote')}</div></div>`;
 }
 
 /* ============ CUSTOMERS ============ */
@@ -1247,29 +1473,61 @@ function autoTagsFor(o, medianTotal) {
   const tags = []; const now = Date.now();
   const ageDays = (now - new Date(o.first).getTime()) / 86400000;
   const sinceLast = (now - new Date(o.last).getTime()) / 86400000;
-  if (medianTotal > 0 && o.total >= medianTotal * 2.5) tags.push({ t: 'VIP', c: 'amber' });
-  if (o.count >= 5) tags.push({ t: 'stamklant', c: 'green' });
-  if (ageDays <= 7) tags.push({ t: 'nieuw', c: 'blue' });
-  if (o.count >= 3 && sinceLast > 30) tags.push({ t: 'blijft weg', c: 'red' });
-  if (o.count && o.qty / o.count >= 64) tags.push({ t: 'groothandel', c: 'gray' });
+  if (medianTotal > 0 && o.total >= medianTotal * 2.5) tags.push({ t: t('tagVIP'), c: 'amber' });
+  if (o.count >= 5) tags.push({ t: t('tagRegular'), c: 'green' });
+  if (ageDays <= 7) tags.push({ t: t('tagNew'), c: 'blue' });
+  if (o.count >= 3 && sinceLast > 30) tags.push({ t: t('tagGone'), c: 'red' });
+  if (o.count && o.qty / o.count >= 64) tags.push({ t: t('tagWholesale'), c: 'gray' });
   return tags;
 }
 function median(arr) { if (!arr.length) return 0; const s = [...arr].sort((a, b) => a - b); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 
+/* ---- Timezone / region estimate from purchase times ----
+   Times are stored in your local (Amsterdam) clock. Assuming players shop
+   mostly in their own evening (~20:00 local), the circular-mean purchase hour
+   reveals their offset from you, which maps to a rough world region.
+   A guess, not an exact location. */
+function regionForOffset(o) {
+  if (o >= -1.5 && o <= 1.5) return { flag: '🇪🇺', label: t('regEU'), sub: t('regEUsub') };
+  if (o > 1.5 && o <= 4) return { flag: '🌍', label: t('regEEast'), sub: t('regEEastSub') };
+  if (o > 4 && o <= 8.5) return { flag: '🌏', label: t('regAsia'), sub: t('regAsiaSub') };
+  if (o > 8.5 || o <= -10.5) return { flag: '🌏', label: t('regOcea'), sub: t('regOceaSub') };
+  if (o < -1.5 && o >= -4.5) return { flag: '🌍', label: t('regWEur'), sub: t('regWEurSub') };
+  return { flag: '🌎', label: t('regAmer'), sub: t('regAmerSub') };
+}
+function estimateTimezone(txs) {
+  const hours = Array(24).fill(0);
+  txs.forEach(t => hours[new Date(t.time).getHours()]++);
+  const n = txs.length;
+  if (!n) return null;
+  let sx = 0, sy = 0;
+  for (let h = 0; h < 24; h++) { if (!hours[h]) continue; const a = h / 24 * 2 * Math.PI; sx += hours[h] * Math.cos(a); sy += hours[h] * Math.sin(a); }
+  const R = Math.sqrt(sx * sx + sy * sy) / n;          // 0..1 concentration of activity
+  let ang = Math.atan2(sy, sx); if (ang < 0) ang += 2 * Math.PI;
+  const peakAms = ang / (2 * Math.PI) * 24;            // fractional peak hour (your clock)
+  let offset = 20 - peakAms;                            // assume local evening peak ~20:00
+  offset = ((offset % 24) + 24) % 24; if (offset >= 12) offset -= 24;  // normalize to range -12..+12
+  let conf;
+  if (n < 4 || R < 0.25) conf = { label: t('confLow'), cls: 'gray' };
+  else if (n >= 8 && R >= 0.5) conf = { label: t('confFair'), cls: 'green' };
+  else conf = { label: t('confRough'), cls: 'amber' };
+  return { hours, n, R, peakAms, offset, region: regionForOffset(offset), conf };
+}
+function tzOffsetText(offset) {
+  const r = Math.round(offset);
+  if (r === 0) return t('tzSameTime');
+  return r < 0 ? t('tzBehind', -r) : t('tzAhead', r);
+}
+
 function renderCustomers() {
-  if (!transactions.length) return emptyPanel('Geen klant-data voor deze periode.');
+  if (!transactions.length) return emptyPanel(t('emptyNoCustomers'));
   return suspiciousPanel() + `
     <div class="panel">
-      <div class="panel-title">Klanten <span class="count" id="custCount"></span></div>
-      <input class="search" id="custSearch" placeholder="Zoek klant…" oninput="renderCustomerList()" />
+      <div class="panel-title">${t('tabCustomers')} <span class="count" id="custCount"></span></div>
+      <input class="search" id="custSearch" data-i18n-ph="custSearchPh" placeholder="${t('custSearchPh')}" oninput="renderCustomerList()" />
       <div id="custList"></div>
     </div>
-    <div class="panel"><div class="panel-title">Labels</div><div class="small-note">
-      <span class="badge amber">VIP</span> hoge besteder ·
-      <span class="badge green">stamklant</span> 5+ orders ·
-      <span class="badge blue">nieuw</span> eerste week ·
-      <span class="badge red">blijft weg</span> 30+ dagen stil ·
-      <span class="badge gray">groothandel</span> grote orders</div></div>`;
+    <div class="panel"><div class="panel-title">${t('custLabelsTitle')}</div><div class="small-note">${t('custLabelsBody')}</div></div>`;
 }
 function renderCustomerList() {
   const host = document.getElementById('custList'); if (!host) return;
@@ -1281,9 +1539,9 @@ function renderCustomerList() {
   const q = (document.getElementById('custSearch')?.value || '').toLowerCase().trim();
   const shown = q ? arr.filter(a => a.name.toLowerCase().includes(q)) : arr;
   const cnt = document.getElementById('custCount'); if (cnt) cnt.textContent = arr.length;
-  if (!shown.length) { host.innerHTML = `<div class="empty"><p>Geen klanten gevonden.</p></div>`; return; }
+  if (!shown.length) { host.innerHTML = `<div class="empty"><p>${t('custNoneFound')}</p></div>`; return; }
   host.innerHTML = shown.map(o => {
-    const tags = autoTagsFor(o, med).map(t => `<span class="badge ${t.c}">${t.t}</span>`).join(' ');
+    const tags = autoTagsFor(o, med).map(tg => `<span class="badge ${tg.c}">${tg.t}</span>`).join(' ');
     const fav = Object.entries(o.items).sort((a, b) => b[1] - a[1])[0];
     const avg = o.count ? o.total / o.count : 0;
     const share = (o.total / totalRev * 100).toFixed(0);
@@ -1292,8 +1550,8 @@ function renderCustomerList() {
       ${avatarImg(o.name)}
       <div class="main">
         <div class="t1">${rankBadge}${esc(o.name)} ${tags}</div>
-        <div class="t2">${o.count} orders · ${fmtNum(o.qty)} items${fav ? ' · vaakst: ' + esc(fav[0]) : ''}</div>
-        <div class="t2">ø ${fmtMoney(avg)}/order · ${share}% van omzet · laatst ${formatRelativeDate(o.last)}</div>
+        <div class="t2">${t('custRow', o.count, fmtNum(o.qty), fav ? esc(fav[0]) : '')}</div>
+        <div class="t2">${t('custRow2', fmtMoney(avg), share, formatRelativeDate(o.last))}</div>
       </div>
       <div class="amount">${fmtMoney(o.total)}</div>
     </div>`;
@@ -1314,22 +1572,38 @@ function showCustomerProfile(name) {
   const med = median(ranked.map(a => a.total));
   const lifetimeTotal = ranked.reduce((s, o) => s + o.total, 0) || 1;
   const rank = ranked.findIndex(x => x.name === name) + 1;
-  const tags = autoTagsFor(allBy[name], med).map(t => `<span class="badge ${t.c}">${t.t}</span>`).join(' ');
+  const tags = autoTagsFor(allBy[name], med).map(tg => `<span class="badge ${tg.c}">${tg.t}</span>`).join(' ');
   const unlocked = canWrite();
 
   const avgOrder = txs.length ? total / txs.length : 0;
   const share = (total / lifetimeTotal * 100).toFixed(1);
   const daysAsCust = Math.max(1, (new Date(last) - new Date(first)) / 86400000 + 1);
   const perMonth = txs.length > 1 ? (txs.length / (daysAsCust / 30)) : 0;
-  const freqTxt = txs.length === 1 ? '1 order' : (perMonth >= 1 ? perMonth.toFixed(1) + '/maand' : (perMonth * 4.33).toFixed(1) + '/week');
+  const freqTxt = txs.length === 1 ? t('pFreqOrder1') : (perMonth >= 1 ? t('pFreqMonth', perMonth.toFixed(1)) : t('pFreqWeek', (perMonth * 4.33).toFixed(1)));
 
   // favorite shop (by qty)
   const shopQ = {}; txs.forEach(t => { const c = coordsOf(t.shop); shopQ[c] = (shopQ[c] || 0) + t.qty; });
   const favShop = Object.entries(shopQ).sort((a, b) => b[1] - a[1])[0];
 
+  // Region / timezone estimate
+  const tz = estimateTimezone(txs);
+  let tzBlock = '';
+  if (tz && tz.n >= 3) {
+    const maxH = Math.max(...tz.hours);
+    const spark = tz.hours.map((v, h) => `<div class="tzbar${v === maxH && v > 0 ? ' peak' : ''}" style="height:${v ? (3 + v / maxH * 19) : 2}px" title="${String(h).padStart(2, '0')}:00 — ${v}"></div>`).join('');
+    tzBlock = `<div class="divider"></div>
+      <div class="panel-title">${t('tzTitle')} <span class="badge ${tz.conf.cls}">${tz.conf.label}</span></div>
+      <div class="tz-est"><div class="tz-flag">${tz.region.flag}</div><div><div class="tz-region">${tz.region.label}</div><div class="small-note">${tz.region.sub} · ${tzOffsetText(tz.offset)}</div></div></div>
+      <div class="tzspark">${spark}</div>
+      <div class="tzaxis"><span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+      <div class="small-note" style="margin-top:8px">${t('tzCaveat')}</div>`;
+  } else if (tz) {
+    tzBlock = `<div class="divider"></div><div class="panel-title">${t('tzTitle')}</div><div class="small-note">${t('tzTooFew', tz.n)}</div>`;
+  }
+
   // last 6 months spend
   const months = []; const mmap = {}; const d0 = new Date();
-  for (let i = 5; i >= 0; i--) { const d = new Date(d0.getFullYear(), d0.getMonth() - i, 1); const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); months.push({ k, label: d.toLocaleDateString('nl-NL', { month: 'short' }) }); mmap[k] = 0; }
+  for (let i = 5; i >= 0; i--) { const d = new Date(d0.getFullYear(), d0.getMonth() - i, 1); const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); months.push({ k, label: d.toLocaleDateString(dloc(), { month: 'short' }) }); mmap[k] = 0; }
   txs.forEach(t => { const dt = new Date(t.time); const k = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0'); if (k in mmap) mmap[k] += t.net; });
   const hasMonthly = Object.values(mmap).some(v => v > 0);
 
@@ -1340,31 +1614,32 @@ function showCustomerProfile(name) {
   el.className = 'modal-bg open'; el.id = 'profileModal';
   el.onclick = (e) => { if (e.target === el) closeProfile(); };
   el.innerHTML = `<div class="modal">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">${avatarImg(name, 44)}<div><h3 style="margin:0">${esc(name)}</h3><div class="small-note">${tags || 'klant'}${rank ? ' · #' + rank + ' van ' + ranked.length : ''}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">${avatarImg(name, 44)}<div><h3 style="margin:0">${esc(name)}</h3><div class="small-note">${tags || t('pTagClient')}${rank ? ' · ' + t('pRankOf', rank, ranked.length) : ''}</div></div></div>
     <div class="grid-3" style="margin:14px 0 10px">
-      <div class="mini-card"><div class="ml">Besteed</div><div class="mv">${fmtMoney(total)}</div></div>
-      <div class="mini-card"><div class="ml">Orders</div><div class="mv" style="color:var(--text)">${txs.length}</div></div>
-      <div class="mini-card"><div class="ml">Items</div><div class="mv" style="color:var(--blue)">${fmtNum(qty)}</div></div>
+      <div class="mini-card"><div class="ml">${t('pBesteed')}</div><div class="mv">${fmtMoney(total)}</div></div>
+      <div class="mini-card"><div class="ml">${t('pOrders')}</div><div class="mv" style="color:var(--text)">${txs.length}</div></div>
+      <div class="mini-card"><div class="ml">${t('pItems')}</div><div class="mv" style="color:var(--blue)">${fmtNum(qty)}</div></div>
     </div>
     <div class="grid-3" style="margin-bottom:6px">
-      <div class="mini-card"><div class="ml">ø per order</div><div class="mv" style="color:var(--text)">${fmtMoney(avgOrder)}</div></div>
-      <div class="mini-card"><div class="ml">Aandeel omzet</div><div class="mv" style="color:var(--accent)">${share}%</div></div>
-      <div class="mini-card"><div class="ml">Koopt</div><div class="mv" style="color:var(--text)">${freqTxt}</div></div>
+      <div class="mini-card"><div class="ml">${t('pAvgOrder')}</div><div class="mv" style="color:var(--text)">${fmtMoney(avgOrder)}</div></div>
+      <div class="mini-card"><div class="ml">${t('pShare')}</div><div class="mv" style="color:var(--accent)">${share}%</div></div>
+      <div class="mini-card"><div class="ml">${t('pBuys')}</div><div class="mv" style="color:var(--text)">${freqTxt}</div></div>
     </div>
-    <div class="small-note">Klant sinds ${new Date(first).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })} · laatst ${formatRelativeDate(last)}${favShop ? ' · favoriete shop @ ' + esc(favShop[0]) : ''}</div>
-    ${hasMonthly ? `<div class="divider"></div><div class="panel-title">Besteed per maand</div><div class="chart-wrap" style="height:140px"><canvas id="profileChart"></canvas></div>` : ''}
+    <div class="small-note">${t('pCustSince', new Date(first).toLocaleDateString(dloc(), { day: 'numeric', month: 'short', year: 'numeric' }), formatRelativeDate(last), favShop ? esc(favShop[0]) : '')}</div>
+    ${tzBlock}
+    ${hasMonthly ? `<div class="divider"></div><div class="panel-title">${t('pMonthly')}</div><div class="chart-wrap" style="height:140px"><canvas id="profileChart"></canvas></div>` : ''}
     <div class="divider"></div>
-    <div class="panel-title">Items <span class="count">${itemList.length}</span></div>
-    <div style="max-height:180px;overflow-y:auto">${itemsHtml || '<div class="small-note">—</div>'}</div>
+    <div class="panel-title">${t('pItems')} <span class="count">${itemList.length}</span></div>
+    <div class="prof-scroll">${itemsHtml || '<div class="small-note">—</div>'}</div>
     <div class="divider"></div>
-    <div class="panel-title">Notitie</div>
+    <div class="panel-title">${t('pNote')}</div>
     ${unlocked
-      ? `<input type="text" id="custNoteInput" class="search" style="margin-bottom:8px" placeholder="bv. vaste klant, wil korting…" value="${esc(note)}" /><button class="btn primary" onclick="saveCustNote('${jsStr(name)}')">Notitie opslaan</button>`
-      : (note ? `<div class="small-note" style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--border)">${esc(note)}</div>` : '<div class="small-note">Geen notitie. Ontgrendel bovenaan om er een toe te voegen.</div>')}
+      ? `<input type="text" id="custNoteInput" class="search" style="margin-bottom:8px" placeholder="${t('pNotePh')}" value="${esc(note)}" /><button class="btn primary" onclick="saveCustNote('${jsStr(name)}')">${t('pNoteSave')}</button>`
+      : (note ? `<div class="small-note" style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--border)">${esc(note)}</div>` : `<div class="small-note">${t('pNoteLockedEmpty')}</div>`)}
     <div class="divider"></div>
-    <div class="panel-title">Geschiedenis <span class="count">${txs.length}</span></div>
-    <div style="max-height:240px;overflow-y:auto">${histHtml}</div>
-    <div class="modal-actions"><button class="btn" onclick="closeProfile()">Sluiten</button></div>
+    <div class="panel-title">${t('pHistory')} <span class="count">${txs.length}</span></div>
+    <div class="prof-scroll tall">${histHtml}</div>
+    <div class="modal-actions"><button class="btn" onclick="closeProfile()">${t('close')}</button></div>
   </div>`;
   document.body.appendChild(el);
 
@@ -1386,7 +1661,7 @@ function saveCustNote(name) {
   const notes = loadStorage('qs_cust_notes', {});
   if (val) notes[name] = val; else delete notes[name];
   saveStorage('qs_cust_notes', notes); triggerSync();
-  showToast('Notitie opgeslagen', 'green'); closeProfile();
+  showToast(t('pNoteSaved'), 'green'); closeProfile();
 }
 
 /* ============ SUSPICIOUS / NOTABLE ACTIVITY ============ */
@@ -1399,17 +1674,17 @@ function suspiciousPanel() {
   if (!big.length) return '';
   let rows = big.map(t => `<div class="row-item">${avatarImg(t.buyer, 24)}<div class="main"><div class="t1" style="font-size:13px">${esc(t.buyer)} · ${fmtNum(t.qty)}× ${esc(t.item)}</div><div class="t2">${formatRelativeDate(t.time)}</div></div><div class="amount" style="color:var(--accent)">${fmtMoney(t.net)}</div></div>`).join('');
   return `<div class="panel" style="border-color:var(--accent)">
-    <div class="panel-title">⚡ Opvallende orders</div>
-    <div class="small-note" style="margin-bottom:8px">Ongewoon grote aankopen (meer dan ${fmtMoney(threshold)}). Meestal gewoon goede klanten — handig om in de gaten te houden voor je voorraad.</div>
+    <div class="panel-title">${t('suspTitle')}</div>
+    <div class="small-note" style="margin-bottom:8px">${t('suspDesc', fmtMoney(threshold))}</div>
     ${rows}</div>`;
 }
 
 /* ============ RECENT ============ */
 function renderRecent() {
   const recent = [...transactions].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 30);
-  if (!recent.length) return emptyPanel('Geen recente verkopen voor deze periode.');
-  let html = `<div class="panel"><div class="panel-title">Recente verkopen <span class="count">${recent.length}</span></div>`;
-  html += recent.map(t => `<div class="row-item">${itemIcon(t.item)}<div class="main"><div class="t1">${esc(t.buyer)} kocht ${fmtNum(t.qty)}× ${esc(t.item)}</div><div class="t2">${formatRelativeDate(t.time)} · @ ${esc(coordsOf(t.shop))}</div></div><div class="amount">${fmtMoney(t.net)}</div></div>`).join('');
+  if (!recent.length) return emptyPanel(t('recentNone'));
+  let html = `<div class="panel"><div class="panel-title">${t('recentTitle')} <span class="count">${recent.length}</span></div>`;
+  html += recent.map(tx => `<div class="row-item">${itemIcon(tx.item)}<div class="main"><div class="t1">${t('recentBought', esc(tx.buyer), fmtNum(tx.qty), esc(tx.item))}</div><div class="t2">${formatRelativeDate(tx.time)} · @ ${esc(coordsOf(tx.shop))}</div></div><div class="amount">${fmtMoney(tx.net)}</div></div>`).join('');
   html += `</div>`;
   return html;
 }
@@ -1417,16 +1692,16 @@ function renderRecent() {
 /* ============ INSIGHTS (lifetime — analyticsAll) ============ */
 function renderInsights() {
   const host = document.getElementById('insightsContent'); if (!host) return;
-  if (!analyticsAll.length) { host.innerHTML = emptyPanel('Nog geen inzichten — er zijn nog geen klant-verkopen.'); return; }
-  let html = `<div class="panel"><div class="panel-title">🎲 Leuke feitjes <button class="btn ghost fact-shuffle" onclick="fillFacts('funFactsBox',6)">andere 🎲</button></div><div id="funFactsBox"></div></div>`;
+  if (!analyticsAll.length) { host.innerHTML = emptyPanel(t('insNoData')); return; }
+  let html = `<div class="panel"><div class="panel-title">${t('factsTitle')} <button class="btn ghost fact-shuffle" onclick="fillFacts('funFactsBox',6)">${t('factsMore')}</button></div><div id="funFactsBox"></div></div>`;
 
   // 1. Shop comparison
   const byShop = {};
   analyticsAll.forEach(t => { const c = coordsOf(t.shop); (byShop[c] = byShop[c] || { coords: c, net: 0, qty: 0, items: new Set() }); byShop[c].net += t.net; byShop[c].qty += t.qty; byShop[c].items.add(t.item); });
   const shops = Object.values(byShop).sort((a, b) => b.net - a.net);
   const maxShop = Math.max(1, ...shops.map(s => s.net));
-  html += `<div class="panel"><div class="panel-title">Shops vergeleken <span class="count">${shops.length}</span></div>`;
-  html += shops.map(s => `<div class="row-item"><div class="main"><div class="t1" style="font-size:13px">@ ${esc(s.coords)}</div><div class="t2">${fmtNum(s.qty)} items · ${s.items.size} soorten</div><div class="bar-track"><div class="bar-fill green" style="width:${(s.net / maxShop * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(s.net)}</div></div>`).join('');
+  html += `<div class="panel"><div class="panel-title">${t('insShopsTitle')} <span class="count">${shops.length}</span></div>`;
+  html += shops.map(s => `<div class="row-item"><div class="main"><div class="t1" style="font-size:13px">@ ${esc(s.coords)}</div><div class="t2">${t('insShopSub', fmtNum(s.qty), s.items.size)}</div><div class="bar-track"><div class="bar-fill green" style="width:${(s.net / maxShop * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(s.net)}</div></div>`).join('');
   html += `</div>`;
 
   // 2. Basket analysis — often bought together (same buyer, same day)
@@ -1441,7 +1716,7 @@ function renderInsights() {
   });
   const pairs = Object.entries(pairCount).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 6);
   if (pairs.length) {
-    html += `<div class="panel"><div class="panel-title">Vaak samen gekocht</div>`;
+    html += `<div class="panel"><div class="panel-title">${t('insBasket')}</div>`;
     html += pairs.map(([p, n]) => `<div class="row-item"><div class="main"><div class="t1" style="font-size:13px">${esc(p)}</div></div><span class="badge blue">${n}×</span></div>`).join('');
     html += `</div>`;
   }
@@ -1451,10 +1726,10 @@ function renderInsights() {
   const last30 = analyticsAll.filter(t => new Date(t.time).getTime() >= cut30);
   const net30 = sumNet(last30);
   const proj = Math.round(net30); // already a 30-day window
-  html += `<div class="panel"><div class="panel-title">Prognose</div>
+  html += `<div class="panel"><div class="panel-title">${t('insForecast')}</div>
     <div class="grid-2">
-      <div class="mini-card"><div class="ml">Laatste 30 dagen</div><div class="mv">${fmtMoney(net30)}</div><div class="ms">${last30.length} verkopen</div></div>
-      <div class="mini-card"><div class="ml">Verwacht komende 30d</div><div class="mv" style="color:var(--accent)">${fmtMoney(proj)}</div><div class="ms">bij gelijk tempo</div></div>
+      <div class="mini-card"><div class="ml">${t('insLast30')}</div><div class="mv">${fmtMoney(net30)}</div><div class="ms">${t('insLast30Sub', last30.length)}</div></div>
+      <div class="mini-card"><div class="ml">${t('insNext30')}</div><div class="mv" style="color:var(--accent)">${fmtMoney(proj)}</div><div class="ms">${t('insNext30Sub')}</div></div>
     </div></div>`;
 
   // 4. Churn — regulars gone quiet
@@ -1462,8 +1737,24 @@ function renderInsights() {
   const now = Date.now();
   const churn = Object.values(by).filter(o => o.count >= 3 && (now - new Date(o.last).getTime()) / 86400000 > 21).sort((a, b) => b.total - a.total).slice(0, 5);
   if (churn.length) {
-    html += `<div class="panel"><div class="panel-title">Klanten die wegblijven</div><div class="small-note" style="margin-bottom:8px">Vaste klanten die al 3+ weken niets kochten.</div>`;
-    html += churn.map(o => `<div class="row-item clickable" onclick="showCustomerProfile('${jsStr(o.name)}')">${avatarImg(o.name, 24)}<div class="main"><div class="t1" style="font-size:13px">${esc(o.name)}</div><div class="t2">${o.count} orders · laatst ${formatRelativeDate(o.last)}</div></div><div class="amount" style="color:var(--text-dim)">${fmtMoney(o.total)}</div></div>`).join('');
+    html += `<div class="panel"><div class="panel-title">${t('insChurnTitle')}</div><div class="small-note" style="margin-bottom:8px">${t('insChurnDesc')}</div>`;
+    html += churn.map(o => `<div class="row-item clickable" onclick="showCustomerProfile('${jsStr(o.name)}')">${avatarImg(o.name, 24)}<div class="main"><div class="t1" style="font-size:13px">${esc(o.name)}</div><div class="t2">${t('insChurnRow', o.count, formatRelativeDate(o.last))}</div></div><div class="amount" style="color:var(--text-dim)">${fmtMoney(o.total)}</div></div>`).join('');
+    html += `</div>`;
+  }
+
+  // Region distribution (estimated from purchase times)
+  const buyerTx = {}; analyticsAll.forEach(t => (buyerTx[t.buyer] = buyerTx[t.buyer] || []).push(t));
+  const regBuckets = {}; let estimable = 0;
+  Object.keys(buyerTx).forEach(nm => {
+    const tz = estimateTimezone(buyerTx[nm]);
+    if (tz && tz.n >= 3) { estimable++; const b = regBuckets[tz.region.label] = regBuckets[tz.region.label] || { label: tz.region.label, flag: tz.region.flag, n: 0 }; b.n++; }
+  });
+  const regArr = Object.values(regBuckets).sort((a, b) => b.n - a.n);
+  if (regArr.length) {
+    const maxR = Math.max(...regArr.map(r => r.n));
+    html += `<div class="panel"><div class="panel-title">${t('insRegionTitle')} <span class="count">${t('insRegionEstimated')}</span></div>`;
+    html += `<div class="small-note" style="margin-bottom:10px">${t('insRegionDesc', estimable, Object.keys(buyerTx).length)}</div>`;
+    html += regArr.map(r => `<div class="row-item"><div class="tz-flag" style="font-size:22px">${r.flag}</div><div class="main"><div class="t1" style="font-size:13px">${r.label}</div><div class="bar-track"><div class="bar-fill blue" style="width:${(r.n / maxR * 100).toFixed(0)}%"></div></div></div><span class="badge gray">${r.n} · ${Math.round(r.n / estimable * 100)}%</span></div>`).join('');
     html += `</div>`;
   }
 
@@ -1477,11 +1768,11 @@ function renderInsights() {
   const sortedDays = Object.keys(daily).sort();
   let streak = 0, best = 0, prev = null;
   sortedDays.forEach(k => { const d = new Date(k).getTime(); if (prev != null && d - prev === 86400000) streak++; else streak = 1; best = Math.max(best, streak); prev = d; });
-  html += `<div class="panel"><div class="panel-title">🏆 Prestaties</div><div class="grid-2">
-    <div class="mini-card"><div class="ml">Beste dag ooit</div><div class="mv">${bestDay ? fmtMoney(bestDay[1]) : '—'}</div><div class="ms">${bestDay ? new Date(bestDay[0]).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) : ''}</div></div>
-    <div class="mini-card"><div class="ml">Totale omzet</div><div class="mv">${fmtMoney(lifetimeNet)}</div><div class="ms">aller tijden</div></div>
-    <div class="mini-card"><div class="ml">Langste streak</div><div class="mv" style="color:var(--blue)">${best} dag${best === 1 ? '' : 'en'}</div><div class="ms">op rij actief</div></div>
-    <div class="mini-card"><div class="ml">Beste klant</div><div class="mv" style="color:var(--accent)">${topCust ? esc(topCust.name) : '—'}</div><div class="ms">${topCust ? fmtMoney(topCust.total) : ''}</div></div>
+  html += `<div class="panel"><div class="panel-title">${t('insAchTitle')}</div><div class="grid-2">
+    <div class="mini-card"><div class="ml">${t('insBestDay')}</div><div class="mv">${bestDay ? fmtMoney(bestDay[1]) : '—'}</div><div class="ms">${bestDay ? new Date(bestDay[0]).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' }) : ''}</div></div>
+    <div class="mini-card"><div class="ml">${t('insTotalRev')}</div><div class="mv">${fmtMoney(lifetimeNet)}</div><div class="ms">${t('insAllTime')}</div></div>
+    <div class="mini-card"><div class="ml">${t('insLongStreak')}</div><div class="mv" style="color:var(--blue)">${t('insStreakDays', best)}</div><div class="ms">${t('insStreakSub')}</div></div>
+    <div class="mini-card"><div class="ml">${t('insBestCust')}</div><div class="mv" style="color:var(--accent)">${topCust ? esc(topCust.name) : '—'}</div><div class="ms">${topCust ? fmtMoney(topCust.total) : ''}</div></div>
   </div></div>`;
 
   host.innerHTML = html;
@@ -1502,7 +1793,7 @@ function checkMilestones() {
   const seen = loadStorage('qs_milestones_seen', []);
   let hit = null;
   tiers.forEach(tier => { if (lifetimeNet >= tier && !seen.includes(tier)) { hit = tier; seen.push(tier); } });
-  if (hit) { saveStorage('qs_milestones_seen', seen); setTimeout(() => showToast(`🎉 Mijlpaal bereikt: ${fmtMoney(hit)} omzet!`, 'green', 4500), 1200); }
+  if (hit) { saveStorage('qs_milestones_seen', seen); setTimeout(() => showToast(t('milestone', fmtMoney(hit)), 'green', 4500), 1200); }
 }
 
 /* ============ FUN FACTS ============ */
@@ -1526,45 +1817,46 @@ function funFacts() {
   });
   const itemArr = Object.entries(byItem).sort((a, b) => b[1] - a[1]);
   const buyerArr = Object.entries(byBuyer).sort((a, b) => b[1].net - a[1].net);
-  const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
-  const fmtDate = (iso) => new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dayNames = L().dayNamesFull;
+  const FA = L().facts;
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(dloc(), { day: 'numeric', month: 'long', year: 'numeric' });
   const F = [];
 
-  if (itemArr.length) F.push({ i: '📦', h: `Bestseller: <b>${E(itemArr[0][0])}</b> — ${fmtNum(itemArr[0][1])} stuks verkocht.` });
-  if (buyerArr.length) F.push({ i: '👑', h: `Grootste fan: <b>${E(buyerArr[0][0])}</b> besteedde ${fmtMoney(buyerArr[0][1].net)} bij jullie.` });
+  if (itemArr.length) F.push({ i: '📦', h: FA.bestseller(E(itemArr[0][0]), fmtNum(itemArr[0][1])) });
+  if (buyerArr.length) F.push({ i: '👑', h: FA.topFan(E(buyerArr[0][0]), fmtMoney(buyerArr[0][1].net)) });
   const mo = Object.entries(byBuyer).sort((a, b) => b[1].orders - a[1].orders)[0];
-  if (mo && mo[1].orders > 1) F.push({ i: '🔁', h: `<b>${E(mo[0])}</b> kwam ${mo[1].orders} keer langs — trouwste klant.` });
-  if (biggest) F.push({ i: '💰', h: `Grootste order ooit: <b>${fmtNum(biggest.qty)}× ${E(biggest.item)}</b> voor ${fmtMoney(biggest.net)} door ${E(biggest.buyer)}.` });
-  if (totalQty > 0) { const dc = totalQty / 3456; F.push({ i: '🧰', h: `Je verkocht ${fmtNum(totalQty)} items — genoeg voor <b>${dc < 10 ? dc.toFixed(1) : fmtNum(Math.round(dc))} dubbelkisten</b>.` }); }
-  if (totalQty >= 64) F.push({ i: '⛏', h: `Dat zijn ~<b>${fmtNum(Math.round(totalQty / 64))} volle stacks</b>.` });
+  if (mo && mo[1].orders > 1) F.push({ i: '🔁', h: FA.loyal(E(mo[0]), mo[1].orders) });
+  if (biggest) F.push({ i: '💰', h: FA.bigOrder(fmtNum(biggest.qty), E(biggest.item), fmtMoney(biggest.net), E(biggest.buyer)) });
+  if (totalQty > 0) { const dc = totalQty / 3456; F.push({ i: '🧰', h: FA.chests(fmtNum(totalQty), dc < 10 ? dc.toFixed(1) : fmtNum(Math.round(dc))) }); }
+  if (totalQty >= 64) F.push({ i: '⛏', h: FA.stacks(fmtNum(Math.round(totalQty / 64))) });
   const maxH = Math.max(...byHour);
-  if (maxH > 0) F.push({ i: '🕗', h: `Rond <b>${String(byHour.indexOf(maxH)).padStart(2, '0')}:00</b> is het het drukst.` });
-  let qh = 0, qv = Infinity; byHour.forEach((v, h) => { if (v < qv) { qv = v; qh = h; } }); F.push({ i: '😴', h: `Rond <b>${String(qh).padStart(2, '0')}:00</b> koopt bijna niemand.` });
-  if (totalTax > 0) F.push({ i: '🏦', h: `Je droeg al <b>${fmtMoney(totalTax)}</b> belasting af aan de server.` });
-  if (buyerArr.length) F.push({ i: '📊', h: `Een gemiddelde klant besteedt <b>${fmtMoney(totalNet / buyerArr.length)}</b>.` });
-  F.push({ i: '🌱', h: `Je allereerste verkoop: <b>${fmtNum(first.qty)}× ${E(first.item)}</b> aan ${E(first.buyer)} op ${fmtDate(first.time)}.` });
+  if (maxH > 0) F.push({ i: '🕗', h: FA.busyHour(String(byHour.indexOf(maxH)).padStart(2, '0') + ':00') });
+  let qh = 0, qv = Infinity; byHour.forEach((v, h) => { if (v < qv) { qv = v; qh = h; } }); F.push({ i: '😴', h: FA.quietHour(String(qh).padStart(2, '0') + ':00') });
+  if (totalTax > 0) F.push({ i: '🏦', h: FA.tax(fmtMoney(totalTax)) });
+  if (buyerArr.length) F.push({ i: '📊', h: FA.avgCust(fmtMoney(totalNet / buyerArr.length)) });
+  F.push({ i: '🌱', h: FA.firstSale(fmtNum(first.qty), E(first.item), E(first.buyer), fmtDate(first.time)) });
   const bd = Object.entries(daily).sort((a, b) => b[1] - a[1])[0];
-  if (bd) F.push({ i: '🚀', h: `Recordverkoopdag: <b>${fmtMoney(bd[1])}</b> op ${fmtDate(bd[0])}.` });
-  if (buyerArr.length) { const rr = Math.round(Object.values(byBuyer).filter(b => b.orders > 1).length / buyerArr.length * 100); F.push({ i: '❤️', h: `<b>${rr}%</b> van je klanten kwam meer dan eens terug.` }); }
-  F.push({ i: '🧑‍🤝‍🧑', h: `<b>${fmtNum(buyerArr.length)}</b> verschillende klanten kochten bij jullie.` });
-  F.push({ i: '🏪', h: `Jullie runnen <b>${shops.size}</b> shop${shops.size === 1 ? '' : 's'} op de map.` });
+  if (bd) F.push({ i: '🚀', h: FA.recordDay(fmtMoney(bd[1]), fmtDate(bd[0])) });
+  if (buyerArr.length) { const rr = Math.round(Object.values(byBuyer).filter(b => b.orders > 1).length / buyerArr.length * 100); F.push({ i: '❤️', h: FA.repeat(rr) }); }
+  F.push({ i: '🧑‍🤝‍🧑', h: FA.uniqueCust(fmtNum(buyerArr.length)) });
+  F.push({ i: '🏪', h: FA.shopCount(shops.size) });
   const maxD = Math.max(...byDay);
-  if (maxD > 0) F.push({ i: '📅', h: `<b>${dayNames[byDay.indexOf(maxD)]}</b> is jullie topdag.` });
-  if (itemArr.length > 1) { const r = itemArr[itemArr.length - 1]; F.push({ i: '💎', h: `Zeldzaamst verkocht: <b>${E(r[0])}</b> (maar ${fmtNum(r[1])}× gekocht).` }); }
+  if (maxD > 0) F.push({ i: '📅', h: FA.topDay(dayNames[byDay.indexOf(maxD)]) });
+  if (itemArr.length > 1) { const r = itemArr[itemArr.length - 1]; F.push({ i: '💎', h: FA.rarest(E(r[0]), fmtNum(r[1])) }); }
   const loy = Object.entries(byBuyer).filter(([n, b]) => b.orders >= 3 && b.items.size === 1).sort((a, b) => b[1].orders - a[1].orders)[0];
-  if (loy) F.push({ i: '🎯', h: `<b>${E(loy[0])}</b> koopt eigenlijk alleen maar ${E([...loy[1].items][0])}.` });
+  if (loy) F.push({ i: '🎯', h: FA.oneItem(E(loy[0]), E([...loy[1].items][0])) });
   let lover = null; Object.entries(buyerItem).forEach(([n, m]) => Object.entries(m).forEach(([it, q]) => { if (!lover || q > lover.q) lover = { n, it, q }; }));
-  if (lover && lover.q >= 10) F.push({ i: '😍', h: `<b>${E(lover.n)}</b> is dol op ${E(lover.it)} — kocht er ${fmtNum(lover.q)}.` });
+  if (lover && lover.q >= 10) F.push({ i: '😍', h: FA.lover(E(lover.n), E(lover.it), fmtNum(lover.q)) });
   const dys = Object.keys(daily).sort(); let st = 0, best = 0, prev = null;
   dys.forEach(k => { const d = new Date(k).getTime(); if (prev != null && d - prev === 86400000) st++; else st = 1; best = Math.max(best, st); prev = d; });
-  if (best >= 2) F.push({ i: '🔥', h: `Langste reeks: <b>${best} dagen op rij</b> verkopen.` });
+  if (best >= 2) F.push({ i: '🔥', h: FA.streak(best) });
 
   return F;
 }
 function fillFacts(id, n) {
   const host = document.getElementById(id); if (!host) return;
   const facts = funFacts();
-  if (!facts.length) { host.innerHTML = '<div class="small-note">Nog te weinig data voor feitjes — kom terug na een paar verkopen.</div>'; return; }
+  if (!facts.length) { host.innerHTML = `<div class="small-note">${t('factsTooFew')}</div>`; return; }
   for (let i = facts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[facts[i], facts[j]] = [facts[j], facts[i]]; }
   host.innerHTML = facts.slice(0, n).map(f => `<div class="fact"><span class="fi">${f.i}</span><span>${f.h}</span></div>`).join('');
 }
@@ -1588,12 +1880,15 @@ function wireEvents() {
 }
 
 async function init() {
+  // Language (load before anything renders)
+  lang = loadStorage('qs_lang', 'nl');
+  if (lang !== 'nl' && lang !== 'en') lang = 'nl';
   // Theme
   const theme = loadStorage('qs_theme', 'dark');
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀' : '☾';
   wireEvents();
-  updateSyncStatus();
+  applyLanguage();
 
   // Load transaction data (public, no auth needed)
   try {
@@ -1616,7 +1911,7 @@ async function init() {
 
   // Since-last-visit nudge + record this visit
   const since = computeSinceLastVisit();
-  if (since && since.net > 0) setTimeout(() => showToast(`Sinds je laatste bezoek: ${since.count} verkopen · ${fmtMoney(since.net)}`, 'green', 4000), 700);
+  if (since && since.net > 0) setTimeout(() => showToast(t('sinceVisit', since.count, fmtMoney(since.net)), 'green', 4000), 700);
   saveStorage('qs_last_visit', new Date().toISOString());
   checkMilestones();
 
