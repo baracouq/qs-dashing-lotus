@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-14T22:58:16.479Z",
+  "updated": "2026-06-14T23:09:52.300Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -242,7 +242,37 @@
       ],
       "lastBy": "Neph",
       "lastType": "delete"
+    },
+    "Ink Sac@@20036, 75, -17150": {
+      "deletedAt": "2026-06-14T22:58:25.783Z",
+      "history": [
+        {
+          "t": "2026-06-14T22:58:25.783Z",
+          "type": "delete",
+          "qty": 0,
+          "by": "Neph",
+          "note": ""
+        }
+      ],
+      "lastBy": "Neph",
+      "lastType": "delete"
     }
   },
-  "notes": {}
+  "notes": {},
+  "loans": [
+    {
+      "id": "ln_1781478591196_8bjvo",
+      "borrower": "Plant",
+      "item": "Odin's",
+      "qty": 1,
+      "amount": 100000,
+      "start": "2026-06-14T23:09:51.196Z",
+      "days": 7,
+      "returnedAt": null,
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-14T23:09:51.196Z",
+      "del": false
+    }
+  ]
 }
