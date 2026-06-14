@@ -273,6 +273,7 @@
     <button class="tab active" data-tab="overview" data-i18n="tabOverview" onclick="switchTab('overview')">Overzicht</button>
     <button class="tab" data-tab="items" data-i18n="tabItems" onclick="switchTab('items')">Items</button>
     <button class="tab" data-tab="stock" data-i18n="tabStock" onclick="switchTab('stock')">Voorraad</button>
+    <button class="tab" data-tab="loans" data-i18n="tabLoans" onclick="switchTab('loans')">Lenen</button>
     <button class="tab" data-tab="customers" data-i18n="tabCustomers" onclick="switchTab('customers')">Klanten</button>
     <button class="tab" data-tab="activity" data-i18n="tabActivity" onclick="switchTab('activity')">Activiteit</button>
     <button class="tab" data-tab="insights" data-i18n="tabInsights" onclick="switchTab('insights')">Inzichten</button>
@@ -386,6 +387,17 @@ const I18N = {
     mCountTitle: 'Exact tellen', mCountDesc: (i) => `Voer het werkelijke aantal ${i} in dat je geteld hebt.`, mCountOk: 'Opslaan', mCountToast: (i, n) => `${i} op ${n} gezet`,
     delBtn: '🗑 Verwijderen', delTitle: 'Shop verwijderen', delDesc: (i, c) => `Verwijder "${i}" @ ${c} uit het overzicht. De shop komt vanzelf terug zodra er een nieuwe verkoop op draait. Typ \`delete\` om te bevestigen.`, delPh: 'typ: delete', delOk: 'Verwijder', delToast: (i) => `${i} verwijderd uit het overzicht`, delMismatch: 'Typ `delete` (precies zo) om te bevestigen.',
     syncFailed: (m) => 'Sync mislukt: ' + m,
+    tabLoans: 'Lenen', loanAdd: '+ Item uitlenen', loanLockedNote: '🔒 Ontgrendel bovenaan om uitleningen te beheren.',
+    loanNone: 'Nog niets uitgeleend.', loanNoneHint: 'Tik op "+ Item uitlenen" om bij te houden wie iets van jullie leent.',
+    loanActive: 'Actief', loanOut: 'Uitstaand', loanOverdue: 'Te laat',
+    stActive: 'loopt', stOverdue: 'te laat', stReturned: 'terug',
+    loanLentOn: (d) => `uitgeleend ${d}`, loanDue: (d) => `terug vóór ${d}`, loanDaysLeft: (n) => `nog ${n} dag${n === 1 ? '' : 'en'}`, loanOverdueBy: (n) => `${n} dag${n === 1 ? '' : 'en'} te laat`, loanReturnedOn: (d) => `terug op ${d}`,
+    loanReturn: '✓ Terug', loanReopen: 'Heropen',
+    loanModalTitle: 'Item uitlenen', loanModalDesc: 'Leg vast wie wat leent, tegen welk bedrag en voor hoelang.',
+    loanFBorrower: 'Wie leent het?', loanFBorrowerPh: 'naam van de lener', loanFItem: 'Welk item?', loanFItemPh: 'bv. Netherite Pickaxe', loanFQty: 'Aantal', loanFAmount: 'Bedrag ($)', loanFDays: 'Duur (dagen)', loanFNote: 'Notitie (optioneel)', loanFNotePh: 'bv. als onderpand, vriendendienst…', loanFSave: 'Uitlenen',
+    loanErrBorrower: 'Vul de naam van de lener in.', loanErrItem: 'Vul een item in.', loanErrQty: 'Vul een geldig aantal in.', loanErrDays: 'Vul een geldige duur in (dagen).',
+    loanAddedToast: (i, b) => `${i} uitgeleend aan ${b}`, loanReturnedToast: (i) => `${i} gemarkeerd als terug`, loanDeletedToast: 'Uitlening verwijderd',
+    loanDelTitle: 'Uitlening verwijderen', loanDelDesc: (i, b) => `Verwijder de uitlening van ${i} aan ${b}?`, loanDelOk: 'Verwijder',
     custSearchPh: 'Zoek klant…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> hoge besteder · <span class="badge green">stamklant</span> 5+ orders · <span class="badge blue">nieuw</span> eerste week · <span class="badge red">blijft weg</span> 30+ dagen stil · <span class="badge gray">groothandel</span> grote orders',
     tagVIP: 'VIP', tagRegular: 'stamklant', tagNew: 'nieuw', tagGone: 'blijft weg', tagWholesale: 'groothandel',
@@ -470,6 +482,17 @@ const I18N = {
     mCountTitle: 'Count exact', mCountDesc: (i) => `Enter the actual ${i} count you measured.`, mCountOk: 'Save', mCountToast: (i, n) => `${i} set to ${n}`,
     delBtn: '🗑 Delete', delTitle: 'Delete shop', delDesc: (i, c) => `Remove "${i}" @ ${c} from the overview. The shop comes back automatically once a new sale runs on it. Type \`delete\` to confirm.`, delPh: 'type: delete', delOk: 'Delete', delToast: (i) => `${i} removed from the overview`, delMismatch: 'Type `delete` (exactly) to confirm.',
     syncFailed: (m) => 'Sync failed: ' + m,
+    tabLoans: 'Loans', loanAdd: '+ Lend an item', loanLockedNote: '🔒 Unlock at the top to manage loans.',
+    loanNone: 'Nothing lent out yet.', loanNoneHint: 'Tap "+ Lend an item" to track who borrows from you.',
+    loanActive: 'Active', loanOut: 'Out on loan', loanOverdue: 'Overdue',
+    stActive: 'active', stOverdue: 'overdue', stReturned: 'returned',
+    loanLentOn: (d) => `lent ${d}`, loanDue: (d) => `due ${d}`, loanDaysLeft: (n) => `${n} day${n === 1 ? '' : 's'} left`, loanOverdueBy: (n) => `${n} day${n === 1 ? '' : 's'} overdue`, loanReturnedOn: (d) => `returned ${d}`,
+    loanReturn: '✓ Returned', loanReopen: 'Reopen',
+    loanModalTitle: 'Lend an item', loanModalDesc: 'Record who borrows what, for what amount and how long.',
+    loanFBorrower: 'Who is borrowing?', loanFBorrowerPh: 'borrower name', loanFItem: 'Which item?', loanFItemPh: 'e.g. Netherite Pickaxe', loanFQty: 'Quantity', loanFAmount: 'Amount ($)', loanFDays: 'Duration (days)', loanFNote: 'Note (optional)', loanFNotePh: 'e.g. as deposit, favor for a friend…', loanFSave: 'Lend',
+    loanErrBorrower: 'Enter the borrower name.', loanErrItem: 'Enter an item.', loanErrQty: 'Enter a valid quantity.', loanErrDays: 'Enter a valid duration (days).',
+    loanAddedToast: (i, b) => `Lent ${i} to ${b}`, loanReturnedToast: (i) => `${i} marked as returned`, loanDeletedToast: 'Loan removed',
+    loanDelTitle: 'Delete loan', loanDelDesc: (i, b) => `Delete the loan of ${i} to ${b}?`, loanDelOk: 'Delete',
     custSearchPh: 'Search customer…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> high spender · <span class="badge green">regular</span> 5+ orders · <span class="badge blue">new</span> first week · <span class="badge red">churning</span> 30+ days quiet · <span class="badge gray">wholesale</span> large orders',
     tagVIP: 'VIP', tagRegular: 'regular', tagNew: 'new', tagGone: 'churning', tagWholesale: 'wholesale',
@@ -898,6 +921,9 @@ function getStockData() { return loadStorage('qs_stock_data', {}); }
 function saveStockData(all) { saveStorage('qs_stock_data', all); }
 function setStockEntry(key, entry) { const all = getStockData(); all[key] = entry; saveStockData(all); triggerSync(); }
 
+function getLoans() { const l = loadStorage('qs_loans', []); return Array.isArray(l) ? l : []; }
+function saveLoans(l) { saveStorage('qs_loans', l); }
+
 /* Re-key entries stored under old full-shop keys to coordinate keys. Idempotent. */
 function migrateStockKeys() {
   const all = getStockData();
@@ -1051,12 +1077,22 @@ function deleteShop(key, combo) {
 
 /* ============ STATE SYNC (qs_state.json) ============ */
 function gatherState() {
-  return { v: 2, updated: new Date().toISOString(), stock: getStockData(), notes: loadStorage('qs_cust_notes', {}) };
+  return { v: 2, updated: new Date().toISOString(), stock: getStockData(), notes: loadStorage('qs_cust_notes', {}), loans: getLoans() };
 }
 function applyState(state) {
   if (!state) return;
   if (state.stock && Object.keys(state.stock).length) saveStockData(state.stock);
   if (state.notes && Object.keys(state.notes).length) saveStorage('qs_cust_notes', state.notes);
+  if (Array.isArray(state.loans)) saveLoans(state.loans);
+}
+function mergeLoans(a, b) {
+  const byId = {};
+  [...(a || []), ...(b || [])].forEach(l => {
+    if (!l || !l.id) return;
+    const prev = byId[l.id];
+    if (!prev || new Date(l.mod || 0).getTime() >= new Date(prev.mod || 0).getTime()) byId[l.id] = l;
+  });
+  return Object.values(byId);
 }
 function mergeStates(remote, local) {
   remote = remote || {}; local = local || {};
@@ -1078,7 +1114,8 @@ function mergeStates(remote, local) {
     } else stock[k] = a || b;
   });
   const notes = { ...(remote.notes || {}), ...(local.notes || {}) };
-  return { v: 2, updated: new Date().toISOString(), stock, notes };
+  const loans = mergeLoans(remote.loans, local.loans);
+  return { v: 2, updated: new Date().toISOString(), stock, notes, loans };
 }
 
 async function pullState(authenticated) {
@@ -1124,10 +1161,12 @@ function startSharedPolling() {
     if (document.hidden || syncInFlight) return;
     try {
       const before = JSON.stringify(getStockData());
+      const beforeLoans = JSON.stringify(getLoans());
       const remote = await pullState(canWrite());
       if (remote) { applyState(mergeStates(remote, gatherState())); migrateStockKeys(); }
       const after = JSON.stringify(getStockData());
       if (before !== after) { if (activeTab === 'stock') renderStock(); updateStockBadge(); }
+      if (beforeLoans !== JSON.stringify(getLoans())) { if (activeTab === 'loans') renderLoans(); updateLoanBadge(); }
       updateSyncStatus();
     } catch (e) {}
   }, 45000);
@@ -1214,17 +1253,20 @@ function render() {
     tabDiv('overview', renderOverview()) +
     tabDiv('items', renderItems()) +
     tabDiv('stock', stockShell()) +
+    tabDiv('loans', `<div id="loansContent"></div>`) +
     tabDiv('customers', renderCustomers()) +
     tabDiv('activity', activityShell()) +
     tabDiv('insights', `<div id="insightsContent"></div>`) +
     tabDiv('recent', renderRecent());
   renderStock();
+  renderLoans();
   renderCustomerList();
   buildCharts();
   renderInsights();
   fillFacts('ovFact', 1);
   fillFacts('funFactsBox', 6);
   updateStockBadge();
+  updateLoanBadge();
 }
 function tabDiv(name, html) {
   return `<div class="tab-content ${activeTab === name ? 'active' : ''}" data-tab="${name}">${html}</div>`;
@@ -1426,7 +1468,181 @@ function updateStockBadge() {
   else if (pip) pip.remove();
 }
 
-/* ============ CHARTS ============ */
+/* ============ LOANS (uitleen) ============ */
+function loanDueMs(loan) { return new Date(loan.start).getTime() + (Number(loan.days) || 0) * 86400000; }
+function loanStatus(loan) {
+  if (loan.returnedAt) return 'returned';
+  return Date.now() > loanDueMs(loan) ? 'overdue' : 'active';
+}
+function activeLoans() { return getLoans().filter(l => l && !l.del); }
+
+function openLoanModal() {
+  if (!ensureUnlocked()) return;
+  const existing = document.getElementById('loanModal'); if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'modal-bg open'; el.id = 'loanModal';
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  el.innerHTML = `<div class="modal">
+    <h3>${t('loanModalTitle')}</h3>
+    <div class="desc">${t('loanModalDesc')}</div>
+    <label>${t('loanFBorrower')}</label>
+    <input type="text" id="loanBorrower" placeholder="${t('loanFBorrowerPh')}" />
+    <label>${t('loanFItem')}</label>
+    <input type="text" id="loanItem" placeholder="${t('loanFItemPh')}" />
+    <div class="grid-2">
+      <div><label>${t('loanFQty')}</label><input type="number" id="loanQty" inputmode="numeric" value="1" min="1" /></div>
+      <div><label>${t('loanFAmount')}</label><input type="number" id="loanAmount" inputmode="decimal" value="0" min="0" /></div>
+    </div>
+    <label>${t('loanFDays')}</label>
+    <input type="number" id="loanDays" inputmode="numeric" value="7" min="1" />
+    <label>${t('loanFNote')}</label>
+    <input type="text" id="loanNote" placeholder="${t('loanFNotePh')}" />
+    <div class="err" id="loanErr"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('loanModal').remove()">${t('cancel')}</button>
+      <button class="btn primary" id="loanOk">${t('loanFSave')}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  const submit = () => {
+    const borrower = document.getElementById('loanBorrower').value.trim();
+    const item = document.getElementById('loanItem').value.trim();
+    const qty = parseInt(document.getElementById('loanQty').value, 10);
+    const amount = parseFloat(document.getElementById('loanAmount').value);
+    const days = parseInt(document.getElementById('loanDays').value, 10);
+    const note = document.getElementById('loanNote').value.trim();
+    const err = document.getElementById('loanErr'); err.textContent = '';
+    if (!borrower) { err.textContent = t('loanErrBorrower'); return; }
+    if (!item) { err.textContent = t('loanErrItem'); return; }
+    if (isNaN(qty) || qty < 1) { err.textContent = t('loanErrQty'); return; }
+    if (isNaN(days) || days < 1) { err.textContent = t('loanErrDays'); return; }
+    const now = new Date().toISOString();
+    const loan = { id: 'ln_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), borrower, item, qty, amount: isNaN(amount) || amount < 0 ? 0 : amount, start: now, days, returnedAt: null, note, by: ensureUserName(), mod: now, del: false };
+    const all = getLoans(); all.push(loan); saveLoans(all); triggerSync();
+    el.remove();
+    showToast(t('loanAddedToast', item, borrower), 'green');
+    renderLoans(); updateLoanBadge();
+  };
+  document.getElementById('loanOk').addEventListener('click', submit);
+  setTimeout(() => { const f = document.getElementById('loanBorrower'); if (f) f.focus(); }, 50);
+}
+function _updateLoan(id, changes) {
+  const all = getLoans();
+  const i = all.findIndex(l => l.id === id); if (i === -1) return;
+  all[i] = { ...all[i], ...changes, mod: new Date().toISOString() };
+  saveLoans(all); triggerSync();
+}
+function markLoanReturned(id) {
+  if (!ensureUnlocked()) return;
+  _updateLoan(id, { returnedAt: new Date().toISOString() });
+  const loan = getLoans().find(l => l.id === id);
+  showToast(t('loanReturnedToast', loan ? loan.item : ''), 'green');
+  renderLoans(); updateLoanBadge();
+}
+function reopenLoan(id) {
+  if (!ensureUnlocked()) return;
+  _updateLoan(id, { returnedAt: null });
+  renderLoans(); updateLoanBadge();
+}
+function deleteLoan(id) {
+  if (!ensureUnlocked()) return;
+  const loan = getLoans().find(l => l.id === id); if (!loan) return;
+  openConfirm({
+    title: t('loanDelTitle'), desc: t('loanDelDesc', esc(loan.item), esc(loan.borrower)), okLabel: t('loanDelOk'), danger: true,
+    onOk: () => { _updateLoan(id, { del: true }); showToast(t('loanDeletedToast'), 'green'); renderLoans(); updateLoanBadge(); }
+  });
+}
+function updateLoanBadge() {
+  const overdue = activeLoans().filter(l => loanStatus(l) === 'overdue').length;
+  const tab = document.querySelector('.tab[data-tab="loans"]');
+  if (!tab) return;
+  let pip = tab.querySelector('.pip');
+  if (overdue > 0) { if (!pip) { pip = document.createElement('span'); pip.className = 'pip'; tab.appendChild(pip); } pip.textContent = overdue; }
+  else if (pip) pip.remove();
+}
+
+function renderLoans() {
+  const unlocked = canWrite();
+  const loans = activeLoans();
+  const rank = { overdue: 0, active: 1, returned: 2 };
+  const withStatus = loans.map(l => ({ l, s: loanStatus(l) }));
+  withStatus.sort((a, b) => {
+    if (rank[a.s] !== rank[b.s]) return rank[a.s] - rank[b.s];
+    if (a.s === 'returned') return new Date(b.l.returnedAt) - new Date(a.l.returnedAt);
+    return loanDueMs(a.l) - loanDueMs(b.l);
+  });
+  const out = withStatus.filter(x => x.s !== 'returned').reduce((s, x) => s + (Number(x.l.amount) || 0), 0);
+  const activeCount = withStatus.filter(x => x.s !== 'returned').length;
+  const overdueCount = withStatus.filter(x => x.s === 'overdue').length;
+
+  let html = `<div class="panel">
+    <div class="panel-title">${t('tabLoans')} <span class="count">${loans.length}</span></div>
+    ${unlocked ? `<button class="btn primary" style="margin-bottom:12px;width:100%" onclick="openLoanModal()">${t('loanAdd')}</button>` : `<div class="locked-note">${t('loanLockedNote')}</div>`}
+    <div class="grid-3">
+      <div class="mini-card"><div class="ml">${t('loanActive')}</div><div class="mv">${activeCount}</div></div>
+      <div class="mini-card"><div class="ml">${t('loanOut')}</div><div class="mv" style="color:var(--accent)">${fmtMoney(out)}</div></div>
+      <div class="mini-card"><div class="ml">${t('loanOverdue')}</div><div class="mv" style="color:${overdueCount ? 'var(--red)' : 'var(--text)'}">${overdueCount}</div></div>
+    </div>
+  </div>`;
+
+  if (!loans.length) {
+    html += `<div class="panel"><div class="empty"><div class="art">[ 🤝 ]</div><p>${t('loanNone')}</p><p class="hint">${t('loanNoneHint')}</p></div></div>`;
+    document.getElementById('loansContent').innerHTML = html;
+    return;
+  }
+
+  const badgeFor = { overdue: 'red', active: 'green', returned: 'gray' };
+  const labelFor = { overdue: t('stOverdue'), active: t('stActive'), returned: t('stReturned') };
+  html += `<div class="panel">`;
+  html += withStatus.map(({ l, s }) => {
+    const dueStr = new Date(loanDueMs(l)).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' });
+    const startStr = new Date(l.start).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' });
+    let timeTxt;
+    if (s === 'returned') timeTxt = t('loanReturnedOn', new Date(l.returnedAt).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' }));
+    else {
+      const d = Math.ceil((loanDueMs(l) - Date.now()) / 86400000);
+      timeTxt = d >= 0 ? t('loanDaysLeft', d) : t('loanOverdueBy', -d);
+    }
+    const amountTxt = (Number(l.amount) || 0) > 0 ? `<span class="badge amber">${fmtMoney(l.amount)}</span>` : '';
+    const noteTxt = l.note ? `<div class="t2" style="opacity:.85">📝 ${esc(l.note)}</div>` : '';
+    const dim = s === 'returned' ? 'opacity:.6;' : '';
+    return `<div class="row-item" style="align-items:flex-start;${dim}">
+      ${avatarImg(l.borrower, 30)}
+      <div class="main">
+        <div class="t1">${esc(l.borrower)} <span class="badge ${badgeFor[s]}">${labelFor[s]}</span> ${amountTxt}</div>
+        <div class="t2">${itemIcon(l.item, 18)} ${fmtNum(l.qty)}× ${esc(l.item)}</div>
+        <div class="t2">${t('loanLentOn', startStr)} · ${t('loanDue', dueStr)} · ${timeTxt}${l.by ? ' · ' + esc(l.by) : ''}</div>
+        ${noteTxt}
+        ${unlocked ? `<div class="stock-actions">
+          ${s === 'returned'
+            ? `<button class="btn" onclick="reopenLoan('${jsStr(l.id)}')">${t('loanReopen')}</button>`
+            : `<button class="btn primary" onclick="markLoanReturned('${jsStr(l.id)}')">${t('loanReturn')}</button>`}
+          <button class="btn del-btn" style="width:auto;margin-top:0" onclick="deleteLoan('${jsStr(l.id)}')">${t('delBtn')}</button>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  html += `</div>`;
+  document.getElementById('loansContent').innerHTML = html;
+}
+
+/* generic yes/no confirm modal */
+function openConfirm(opts) {
+  const existing = document.getElementById('confirmModal'); if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'modal-bg open'; el.id = 'confirmModal';
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  el.innerHTML = `<div class="modal">
+    <h3>${opts.title || ''}</h3>
+    <div class="desc">${opts.desc || ''}</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('confirmModal').remove()">${t('cancel')}</button>
+      <button class="btn primary${opts.danger ? ' danger' : ''}" id="confirmOk">${opts.okLabel || 'OK'}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  document.getElementById('confirmOk').addEventListener('click', () => { el.remove(); if (opts.onOk) opts.onOk(); });
+}
 function buildCharts() {
   Object.values(charts).forEach(c => c && c.destroy && c.destroy());
   charts = {};
@@ -1936,7 +2152,7 @@ function wireEvents() {
   });
   // Escape closes any open modal
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal' || m.id === 'unlockModal') ? m.remove() : m.classList.remove('open')); }
+    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal' || m.id === 'unlockModal' || m.id === 'loanModal' || m.id === 'confirmModal') ? m.remove() : m.classList.remove('open')); }
   });
   // Scroll-to-top
   window.addEventListener('scroll', () => { document.getElementById('toTop').classList.toggle('show', window.scrollY > 600); }, { passive: true });
