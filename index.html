@@ -19,6 +19,7 @@
     --shadow: 0 4px 24px rgba(0,0,0,0.4);
     --mono: 'JetBrains Mono', ui-monospace, monospace;
     --display: 'VT323', 'JetBrains Mono', monospace;
+    color-scheme: dark;
   }
   [data-theme="light"] {
     --bg: #f4f1ea; --bg-panel: #ffffff; --bg-panel-2: #f0ece2;
@@ -28,6 +29,7 @@
     --amber-soft: rgba(201,149,42,0.14); --green-soft: rgba(58,157,74,0.14);
     --blue-soft: rgba(47,95,208,0.12); --red-soft: rgba(214,69,69,0.12);
     --shadow: 0 4px 20px rgba(0,0,0,0.1);
+    color-scheme: light;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
@@ -41,8 +43,9 @@
   .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
   .brand .logo { font-family: var(--display); font-size: 42px; line-height: .9; letter-spacing: 1px; color: var(--text); }
   .brand .logo .dot { color: var(--accent-2); }
-  .brand .logo .cursor { color: var(--accent-2); animation: blink 1.1s steps(1) infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
+  .brand .logo .chev { color: var(--accent-2); margin-right: 6px; }
+  .brand .prompt .caret { display: inline-block; width: 6px; height: 0.95em; background: var(--text-faint); vertical-align: -1px; margin-left: 3px; opacity: 0.55; border-radius: 1px; animation: blink 1.4s ease-in-out infinite; }
+  @keyframes blink { 0%, 100% { opacity: 0.55; } 50% { opacity: 0.1; } }
   .brand .prompt { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
   .brand .prompt .path { color: var(--blue); }
 
@@ -63,7 +66,8 @@
   .sync.readonly .led { background: var(--blue); }
   .sync.error .led { background: var(--red); }
 
-  .filters { display: flex; gap: 4px; }
+  .filters { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .filters::-webkit-scrollbar { display: none; }
   .filter-btn {
     background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim);
     border-radius: 8px; padding: 6px 10px; font-family: var(--mono); font-size: 11px;
@@ -191,6 +195,12 @@
   .mini-card .mv { font-size: 16px; font-weight: 600; color: var(--accent-2); margin-top: 4px; }
   .mini-card .ms { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
 
+  .fact { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; font-size: 13px; line-height: 1.45; color: var(--text-dim); }
+  .fact:last-child { margin-bottom: 0; }
+  .fact .fi { font-size: 18px; line-height: 1.2; flex-shrink: 0; }
+  .fact b { color: var(--accent); font-weight: 600; }
+  .fact-shuffle { margin-left: auto; flex: 0 0 auto !important; padding: 5px 10px !important; font-size: 11px !important; }
+
   @media (min-width: 768px) {
     body { padding: 26px 30px 80px; }
     .container { max-width: 920px; }
@@ -207,8 +217,8 @@
 <div class="container">
   <div class="topbar">
     <div class="brand">
-      <div class="logo">QS<span class="dot">·</span>INSIGHTS<span class="cursor">█</span></div>
-      <div class="prompt"><span class="path">~/blossomcraft/lotus</span> $ shop --analytics</div>
+      <div class="logo"><span class="chev">&gt;</span>QS<span class="dot">·</span>INSIGHTS</div>
+      <div class="prompt"><span class="path">~/blossomcraft/lotus</span> $ shop --analytics<span class="caret"></span></div>
     </div>
     <div class="actions">
       <button class="icon-btn" id="lockBtn" onclick="toggleEditLock()">🔒 Bekijken</button>
@@ -221,9 +231,11 @@
     <div class="sync readonly" id="sync"><span class="led"></span><span id="syncText">verbinden…</span></div>
     <div class="filters">
       <button class="filter-btn active" data-range="all" onclick="setDateFilter('all')">Alles</button>
-      <button class="filter-btn" data-range="30d" onclick="setDateFilter('30d')">30d</button>
+      <button class="filter-btn" data-range="1d" onclick="setDateFilter('1d')">Vandaag</button>
       <button class="filter-btn" data-range="7d" onclick="setDateFilter('7d')">7d</button>
-      <button class="filter-btn" data-range="month" onclick="setDateFilter('month')">Maand</button>
+      <button class="filter-btn" data-range="30d" onclick="setDateFilter('30d')">30d</button>
+      <button class="filter-btn" data-range="90d" onclick="setDateFilter('90d')">90d</button>
+      <button class="filter-btn" data-range="custom" onclick="openCustomRange()">Aangepast</button>
     </div>
   </div>
 
@@ -291,6 +303,7 @@ let transactions = [];      // analyticsAll after the active date filter
 let charts = {};
 let activeTab = 'overview';
 let dateFilter = 'all';
+let customFrom = null, customTo = null;
 let sinceLastVisit = null;
 let pollTimer = null;
 let syncInFlight = false;
@@ -845,10 +858,15 @@ function updateSyncStatus(state) {
 /* ============ DATE FILTER ============ */
 function applyDateFilter(txs) {
   if (dateFilter === 'all') return txs;
+  if (dateFilter === 'custom') {
+    if (!customFrom || !customTo) return txs;
+    return txs.filter(t => { const x = new Date(t.time).getTime(); return x >= customFrom && x <= customTo; });
+  }
   const now = new Date(); let cutoff;
-  if (dateFilter === '7d') cutoff = now.getTime() - 7 * 86400000;
+  if (dateFilter === '1d') cutoff = startOfDay(now);
+  else if (dateFilter === '7d') cutoff = now.getTime() - 7 * 86400000;
   else if (dateFilter === '30d') cutoff = now.getTime() - 30 * 86400000;
-  else if (dateFilter === 'month') cutoff = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  else if (dateFilter === '90d') cutoff = now.getTime() - 90 * 86400000;
   else return txs;
   return txs.filter(t => new Date(t.time).getTime() >= cutoff);
 }
@@ -856,6 +874,44 @@ function setDateFilter(f) {
   dateFilter = f;
   transactions = applyDateFilter(analyticsAll);
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.range === f));
+  render();
+}
+function openCustomRange() {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  let fromDefault = customFrom ? new Date(customFrom).toISOString().slice(0, 10) : null;
+  if (!fromDefault) {
+    const earliest = analyticsAll.length ? analyticsAll.reduce((m, t) => new Date(t.time) < new Date(m) ? t.time : m, analyticsAll[0].time) : null;
+    fromDefault = earliest ? new Date(earliest).toISOString().slice(0, 10) : todayStr;
+  }
+  const toDefault = customTo ? new Date(customTo).toISOString().slice(0, 10) : todayStr;
+  const el = document.createElement('div');
+  el.className = 'modal-bg open'; el.id = 'rangeModal';
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  el.innerHTML = `<div class="modal">
+    <h3>Aangepaste periode</h3>
+    <div class="desc">Kies een begin- en einddatum. Alle analyses (niet de voorraad) gebruiken dan dit bereik.</div>
+    <label>Van</label><input type="date" id="rangeFrom" value="${fromDefault}" max="${todayStr}" />
+    <label>Tot</label><input type="date" id="rangeTo" value="${toDefault}" max="${todayStr}" />
+    <div class="err" id="rangeErr"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('rangeModal').remove()">Annuleer</button>
+      <button class="btn primary" onclick="applyCustomRange()">Toepassen</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+}
+function applyCustomRange() {
+  const f = document.getElementById('rangeFrom').value;
+  const t = document.getElementById('rangeTo').value;
+  const err = document.getElementById('rangeErr');
+  if (!f || !t) { err.textContent = 'Kies beide datums.'; return; }
+  const from = new Date(f + 'T00:00:00').getTime();
+  const to = new Date(t + 'T23:59:59').getTime();
+  if (from > to) { err.textContent = 'De begindatum ligt na de einddatum.'; return; }
+  customFrom = from; customTo = to; dateFilter = 'custom';
+  transactions = applyDateFilter(analyticsAll);
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.range === 'custom'));
+  const m = document.getElementById('rangeModal'); if (m) m.remove();
   render();
 }
 
@@ -878,6 +934,8 @@ function render() {
   renderCustomerList();
   buildCharts();
   renderInsights();
+  fillFacts('ovFact', 1);
+  fillFacts('funFactsBox', 6);
   updateStockBadge();
 }
 function tabDiv(name, html) {
@@ -914,7 +972,9 @@ function renderOverview() {
   const twNet = sumNet(twTx), lwNet = sumNet(lwTx);
   const wowPct = lwNet > 0 ? Math.round((twNet - lwNet) / lwNet * 100) : (twNet > 0 ? 100 : 0);
 
-  const periodLabel = { all: 'totaal', '30d': '30 dagen', '7d': '7 dagen', month: 'deze maand' }[dateFilter];
+  const periodLabel = (dateFilter === 'custom' && customFrom && customTo)
+    ? new Date(customFrom).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) + ' – ' + new Date(customTo).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+    : ({ all: 'totaal', '1d': 'vandaag', '7d': '7 dagen', '30d': '30 dagen', '90d': '90 dagen' }[dateFilter]);
 
   let html = `
     <div class="hero">
@@ -955,6 +1015,7 @@ function renderOverview() {
     html += `<div class="row-item">${itemIcon(it.item)}<div class="main"><div class="t1">${esc(it.item)}</div><div class="bar-track"><div class="bar-fill green" style="width:${(it.net / maxNet * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(it.net)}</div></div>`;
   });
   html += `</div>`;
+  html += `<div class="panel"><div class="panel-title">🎲 Wist je dat… <button class="btn ghost fact-shuffle" onclick="fillFacts('ovFact',1)">nog een 🎲</button></div><div id="ovFact"></div></div>`;
   return html;
 }
 
@@ -1215,48 +1276,86 @@ function renderCustomerList() {
   const by = customerStats(transactions);
   const arr = Object.values(by).sort((a, b) => b.total - a.total);
   const med = median(arr.map(a => a.total));
+  const totalRev = arr.reduce((s, o) => s + o.total, 0) || 1;
+  arr.forEach((o, i) => { o._rank = i + 1; });
   const q = (document.getElementById('custSearch')?.value || '').toLowerCase().trim();
   const shown = q ? arr.filter(a => a.name.toLowerCase().includes(q)) : arr;
   const cnt = document.getElementById('custCount'); if (cnt) cnt.textContent = arr.length;
   if (!shown.length) { host.innerHTML = `<div class="empty"><p>Geen klanten gevonden.</p></div>`; return; }
   host.innerHTML = shown.map(o => {
     const tags = autoTagsFor(o, med).map(t => `<span class="badge ${t.c}">${t.t}</span>`).join(' ');
+    const fav = Object.entries(o.items).sort((a, b) => b[1] - a[1])[0];
+    const avg = o.count ? o.total / o.count : 0;
+    const share = (o.total / totalRev * 100).toFixed(0);
+    const rankBadge = o._rank <= 3 ? `<span class="badge amber">#${o._rank}</span> ` : '';
     return `<div class="row-item clickable" onclick="showCustomerProfile('${jsStr(o.name)}')">
       ${avatarImg(o.name)}
-      <div class="main"><div class="t1">${esc(o.name)} ${tags}</div><div class="t2">${o.count} orders · ${fmtNum(o.qty)} items · laatst ${formatRelativeDate(o.last)}</div></div>
+      <div class="main">
+        <div class="t1">${rankBadge}${esc(o.name)} ${tags}</div>
+        <div class="t2">${o.count} orders · ${fmtNum(o.qty)} items${fav ? ' · vaakst: ' + esc(fav[0]) : ''}</div>
+        <div class="t2">ø ${fmtMoney(avg)}/order · ${share}% van omzet · laatst ${formatRelativeDate(o.last)}</div>
+      </div>
       <div class="amount">${fmtMoney(o.total)}</div>
     </div>`;
   }).join('');
 }
 
+let _profileChart = null;
 function showCustomerProfile(name) {
   const txs = analyticsAll.filter(t => t.buyer === name).sort((a, b) => new Date(b.time) - new Date(a.time));
   if (!txs.length) return;
   const total = sumNet(txs), qty = txs.reduce((s, t) => s + t.qty, 0);
   const items = {}; txs.forEach(t => items[t.item] = (items[t.item] || 0) + t.qty);
-  const topItems = Object.entries(items).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const itemList = Object.entries(items).sort((a, b) => b[1] - a[1]);
   const first = txs[txs.length - 1].time, last = txs[0].time;
   const notes = loadStorage('qs_cust_notes', {}); const note = notes[name] || '';
-  const allBy = customerStats(analyticsAll); const med = median(Object.values(allBy).map(a => a.total));
+  const allBy = customerStats(analyticsAll);
+  const ranked = Object.values(allBy).sort((a, b) => b.total - a.total);
+  const med = median(ranked.map(a => a.total));
+  const lifetimeTotal = ranked.reduce((s, o) => s + o.total, 0) || 1;
+  const rank = ranked.findIndex(x => x.name === name) + 1;
   const tags = autoTagsFor(allBy[name], med).map(t => `<span class="badge ${t.c}">${t.t}</span>`).join(' ');
   const unlocked = canWrite();
 
-  const histHtml = txs.slice(0, 25).map(t => `<div class="row-item">${itemIcon(t.item, 22)}<div class="main"><div class="t1" style="font-size:13px">${fmtNum(t.qty)}× ${esc(t.item)}</div><div class="t2">${formatRelativeDate(t.time)} · @ ${esc(coordsOf(t.shop))}</div></div><div class="amount" style="font-size:12px">${fmtMoney(t.net)}</div></div>`).join('');
-  const itemsHtml = topItems.map(([it, q]) => `<div class="row-item">${itemIcon(it, 22)}<div class="main"><div class="t1" style="font-size:13px">${esc(it)}</div></div><div class="amount" style="font-size:12px;color:var(--text-dim)">${fmtNum(q)}×</div></div>`).join('');
+  const avgOrder = txs.length ? total / txs.length : 0;
+  const share = (total / lifetimeTotal * 100).toFixed(1);
+  const daysAsCust = Math.max(1, (new Date(last) - new Date(first)) / 86400000 + 1);
+  const perMonth = txs.length > 1 ? (txs.length / (daysAsCust / 30)) : 0;
+  const freqTxt = txs.length === 1 ? '1 order' : (perMonth >= 1 ? perMonth.toFixed(1) + '/maand' : (perMonth * 4.33).toFixed(1) + '/week');
+
+  // favorite shop (by qty)
+  const shopQ = {}; txs.forEach(t => { const c = coordsOf(t.shop); shopQ[c] = (shopQ[c] || 0) + t.qty; });
+  const favShop = Object.entries(shopQ).sort((a, b) => b[1] - a[1])[0];
+
+  // last 6 months spend
+  const months = []; const mmap = {}; const d0 = new Date();
+  for (let i = 5; i >= 0; i--) { const d = new Date(d0.getFullYear(), d0.getMonth() - i, 1); const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); months.push({ k, label: d.toLocaleDateString('nl-NL', { month: 'short' }) }); mmap[k] = 0; }
+  txs.forEach(t => { const dt = new Date(t.time); const k = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0'); if (k in mmap) mmap[k] += t.net; });
+  const hasMonthly = Object.values(mmap).some(v => v > 0);
+
+  const histHtml = txs.slice(0, 30).map(t => `<div class="row-item">${itemIcon(t.item, 22)}<div class="main"><div class="t1" style="font-size:13px">${fmtNum(t.qty)}× ${esc(t.item)}</div><div class="t2">${formatRelativeDate(t.time)} · @ ${esc(coordsOf(t.shop))}</div></div><div class="amount" style="font-size:12px">${fmtMoney(t.net)}</div></div>`).join('');
+  const itemsHtml = itemList.map(([it, q]) => `<div class="row-item">${itemIcon(it, 22)}<div class="main"><div class="t1" style="font-size:13px">${esc(it)}</div></div><div class="amount" style="font-size:12px;color:var(--text-dim)">${fmtNum(q)}×</div></div>`).join('');
 
   const el = document.createElement('div');
   el.className = 'modal-bg open'; el.id = 'profileModal';
   el.onclick = (e) => { if (e.target === el) closeProfile(); };
   el.innerHTML = `<div class="modal">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">${avatarImg(name, 44)}<div><h3 style="margin:0">${esc(name)}</h3><div class="small-note">${tags || 'klant'}</div></div></div>
-    <div class="grid-3" style="margin:14px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">${avatarImg(name, 44)}<div><h3 style="margin:0">${esc(name)}</h3><div class="small-note">${tags || 'klant'}${rank ? ' · #' + rank + ' van ' + ranked.length : ''}</div></div></div>
+    <div class="grid-3" style="margin:14px 0 10px">
       <div class="mini-card"><div class="ml">Besteed</div><div class="mv">${fmtMoney(total)}</div></div>
       <div class="mini-card"><div class="ml">Orders</div><div class="mv" style="color:var(--text)">${txs.length}</div></div>
       <div class="mini-card"><div class="ml">Items</div><div class="mv" style="color:var(--blue)">${fmtNum(qty)}</div></div>
     </div>
-    <div class="small-note">Klant sinds ${new Date(first).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })} · laatst ${formatRelativeDate(last)}</div>
+    <div class="grid-3" style="margin-bottom:6px">
+      <div class="mini-card"><div class="ml">ø per order</div><div class="mv" style="color:var(--text)">${fmtMoney(avgOrder)}</div></div>
+      <div class="mini-card"><div class="ml">Aandeel omzet</div><div class="mv" style="color:var(--accent)">${share}%</div></div>
+      <div class="mini-card"><div class="ml">Koopt</div><div class="mv" style="color:var(--text)">${freqTxt}</div></div>
+    </div>
+    <div class="small-note">Klant sinds ${new Date(first).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })} · laatst ${formatRelativeDate(last)}${favShop ? ' · favoriete shop @ ' + esc(favShop[0]) : ''}</div>
+    ${hasMonthly ? `<div class="divider"></div><div class="panel-title">Besteed per maand</div><div class="chart-wrap" style="height:140px"><canvas id="profileChart"></canvas></div>` : ''}
     <div class="divider"></div>
-    <div class="panel-title">Favoriete items</div>${itemsHtml || '<div class="small-note">—</div>'}
+    <div class="panel-title">Items <span class="count">${itemList.length}</span></div>
+    <div style="max-height:180px;overflow-y:auto">${itemsHtml || '<div class="small-note">—</div>'}</div>
     <div class="divider"></div>
     <div class="panel-title">Notitie</div>
     ${unlocked
@@ -1268,8 +1367,19 @@ function showCustomerProfile(name) {
     <div class="modal-actions"><button class="btn" onclick="closeProfile()">Sluiten</button></div>
   </div>`;
   document.body.appendChild(el);
+
+  if (hasMonthly) {
+    const cv = document.getElementById('profileChart');
+    const axis = getComputedStyle(document.documentElement).getPropertyValue('--text-faint').trim() || '#66727f';
+    if (_profileChart) { _profileChart.destroy(); _profileChart = null; }
+    _profileChart = new Chart(cv, {
+      type: 'bar',
+      data: { labels: months.map(m => m.label), datasets: [{ data: months.map(m => mmap[m.k]), backgroundColor: '#5ec46c', borderRadius: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => '$' + Math.round(i.parsed.y).toLocaleString('en-US') } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { color: 'rgba(128,128,128,0.12)' } } } }
+    });
+  }
 }
-function closeProfile() { const el = document.getElementById('profileModal'); if (el) el.remove(); }
+function closeProfile() { if (_profileChart) { _profileChart.destroy(); _profileChart = null; } const el = document.getElementById('profileModal'); if (el) el.remove(); }
 function saveCustNote(name) {
   if (!ensureUnlocked()) return;
   const val = document.getElementById('custNoteInput').value.trim();
@@ -1308,7 +1418,7 @@ function renderRecent() {
 function renderInsights() {
   const host = document.getElementById('insightsContent'); if (!host) return;
   if (!analyticsAll.length) { host.innerHTML = emptyPanel('Nog geen inzichten — er zijn nog geen klant-verkopen.'); return; }
-  let html = '';
+  let html = `<div class="panel"><div class="panel-title">🎲 Leuke feitjes <button class="btn ghost fact-shuffle" onclick="fillFacts('funFactsBox',6)">andere 🎲</button></div><div id="funFactsBox"></div></div>`;
 
   // 1. Shop comparison
   const byShop = {};
@@ -1395,6 +1505,70 @@ function checkMilestones() {
   if (hit) { saveStorage('qs_milestones_seen', seen); setTimeout(() => showToast(`🎉 Mijlpaal bereikt: ${fmtMoney(hit)} omzet!`, 'green', 4500), 1200); }
 }
 
+/* ============ FUN FACTS ============ */
+function funFacts() {
+  const tx = analyticsAll;
+  if (tx.length < 3) return [];
+  const E = esc;
+  const byItem = {}, byBuyer = {}, byHour = Array(24).fill(0), byDay = Array(7).fill(0), daily = {}, shops = new Set(), buyerItem = {};
+  let totalQty = 0, totalNet = 0, totalTax = 0, biggest = null, first = tx[0], firstT = new Date(tx[0].time).getTime();
+  tx.forEach(t => {
+    byItem[t.item] = (byItem[t.item] || 0) + t.qty;
+    const b = byBuyer[t.buyer] = byBuyer[t.buyer] || { net: 0, orders: 0, items: new Set() };
+    b.net += t.net; b.orders++; b.items.add(t.item);
+    const d = new Date(t.time); byHour[d.getHours()]++; byDay[d.getDay()]++;
+    daily[d.toISOString().slice(0, 10)] = (daily[d.toISOString().slice(0, 10)] || 0) + t.net;
+    shops.add(coordsOf(t.shop));
+    totalQty += t.qty; totalNet += t.net; totalTax += t.tax;
+    if (!biggest || t.net > biggest.net) biggest = t;
+    const ft = d.getTime(); if (ft < firstT) { firstT = ft; first = t; }
+    (buyerItem[t.buyer] = buyerItem[t.buyer] || {})[t.item] = (buyerItem[t.buyer][t.item] || 0) + t.qty;
+  });
+  const itemArr = Object.entries(byItem).sort((a, b) => b[1] - a[1]);
+  const buyerArr = Object.entries(byBuyer).sort((a, b) => b[1].net - a[1].net);
+  const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+  const F = [];
+
+  if (itemArr.length) F.push({ i: '📦', h: `Bestseller: <b>${E(itemArr[0][0])}</b> — ${fmtNum(itemArr[0][1])} stuks verkocht.` });
+  if (buyerArr.length) F.push({ i: '👑', h: `Grootste fan: <b>${E(buyerArr[0][0])}</b> besteedde ${fmtMoney(buyerArr[0][1].net)} bij jullie.` });
+  const mo = Object.entries(byBuyer).sort((a, b) => b[1].orders - a[1].orders)[0];
+  if (mo && mo[1].orders > 1) F.push({ i: '🔁', h: `<b>${E(mo[0])}</b> kwam ${mo[1].orders} keer langs — trouwste klant.` });
+  if (biggest) F.push({ i: '💰', h: `Grootste order ooit: <b>${fmtNum(biggest.qty)}× ${E(biggest.item)}</b> voor ${fmtMoney(biggest.net)} door ${E(biggest.buyer)}.` });
+  if (totalQty > 0) { const dc = totalQty / 3456; F.push({ i: '🧰', h: `Je verkocht ${fmtNum(totalQty)} items — genoeg voor <b>${dc < 10 ? dc.toFixed(1) : fmtNum(Math.round(dc))} dubbelkisten</b>.` }); }
+  if (totalQty >= 64) F.push({ i: '⛏', h: `Dat zijn ~<b>${fmtNum(Math.round(totalQty / 64))} volle stacks</b>.` });
+  const maxH = Math.max(...byHour);
+  if (maxH > 0) F.push({ i: '🕗', h: `Rond <b>${String(byHour.indexOf(maxH)).padStart(2, '0')}:00</b> is het het drukst.` });
+  let qh = 0, qv = Infinity; byHour.forEach((v, h) => { if (v < qv) { qv = v; qh = h; } }); F.push({ i: '😴', h: `Rond <b>${String(qh).padStart(2, '0')}:00</b> koopt bijna niemand.` });
+  if (totalTax > 0) F.push({ i: '🏦', h: `Je droeg al <b>${fmtMoney(totalTax)}</b> belasting af aan de server.` });
+  if (buyerArr.length) F.push({ i: '📊', h: `Een gemiddelde klant besteedt <b>${fmtMoney(totalNet / buyerArr.length)}</b>.` });
+  F.push({ i: '🌱', h: `Je allereerste verkoop: <b>${fmtNum(first.qty)}× ${E(first.item)}</b> aan ${E(first.buyer)} op ${fmtDate(first.time)}.` });
+  const bd = Object.entries(daily).sort((a, b) => b[1] - a[1])[0];
+  if (bd) F.push({ i: '🚀', h: `Recordverkoopdag: <b>${fmtMoney(bd[1])}</b> op ${fmtDate(bd[0])}.` });
+  if (buyerArr.length) { const rr = Math.round(Object.values(byBuyer).filter(b => b.orders > 1).length / buyerArr.length * 100); F.push({ i: '❤️', h: `<b>${rr}%</b> van je klanten kwam meer dan eens terug.` }); }
+  F.push({ i: '🧑‍🤝‍🧑', h: `<b>${fmtNum(buyerArr.length)}</b> verschillende klanten kochten bij jullie.` });
+  F.push({ i: '🏪', h: `Jullie runnen <b>${shops.size}</b> shop${shops.size === 1 ? '' : 's'} op de map.` });
+  const maxD = Math.max(...byDay);
+  if (maxD > 0) F.push({ i: '📅', h: `<b>${dayNames[byDay.indexOf(maxD)]}</b> is jullie topdag.` });
+  if (itemArr.length > 1) { const r = itemArr[itemArr.length - 1]; F.push({ i: '💎', h: `Zeldzaamst verkocht: <b>${E(r[0])}</b> (maar ${fmtNum(r[1])}× gekocht).` }); }
+  const loy = Object.entries(byBuyer).filter(([n, b]) => b.orders >= 3 && b.items.size === 1).sort((a, b) => b[1].orders - a[1].orders)[0];
+  if (loy) F.push({ i: '🎯', h: `<b>${E(loy[0])}</b> koopt eigenlijk alleen maar ${E([...loy[1].items][0])}.` });
+  let lover = null; Object.entries(buyerItem).forEach(([n, m]) => Object.entries(m).forEach(([it, q]) => { if (!lover || q > lover.q) lover = { n, it, q }; }));
+  if (lover && lover.q >= 10) F.push({ i: '😍', h: `<b>${E(lover.n)}</b> is dol op ${E(lover.it)} — kocht er ${fmtNum(lover.q)}.` });
+  const dys = Object.keys(daily).sort(); let st = 0, best = 0, prev = null;
+  dys.forEach(k => { const d = new Date(k).getTime(); if (prev != null && d - prev === 86400000) st++; else st = 1; best = Math.max(best, st); prev = d; });
+  if (best >= 2) F.push({ i: '🔥', h: `Langste reeks: <b>${best} dagen op rij</b> verkopen.` });
+
+  return F;
+}
+function fillFacts(id, n) {
+  const host = document.getElementById(id); if (!host) return;
+  const facts = funFacts();
+  if (!facts.length) { host.innerHTML = '<div class="small-note">Nog te weinig data voor feitjes — kom terug na een paar verkopen.</div>'; return; }
+  for (let i = facts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[facts[i], facts[j]] = [facts[j], facts[i]]; }
+  host.innerHTML = facts.slice(0, n).map(f => `<div class="fact"><span class="fi">${f.i}</span><span>${f.h}</span></div>`).join('');
+}
+
 /* ============ INIT ============ */
 function wireEvents() {
   // OK button + Enter in the generic modal
@@ -1407,7 +1581,7 @@ function wireEvents() {
   });
   // Escape closes any open modal
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => m.id === 'profileModal' ? m.remove() : m.classList.remove('open')); }
+    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal') ? m.remove() : m.classList.remove('open')); }
   });
   // Scroll-to-top
   window.addEventListener('scroll', () => { document.getElementById('toTop').classList.toggle('show', window.scrollY > 600); }, { passive: true });
