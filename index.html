@@ -226,6 +226,10 @@
   .tzspark .tzbar.peak { opacity: 1; }
   .tzaxis { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-faint); margin-top: 3px; font-family: var(--mono); }
 
+  .btn.del-btn { width: 100%; margin-top: 8px; color: var(--red); }
+  .btn.del-btn:hover { background: rgba(229,87,87,0.12); border-color: var(--red); }
+  .btn.primary.danger { background: var(--red); border-color: var(--red); color: #fff; }
+
   @media (min-width: 768px) {
     body { padding: 26px 30px 80px; }
     .container { max-width: 920px; }
@@ -380,6 +384,8 @@ const I18N = {
     mRestockTitle: 'Deel bijvullen', mRestockDesc: (i) => `Hoeveel ${i} heb je bijgevuld?`, mRestockPh: 'aantal', mRestockOk: 'Bijvullen', mRestockToast: (n, i) => `+${n} ${i}`,
     mBaselineTitle: 'Begin-aantal instellen', mBaselineDesc: (i) => `Hoeveel ${i} liggen er nu in de shop? Dit wordt ook de "vol"-waarde.`,
     mCountTitle: 'Exact tellen', mCountDesc: (i) => `Voer het werkelijke aantal ${i} in dat je geteld hebt.`, mCountOk: 'Opslaan', mCountToast: (i, n) => `${i} op ${n} gezet`,
+    delBtn: '🗑 Verwijderen', delTitle: 'Shop verwijderen', delDesc: (i, c) => `Verwijder "${i}" @ ${c} uit het overzicht. De shop komt vanzelf terug zodra er een nieuwe verkoop op draait. Typ \`delete\` om te bevestigen.`, delPh: 'typ: delete', delOk: 'Verwijder', delToast: (i) => `${i} verwijderd uit het overzicht`, delMismatch: 'Typ `delete` (precies zo) om te bevestigen.',
+    syncFailed: (m) => 'Sync mislukt: ' + m,
     custSearchPh: 'Zoek klant…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> hoge besteder · <span class="badge green">stamklant</span> 5+ orders · <span class="badge blue">nieuw</span> eerste week · <span class="badge red">blijft weg</span> 30+ dagen stil · <span class="badge gray">groothandel</span> grote orders',
     tagVIP: 'VIP', tagRegular: 'stamklant', tagNew: 'nieuw', tagGone: 'blijft weg', tagWholesale: 'groothandel',
@@ -462,6 +468,8 @@ const I18N = {
     mRestockTitle: 'Add stock', mRestockDesc: (i) => `How much ${i} did you add?`, mRestockPh: 'amount', mRestockOk: 'Add', mRestockToast: (n, i) => `+${n} ${i}`,
     mBaselineTitle: 'Set starting count', mBaselineDesc: (i) => `How much ${i} is in the shop now? This also becomes the "full" value.`,
     mCountTitle: 'Count exact', mCountDesc: (i) => `Enter the actual ${i} count you measured.`, mCountOk: 'Save', mCountToast: (i, n) => `${i} set to ${n}`,
+    delBtn: '🗑 Delete', delTitle: 'Delete shop', delDesc: (i, c) => `Remove "${i}" @ ${c} from the overview. The shop comes back automatically once a new sale runs on it. Type \`delete\` to confirm.`, delPh: 'type: delete', delOk: 'Delete', delToast: (i) => `${i} removed from the overview`, delMismatch: 'Type `delete` (exactly) to confirm.',
+    syncFailed: (m) => 'Sync failed: ' + m,
     custSearchPh: 'Search customer…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> high spender · <span class="badge green">regular</span> 5+ orders · <span class="badge blue">new</span> first week · <span class="badge red">churning</span> 30+ days quiet · <span class="badge gray">wholesale</span> large orders',
     tagVIP: 'VIP', tagRegular: 'regular', tagNew: 'new', tagGone: 'churning', tagWholesale: 'wholesale',
@@ -760,11 +768,14 @@ function openInputModal(opts) {
   document.getElementById('imTitle').textContent = opts.title || 'Invoer';
   document.getElementById('imDesc').textContent = opts.desc || '';
   const input = document.getElementById('imInput');
-  input.type = opts.type === 'password' ? 'password' : 'number';
+  input.type = opts.type === 'password' ? 'password' : (opts.type === 'text' ? 'text' : 'number');
+  input.inputMode = opts.type === 'text' ? 'text' : 'decimal';
   input.value = opts.value != null ? opts.value : '';
   input.placeholder = opts.placeholder || '';
   document.getElementById('imErr').textContent = '';
-  document.getElementById('imOk').textContent = opts.okLabel || 'OK';
+  const ok = document.getElementById('imOk');
+  ok.textContent = opts.okLabel || 'OK';
+  ok.className = 'btn primary' + (opts.danger ? ' danger' : '');
   _imHandler = opts.onOk;
   document.getElementById('inputModal').classList.add('open');
   setTimeout(() => input.focus(), 50);
@@ -772,8 +783,8 @@ function openInputModal(opts) {
 function closeInputModal() { document.getElementById('inputModal').classList.remove('open'); _imHandler = null; }
 async function _imSubmit() {
   const input = document.getElementById('imInput');
-  const raw = input.type === 'password' ? input.value : parseFloat(input.value);
-  if (input.type !== 'password' && (isNaN(raw) || raw < 0)) { document.getElementById('imErr').textContent = t('imInvalid'); return; }
+  const raw = input.type === 'number' ? parseFloat(input.value) : input.value;
+  if (input.type === 'number' && (isNaN(raw) || raw < 0)) { document.getElementById('imErr').textContent = t('imInvalid'); return; }
   if (_imHandler) {
     const res = await _imHandler(raw);
     if (res === true || res == null) closeInputModal();
@@ -879,6 +890,8 @@ function migrateStockKeys() {
       const at = new Date(a.baselineTime || 0).getTime(), bt = new Date(b.baselineTime || 0).getTime();
       const w = bt >= at ? { ...b } : { ...a };
       w.capacity = Math.max(a.capacity || 0, b.capacity || 0) || undefined;
+      const dMax = Math.max(new Date(a.deletedAt || 0).getTime(), new Date(b.deletedAt || 0).getTime());
+      w.deletedAt = dMax > 0 ? new Date(dMax).toISOString() : undefined;
       const seen = new Set();
       w.history = [...(a.history || []), ...(b.history || [])]
         .filter(h => { const k = h.t + h.type; if (seen.has(k)) return false; seen.add(k); return true; })
@@ -988,6 +1001,26 @@ function fillAllToCapacity() {
   if (n) { saveStockData(all); triggerSync(); showToast(t('mFillAllDone', n), 'green'); renderStock(); }
   else showToast(t('mFillAllNoCap'), 'amber');
 }
+/* A deleted shop stays hidden until a sale newer than the delete moment appears. */
+function latestSaleTime(combo) { let m = 0; combo.txs.forEach(t => { const x = new Date(t.time).getTime(); if (x > m) m = x; }); return m; }
+function isShopDeleted(entry, combo) { return !!(entry && entry.deletedAt && latestSaleTime(combo) <= new Date(entry.deletedAt).getTime()); }
+function deleteShop(key, combo) {
+  if (!ensureUnlocked()) return;
+  combo = combo || buildStockCombos()[key]; if (!combo) return;
+  openInputModal({
+    title: t('delTitle'), desc: t('delDesc', combo.item, combo.coords),
+    type: 'text', placeholder: t('delPh'), okLabel: t('delOk'), danger: true,
+    onOk: (val) => {
+      if (String(val).trim().toLowerCase() !== 'delete') return t('delMismatch');
+      const all = getStockData(); const entry = all[key] || {};
+      entry.deletedAt = new Date().toISOString();
+      _pushHistory(entry, 'delete', 0);
+      all[key] = entry; saveStockData(all); triggerSync();
+      showToast(t('delToast', combo.item), 'green');
+      renderStock(); updateStockBadge(); return true;
+    }
+  });
+}
 
 /* ============ STATE SYNC (qs_state.json) ============ */
 function gatherState() {
@@ -1008,6 +1041,8 @@ function mergeStates(remote, local) {
       const at = new Date(a.baselineTime || 0).getTime(), bt = new Date(b.baselineTime || 0).getTime();
       const w = bt >= at ? { ...b } : { ...a };
       w.capacity = Math.max(a.capacity || 0, b.capacity || 0) || undefined;
+      const dMax = Math.max(new Date(a.deletedAt || 0).getTime(), new Date(b.deletedAt || 0).getTime());
+      w.deletedAt = dMax > 0 ? new Date(dMax).toISOString() : undefined;
       const seen = new Set();
       w.history = [...(a.history || []), ...(b.history || [])]
         .filter(h => { const key = h.t + h.type; if (seen.has(key)) return false; seen.add(key); return true; })
@@ -1043,7 +1078,7 @@ async function pushState() {
     updateSyncStatus();
   } catch (e) {
     updateSyncStatus('error');
-    showToast('Sync mislukt: ' + e.message, 'red', 3500);
+    showToast(t('syncFailed', e.message), 'red', 3500);
   } finally { syncInFlight = false; }
 }
 
@@ -1289,6 +1324,7 @@ function renderStock() {
   const all = getStockData();
   const q = (document.getElementById('stockSearch')?.value || '').toLowerCase().trim();
   let list = Object.values(combos);
+  list = list.filter(c => !isShopDeleted(all[c.key], c));
   if (q) list = list.filter(c => c.item.toLowerCase().includes(q) || c.coords.toLowerCase().includes(q));
 
   // Sort: urgent (fewest days left) first; unconfigured last
@@ -1318,7 +1354,7 @@ function renderStock() {
       return `<div class="stock-card">
         <div class="stock-head">${itemIcon(c.item, 30)}<div class="info"><div class="name">${esc(c.item)}</div><div class="coords">@ ${esc(c.coords)} · ${t('stockEverSold', fmtNum(c.totalQty))}</div></div>
         <div class="stock-est"><div class="num" style="color:var(--text-faint);font-size:20px">—</div></div></div>
-        ${unlocked ? `<div class="stock-actions"><button class="btn primary" onclick="setExactCount('${k}', null, true)">${t('stockSetBaseline')}</button></div>` : `<div class="locked-note">${t('stockNotSet')}</div>`}
+        ${unlocked ? `<div class="stock-actions"><button class="btn primary" onclick="setExactCount('${k}', null, true)">${t('stockSetBaseline')}</button></div><button class="btn del-btn" onclick="deleteShop('${k}')">${t('delBtn')}</button>` : `<div class="locked-note">${t('stockNotSet')}</div>`}
       </div>`;
     }
     const est = c._est;
@@ -1347,7 +1383,7 @@ function renderStock() {
         <button class="btn primary" onclick="fillToFull('${k}')">${t('stockFilled')}</button>
         <button class="btn" onclick="addRestock('${k}')">${t('stockRestock')}</button>
         <button class="btn" onclick="setExactCount('${k}')">${t('stockCountBtn')}</button>
-      </div>` : ''}
+      </div><button class="btn del-btn" onclick="deleteShop('${k}')">${t('delBtn')}</button>` : ''}
     </div>`;
   }).join('');
 }
