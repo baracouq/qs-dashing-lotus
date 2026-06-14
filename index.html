@@ -366,7 +366,7 @@ const I18N = {
     errPassShort: 'Kies een wachtwoord van minstens 4 tekens.', errSaveFail: (m) => 'Opslaan mislukt: ' + m, errTokenPass: 'Vul zowel een token als een wachtwoord in.',
     toastEditSet: 'Bewerken ingesteld en ingeschakeld', toastSaved: 'Opgeslagen',
     toastView: 'Terug naar bekijken', toastNoPass: 'Nog geen wachtwoord ingesteld — zie ⚙ Instellingen',
-    unlockTitle: 'Bewerken ontgrendelen', unlockDesc: 'Voer het gedeelde wachtwoord in om de voorraad te kunnen bijwerken.', unlockPh: 'wachtwoord', unlockBtn: 'Ontgrendel',
+    unlockTitle: 'Bewerken ontgrendelen', unlockDesc: 'Vul je naam en het gedeelde wachtwoord in om de voorraad te kunnen bijwerken. Je naam komt bij je voorraad-updates te staan.', unlockPh: 'wachtwoord', unlockBtn: 'Ontgrendel', unlockPassLabel: 'Wachtwoord', unlockNameRequired: 'Vul ook je naam in.',
     toastEditOn: 'Bewerken ingeschakeld', errWrongPass: 'Verkeerd wachtwoord', toastLockFirst: 'Ontgrendel eerst bovenaan met 🔒', imInvalid: 'Voer een geldig getal in.',
     ovTodayEyebrow: 'Vandaag', ovSales: 'verkopen', ovCustomers: 'klanten', ovWoW: 'week vs week',
     kpiRevenue: 'Omzet', kpiRevSub: 'netto na 1% tax', kpiSales: 'Verkopen', kpiSalesSub: 'transacties', kpiCustomers: 'Klanten', kpiCustSub: 'unieke kopers', kpiAvg: 'Gem. verkoop', kpiAvgSub: 'per transactie',
@@ -450,7 +450,7 @@ const I18N = {
     errPassShort: 'Choose a password of at least 4 characters.', errSaveFail: (m) => 'Save failed: ' + m, errTokenPass: 'Enter both a token and a password.',
     toastEditSet: 'Editing set up and enabled', toastSaved: 'Saved',
     toastView: 'Back to viewing', toastNoPass: 'No password set yet — see ⚙ Settings',
-    unlockTitle: 'Unlock editing', unlockDesc: 'Enter the shared password to update stock.', unlockPh: 'password', unlockBtn: 'Unlock',
+    unlockTitle: 'Unlock editing', unlockDesc: 'Enter your name and the shared password to update stock. Your name is shown on your stock updates.', unlockPh: 'password', unlockBtn: 'Unlock', unlockPassLabel: 'Password', unlockNameRequired: 'Enter your name too.',
     toastEditOn: 'Editing enabled', errWrongPass: 'Wrong password', toastLockFirst: 'Unlock first at the top with 🔒', imInvalid: 'Enter a valid number.',
     ovTodayEyebrow: 'Today', ovSales: 'sales', ovCustomers: 'customers', ovWoW: 'week vs week',
     kpiRevenue: 'Revenue', kpiRevSub: 'net after 1% tax', kpiSales: 'Sales', kpiSalesSub: 'transactions', kpiCustomers: 'Customers', kpiCustSub: 'unique buyers', kpiAvg: 'Avg. sale', kpiAvgSub: 'per transaction',
@@ -650,22 +650,49 @@ async function toggleEditLock() {
     openSettings();
     return;
   }
-  openInputModal({
-    title: t('unlockTitle'), desc: t('unlockDesc'),
-    type: 'password', placeholder: t('unlockPh'), okLabel: t('unlockBtn'),
-    onOk: async (val) => {
-      try {
-        const token = await decryptToken(auth, val);
-        setEditToken(token);
-        updateLockButton();
-        showToast(t('toastEditOn'), 'green');
-        await pullAndRender(true);
-        return true;
-      } catch (e) {
-        return t('errWrongPass');
-      }
+  openUnlockModal(auth);
+}
+function openUnlockModal(auth) {
+  const existing = document.getElementById('unlockModal'); if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'modal-bg open'; el.id = 'unlockModal';
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  el.innerHTML = `<div class="modal">
+    <h3>${t('unlockTitle')}</h3>
+    <div class="desc">${t('unlockDesc')}</div>
+    <label>${t('setNameLabel')}</label>
+    <input type="text" id="unlockName" placeholder="${t('setNamePh')}" value="${esc(getUserName() || '')}" />
+    <label>${t('unlockPassLabel')}</label>
+    <input type="password" id="unlockPass" placeholder="${t('unlockPh')}" autocomplete="off" />
+    <div class="err" id="unlockErr"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('unlockModal').remove()">${t('cancel')}</button>
+      <button class="btn primary" id="unlockOk">${t('unlockBtn')}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  const submit = async () => {
+    const name = document.getElementById('unlockName').value.trim();
+    const pass = document.getElementById('unlockPass').value;
+    const err = document.getElementById('unlockErr');
+    err.textContent = '';
+    if (!name) { err.textContent = t('unlockNameRequired'); return; }
+    if (!pass) { err.textContent = t('errWrongPass'); return; }
+    try {
+      const token = await decryptToken(auth, pass);
+      setUserName(name);
+      setEditToken(token);
+      updateLockButton();
+      el.remove();
+      showToast(t('toastEditOn'), 'green');
+      await pullAndRender(true);
+    } catch (e) {
+      err.textContent = t('errWrongPass');
     }
-  });
+  };
+  document.getElementById('unlockOk').addEventListener('click', submit);
+  ['unlockName', 'unlockPass'].forEach(id => document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }));
+  setTimeout(() => { const f = document.getElementById(getUserName() ? 'unlockPass' : 'unlockName'); if (f) f.focus(); }, 50);
 }
 
 /* ============ SETTINGS ============ */
@@ -1909,7 +1936,7 @@ function wireEvents() {
   });
   // Escape closes any open modal
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal') ? m.remove() : m.classList.remove('open')); }
+    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal' || m.id === 'unlockModal') ? m.remove() : m.classList.remove('open')); }
   });
   // Scroll-to-top
   window.addEventListener('scroll', () => { document.getElementById('toTop').classList.toggle('show', window.scrollY > 600); }, { passive: true });
