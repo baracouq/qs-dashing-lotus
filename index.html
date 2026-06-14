@@ -814,7 +814,11 @@
   }
   .date-filter-btn:hover { border-color: var(--accent); }
 
-
+  .heatmap {
+    display: grid;
+    grid-template-columns: 26px repeat(24, 1fr);
+    gap: 2px;
+    align-items: center;
     font-size: 8px;
     color: var(--text-faint);
     font-family: 'JetBrains Mono', monospace;
@@ -823,6 +827,14 @@
     aspect-ratio: 1;
     border-radius: 2px;
     background: rgba(255, 209, 102, 0.04);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .heatmap .cell:hover {
+    transform: scale(1.35);
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: default;
+    position: relative;
+    z-index: 2;
   }
 
   .empty-state {
@@ -2736,6 +2748,17 @@
       heat[d.getDay()][d.getHours()]++;
     });
 
+    // ===== Activity tab: peak stats + per-weekday totals =====
+    const dayNamesFull = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const dayTotals = heat.map(row => row.reduce((s, v) => s + v, 0));
+    const busiestDayIdx = dayTotals.some(v => v > 0) ? dayTotals.indexOf(Math.max(...dayTotals)) : -1;
+    const busiestHour = hourly.some(v => v > 0) ? hourly.indexOf(Math.max(...hourly)) : -1;
+    // Hottest single day×hour window
+    let hotV = 0, hotD = -1, hotH = -1;
+    heat.forEach((row, di) => row.forEach((v, h) => { if (v > hotV) { hotV = v; hotD = di; hotH = h; } }));
+    const fmtHour = (h) => h < 0 ? '—' : `${String(h).padStart(2, '0')}:00`;
+    const fmtHourRange = (h) => h < 0 ? '—' : `${String(h).padStart(2,'0')}:00–${String((h+1)%24).padStart(2,'0')}:00`;
+
     dash.innerHTML = `
       <div class="tab-content active" data-tab="overview">
         ${(() => {
@@ -3463,13 +3486,40 @@
 
       <div class="tab-content" data-tab="activity">
         <div class="panel">
+          <h3 class="panel-title">⏰ Peak times</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint);">Busiest day</div>
+              <div style="font-size:16px; color:var(--accent-2); font-weight:600; margin-top:4px;">${busiestDayIdx >= 0 ? dayNamesFull[busiestDayIdx] : '—'}</div>
+              <div style="font-size:10px; color:var(--text-faint); margin-top:2px; font-family:'JetBrains Mono',monospace;">${busiestDayIdx >= 0 ? dayTotals[busiestDayIdx] + ' sales' : ''}</div>
+            </div>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint);">Busiest hour</div>
+              <div style="font-size:16px; color:var(--accent-2); font-weight:600; margin-top:4px;">${fmtHour(busiestHour)}</div>
+              <div style="font-size:10px; color:var(--text-faint); margin-top:2px; font-family:'JetBrains Mono',monospace;">${busiestHour >= 0 ? hourly[busiestHour] + ' sales' : ''}</div>
+            </div>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint);">Hottest window</div>
+              <div style="font-size:15px; color:var(--accent); font-weight:600; margin-top:4px;">${hotD >= 0 ? dayNamesFull[hotD].slice(0,3) + ' ' + fmtHour(hotH) : '—'}</div>
+              <div style="font-size:10px; color:var(--text-faint); margin-top:2px; font-family:'JetBrains Mono',monospace;">${hotD >= 0 ? hotV + ' sales in 1h' : ''}</div>
+            </div>
+          </div>
+          <p style="font-size:10px; color:var(--text-faint); margin:12px 0 0; font-family:'JetBrains Mono',monospace; line-height:1.5;">
+            When your customers actually shop — handy for timing restocks before the rush.
+          </p>
+        </div>
+        <div class="panel">
+          <h3 class="panel-title">Sales by weekday</h3>
+          <div class="chart-wrap"><canvas id="weekdayChart"></canvas></div>
+        </div>
+        <div class="panel">
           <h3 class="panel-title">Sales by hour</h3>
           <div class="chart-wrap"><canvas id="hourChart"></canvas></div>
         </div>
         <div class="panel">
           <h3 class="panel-title">Day × hour heatmap</h3>
           <div id="heatmap" class="heatmap"></div>
-          <p style="font-size:10px; color:var(--text-faint); margin: 10px 0 0; font-family: 'JetBrains Mono', monospace;">Darker = more sales</p>
+          <p style="font-size:10px; color:var(--text-faint); margin: 10px 0 0; font-family: 'JetBrains Mono', monospace;">Darker = more sales · hover a cell for the count</p>
         </div>
       </div>
 
@@ -3581,6 +3631,27 @@
         }
       }
     });
+
+    // Sales by weekday (Mon-first for readability), peak day highlighted
+    const weekdayOrder = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun
+    const weekdayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const weekdayData = weekdayOrder.map(d => dayTotals[d]);
+    const weekdayColors = weekdayOrder.map(d => d === busiestDayIdx ? '#ffd166' : '#4f7cff');
+    const weekdayCanvas = document.getElementById('weekdayChart');
+    if (weekdayCanvas) {
+      charts.weekday = new Chart(weekdayCanvas, {
+        type: 'bar',
+        data: { labels: weekdayLabels, datasets: [{ data: weekdayData, backgroundColor: weekdayColors, borderRadius: 3 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => `${i.parsed.y} sales` } } },
+          scales: {
+            x: { ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: '#6e7681', font: { family: 'JetBrains Mono', size: 9 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          }
+        }
+      });
+    }
 
     const heatmap = document.getElementById('heatmap');
     heatmap.innerHTML = '';
@@ -3720,57 +3791,10 @@
       }
     })();
 
-    // ---------- #11 Profit margin ----------
-    (() => {
-      const costs = getItemCosts();
-      const byItem = {};
-      tx.forEach(t => {
-        if (!byItem[t.item]) byItem[t.item] = { item: t.item, rev: 0, qty: 0 };
-        byItem[t.item].rev += t.net;
-        byItem[t.item].qty += t.qty;
-      });
-      const items = Object.values(byItem).sort((a, b) => b.rev - a.rev);
-      const rows = items.map(it => {
-        const cost = costs[it.item] || 0;
-        const costTotal = cost * it.qty;
-        const profit = it.rev - costTotal;
-        const margin = it.rev > 0 ? (profit / it.rev * 100) : 0;
-        const hasCost = cost > 0;
-        return `
-          <div class="list-row">
-            ${itemIcon(it.item, 24)}
-            <div class="main">
-              <div>${it.item}</div>
-              <div class="meta">${hasCost ? `cost $${cost}/ea · profit $${profit.toLocaleString(undefined,{maximumFractionDigits:0})} (${margin.toFixed(0)}%)` : 'no cost set'}</div>
-            </div>
-            <input type="number" inputmode="decimal" value="${cost || ''}" placeholder="cost"
-              onchange="setItemCost('${it.item.replace(/'/g, "\\'")}', parseFloat(this.value)||0); renderInsights();"
-              style="width:64px; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:6px 8px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right;" />
-          </div>`;
-      }).join('');
-
-      // Totals (only counts items with a cost set)
-      let totalRev = 0, totalProfit = 0, haveCost = false;
-      items.forEach(it => {
-        const cost = costs[it.item] || 0;
-        if (cost > 0) { haveCost = true; totalRev += it.rev; totalProfit += it.rev - cost * it.qty; }
-      });
-      const totalsHtml = haveCost ? `
-        <div style="display:flex; justify-content:space-between; padding:10px 0 4px; font-family:'JetBrains Mono',monospace; font-size:12px; border-top:1px solid var(--border); margin-top:6px;">
-          <span style="color:var(--text-dim);">Profit (items with cost)</span>
-          <span style="color:var(--accent-2);">$${totalProfit.toLocaleString(undefined,{maximumFractionDigits:0})} · ${totalRev>0?(totalProfit/totalRev*100).toFixed(0):0}%</span>
-        </div>` : '';
-
-      html += `
-        <div class="panel">
-          <h3 class="panel-title">💵 Profit margin</h3>
-          <p style="font-size:11px; color:var(--text-faint); margin:-6px 0 12px; font-family:'JetBrains Mono',monospace; line-height:1.5;">
-            Enter your cost per item (what it costs you to source). Profit = revenue − cost.
-          </p>
-          ${rows}
-          ${totalsHtml}
-        </div>`;
-    })();
+    // ---------- #11 Profit margin: REMOVED ----------
+    // Everything sold is own-produced (no sourcing cost), so margin is always
+    // 100% and a cost-per-item input doesn't apply. Per-item revenue lives on
+    // the Items tab. (Cost storage plumbing is left dormant and unused.)
 
     // ---------- #12 Basket analysis ----------
     (() => {
