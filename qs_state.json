@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "updated": "2026-06-09T21:55:18.250Z",
+  "v": 2,
+  "updated": "2026-06-14T22:44:58.544Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -111,14 +111,22 @@
           "type": "recount",
           "amount": 158,
           "by": "Neph"
+        },
+        {
+          "t": "2026-06-14T22:44:57.362Z",
+          "type": "fill",
+          "qty": 158,
+          "by": "iemand",
+          "note": ""
         }
       ],
       "baseline": 158,
-      "baselineTime": "2026-06-09T21:47:47.034Z",
+      "baselineTime": "2026-06-14T22:44:57.362Z",
       "restocked": 0,
       "measured": true,
       "capacity": 158,
-      "lastBy": "Neph"
+      "lastBy": "iemand",
+      "lastType": "fill"
     },
     "Light Blue Wool@@19977, 75, -17192": {
       "history": [
@@ -137,6 +145,5 @@
       "lastBy": "Neph"
     }
   },
-  "customers": {},
-  "costs": {}
+  "notes": {}
 }
