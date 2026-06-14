@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-06-09T20:29:29.726Z",
+  "updated": "2026-06-09T21:55:18.250Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -16,6 +16,124 @@
       "restocked": 0,
       "measured": true,
       "capacity": 1715,
+      "lastBy": "Neph"
+    },
+    "Purple Wool@@19977, 75, -17192": {
+      "history": [
+        {
+          "t": "2026-06-09T20:29:28.647Z",
+          "type": "recount",
+          "amount": 1715,
+          "by": "Neph"
+        },
+        {
+          "t": "2026-06-09T21:46:25.328Z",
+          "type": "recount",
+          "amount": 1669,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 1669,
+      "baselineTime": "2026-06-09T21:46:25.328Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 1715,
+      "lastBy": "Neph"
+    },
+    "Blue Wool@@19977, 75, -17192": {
+      "history": [
+        {
+          "t": "2026-06-09T21:46:45.173Z",
+          "type": "recount",
+          "amount": 1370,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 1370,
+      "baselineTime": "2026-06-09T21:46:45.173Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 1370,
+      "lastBy": "Neph"
+    },
+    "Black Wool@@19977, 75, -17192": {
+      "history": [
+        {
+          "t": "2026-06-09T21:46:54.096Z",
+          "type": "recount",
+          "amount": 1437,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 1437,
+      "baselineTime": "2026-06-09T21:46:54.096Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 1437,
+      "lastBy": "Neph"
+    },
+    "Green Wool@@19977, 75, -17192": {
+      "history": [
+        {
+          "t": "2026-06-09T21:47:04.623Z",
+          "type": "recount",
+          "amount": 548,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 548,
+      "baselineTime": "2026-06-09T21:47:04.623Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 548,
+      "lastBy": "Neph"
+    },
+    "Brown Wool@@19977, 75, -17192": {
+      "history": [
+        {
+          "t": "2026-06-09T21:47:10.250Z",
+          "type": "recount",
+          "amount": 409,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 409,
+      "baselineTime": "2026-06-09T21:47:10.250Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 409,
+      "lastBy": "Neph"
+    },
+    "Cyan Wool@@19977, 75, -17192": {
+      "history": [
+        {
+          "t": "2026-06-09T21:47:47.034Z",
+          "type": "recount",
+          "amount": 158,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 158,
+      "baselineTime": "2026-06-09T21:47:47.034Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 158,
+      "lastBy": "Neph"
+    },
+    "Light Blue Wool@@19977, 75, -17192": {
+      "history": [
+        {
+          "t": "2026-06-09T21:47:52.465Z",
+          "type": "recount",
+          "amount": 1260,
+          "by": "Neph"
+        }
+      ],
+      "baseline": 1260,
+      "baselineTime": "2026-06-09T21:47:52.465Z",
+      "restocked": 0,
+      "measured": true,
+      "capacity": 1260,
       "lastBy": "Neph"
     }
   },
