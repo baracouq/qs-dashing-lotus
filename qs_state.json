@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-15T22:04:40.374Z",
+  "updated": "2026-06-15T22:05:01.027Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -360,6 +360,20 @@
       "note": "",
       "by": "Neph",
       "mod": "2026-06-15T22:04:39.293Z",
+      "del": false
+    },
+    {
+      "id": "ln_1781561099888_lynzv",
+      "borrower": "Luhvliii",
+      "item": "Micro Penis",
+      "qty": 1,
+      "amount": 200,
+      "start": "2026-06-15T22:04:59.888Z",
+      "days": 3,
+      "returnedAt": null,
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-15T22:04:59.888Z",
       "del": false
     }
   ]
