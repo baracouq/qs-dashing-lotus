@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-15T22:04:03.631Z",
+  "updated": "2026-06-15T22:04:40.374Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -346,6 +346,20 @@
       "note": "",
       "by": "Neph",
       "mod": "2026-06-15T22:04:02.218Z",
+      "del": false
+    },
+    {
+      "id": "ln_1781561079293_03xcr",
+      "borrower": "softpines",
+      "item": "Test item",
+      "qty": 1,
+      "amount": 9000,
+      "start": "2026-06-15T22:04:39.293Z",
+      "days": 7,
+      "returnedAt": null,
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-15T22:04:39.293Z",
       "del": false
     }
   ]
