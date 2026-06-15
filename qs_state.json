@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-15T21:27:06.653Z",
+  "updated": "2026-06-15T21:34:57.539Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -289,8 +289,8 @@
       "returnedAt": "2026-06-14T23:12:35.448Z",
       "note": "",
       "by": "Neph",
-      "mod": "2026-06-14T23:12:35.448Z",
-      "del": false
+      "mod": "2026-06-15T21:34:34.883Z",
+      "del": true
     },
     {
       "id": "ln_1781546624756_s2frc",
@@ -314,11 +314,25 @@
       "amount": 100000,
       "start": "2026-06-14T23:10:15.546Z",
       "days": 7,
+      "returnedAt": "2026-06-15T21:27:35.458Z",
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-15T21:27:43.950Z",
+      "del": true
+    },
+    {
+      "id": "ln_1781559292884_j4mow",
+      "borrower": "___Plant",
+      "item": "Odin's",
+      "qty": 1,
+      "amount": 10000,
+      "start": "2026-06-15T21:34:52.884Z",
+      "days": 7,
       "returnedAt": null,
       "note": "",
       "by": "Neph",
-      "mod": "2026-06-14T23:10:15.546Z",
-      "del": false
+      "mod": "2026-06-15T21:34:56.431Z",
+      "del": true
     }
   ]
 }
