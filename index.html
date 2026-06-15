@@ -257,6 +257,18 @@
   .loan-actions .btn { flex: 1; }
   .loan-actions .btn.del-btn { flex: 0 0 auto; width: auto; margin-top: 0; padding-left: 13px; padding-right: 13px; }
 
+  .ver-btn { margin-left: 9px; font-family: var(--mono); font-size: 10px; color: var(--text-faint); background: var(--bg-panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; cursor: pointer; position: relative; vertical-align: middle; transition: color .15s, border-color .15s; }
+  .ver-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
+  .ver-btn .nd { position: absolute; top: -3px; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--red); border: 1.5px solid var(--bg); }
+  .cl-list { max-height: 58vh; overflow-y: auto; margin: 6px 0 2px; }
+  .cl-entry { padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+  .cl-entry:last-child { border-bottom: 0; }
+  .cl-head { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .cl-ver { font-family: var(--mono); font-weight: 700; font-size: 14px; color: var(--accent); }
+  .cl-date { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
+  .cl-items { margin: 0; padding-left: 18px; }
+  .cl-items li { font-size: 13px; color: var(--text-dim); margin: 4px 0; line-height: 1.5; }
+
   @media (min-width: 768px) {
     body { padding: 26px 30px 80px; }
     .container { max-width: 920px; }
@@ -273,7 +285,7 @@
 <div class="container">
   <div class="topbar">
     <div class="brand">
-      <div class="logo"><span class="chev">&gt;</span>QS<span class="dot">·</span>INSIGHTS</div>
+      <div class="logo"><span class="chev">&gt;</span>QS<span class="dot">·</span>INSIGHTS<button class="ver-btn" id="verBtn" onclick="openChangelog()">v1.0</button></div>
       <div class="prompt"><span class="path">~/blossomcraft/lotus</span> $ shop --analytics<span class="caret"></span></div>
     </div>
     <div class="actions">
@@ -427,6 +439,7 @@ const I18N = {
     loanAddedToast: (i, b) => `${i} uitgeleend aan ${b}`, loanReturnedToast: (i) => `${i} gemarkeerd als terug`, loanDeletedToast: 'Uitlening verwijderd',
     loanDelTitle: 'Uitlening verwijderen', loanDelDesc: (i, b) => `Verwijder de uitlening van ${i} aan ${b}?`, loanDelOk: 'Verwijder',
     loanSecOverdue: 'Te laat', loanSecActive: 'Lopend', loanSecReturned: 'Teruggebracht', loanFeeLabel: 'bedrag', loanDuePreview: (d) => `Terug verwacht op ${d}`,
+    changelogTitle: 'Wat is er nieuw', changelogCurrent: 'nu',
     custSearchPh: 'Zoek klant…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> hoge besteder · <span class="badge green">stamklant</span> 5+ orders · <span class="badge blue">nieuw</span> eerste week · <span class="badge red">blijft weg</span> 30+ dagen stil · <span class="badge gray">groothandel</span> grote orders',
     tagVIP: 'VIP', tagRegular: 'stamklant', tagNew: 'nieuw', tagGone: 'blijft weg', tagWholesale: 'groothandel',
@@ -523,6 +536,7 @@ const I18N = {
     loanAddedToast: (i, b) => `Lent ${i} to ${b}`, loanReturnedToast: (i) => `${i} marked as returned`, loanDeletedToast: 'Loan removed',
     loanDelTitle: 'Delete loan', loanDelDesc: (i, b) => `Delete the loan of ${i} to ${b}?`, loanDelOk: 'Delete',
     loanSecOverdue: 'Overdue', loanSecActive: 'Active', loanSecReturned: 'Returned', loanFeeLabel: 'amount', loanDuePreview: (d) => `Due back on ${d}`,
+    changelogTitle: "What's new", changelogCurrent: 'current',
     custSearchPh: 'Search customer…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> high spender · <span class="badge green">regular</span> 5+ orders · <span class="badge blue">new</span> first week · <span class="badge red">churning</span> 30+ days quiet · <span class="badge gray">wholesale</span> large orders',
     tagVIP: 'VIP', tagRegular: 'regular', tagNew: 'new', tagGone: 'churning', tagWholesale: 'wholesale',
@@ -582,6 +596,110 @@ function t(k, ...args) {
   return typeof v === 'function' ? v(...args) : v;
 }
 function dloc() { return lang === 'en' ? 'en-US' : 'nl-NL'; }
+
+/* ============ CHANGELOG ============ */
+const CHANGELOG = [
+  {
+    v: '1.8', date: '2026-06-16',
+    nl: [
+      'Lenen-scherm vernieuwd: overzichtelijk gegroepeerd in Te laat, Lopend en Teruggebracht, met een voortgangsbalk naar de terugdatum en een duidelijke bedrag-weergave.',
+      'Bij het uitlenen zie je nu meteen op welke dag het item terug verwacht wordt.',
+      'Deze changelog toegevoegd, zodat je altijd ziet wat er nieuw is.'
+    ],
+    en: [
+      'Reworked the Loans screen: clearly grouped into Overdue, Active and Returned, with a progress bar to the due date and a clear amount display.',
+      'When lending an item you now instantly see the expected return date.',
+      'Added this changelog so you always know what is new.'
+    ]
+  },
+  {
+    v: '1.7', date: '2026-06-15',
+    nl: [
+      'De pagina ververst nu vanzelf: nieuwe verkopen verschijnen automatisch, zonder te verversen.',
+      'Komt het tabblad weer naar voren, dan werkt alles meteen bij.',
+      'Sync-conflict opgelost dat soms een foutmelding gaf bij het opslaan.'
+    ],
+    en: [
+      'The page now refreshes itself: new sales appear automatically, no manual refresh needed.',
+      'When the tab comes back to the front, everything updates right away.',
+      'Fixed a sync conflict that sometimes showed an error while saving.'
+    ]
+  },
+  {
+    v: '1.6', date: '2026-06-14',
+    nl: [
+      'Nieuw tabblad Lenen: houd bij wie iets van jullie leent, tegen welk bedrag en voor hoelang, met status en een te-laat-melding.'
+    ],
+    en: [
+      'New Loans tab: track who borrows from you, for what amount and how long, with status and an overdue warning.'
+    ]
+  },
+  {
+    v: '1.5', date: '2026-06-13',
+    nl: [
+      'Shops kun je nu uit het voorraadoverzicht verwijderen (je typt "delete" ter bevestiging). Ze komen vanzelf terug zodra er een nieuwe verkoop op draait.',
+      'Bewerken ontgrendelen vraagt nu om je naam én het wachtwoord, zodat voorraad-updates op naam staan.'
+    ],
+    en: [
+      'You can now remove shops from the stock overview (type "delete" to confirm). They come back automatically once a new sale runs on them.',
+      'Unlocking editing now asks for your name and the password, so stock updates are attributed by name.'
+    ]
+  },
+  {
+    v: '1.4', date: '2026-06-12',
+    nl: [
+      'Taalknop toegevoegd: wissel het hele dashboard tussen Nederlands en Engels.'
+    ],
+    en: [
+      'Added a language switch: toggle the whole dashboard between Dutch and English.'
+    ]
+  },
+  {
+    v: '1.3', date: '2026-06-10',
+    nl: [
+      'Datumfilters Vandaag en Aangepaste periode toegevoegd.',
+      'Klantprofiel opent op mobiel als een prettig schuifpaneel.'
+    ],
+    en: [
+      'Added Today and Custom period date filters.',
+      'Customer profile opens as a smooth bottom sheet on mobile.'
+    ]
+  },
+  {
+    v: '1.2', date: '2026-06-07',
+    nl: [
+      'Uitgebreide klantprofielen met bestedingen per maand en favoriete items.',
+      'Geschatte regio/tijdzone van klanten op basis van hun aankooptijden.'
+    ],
+    en: [
+      'Richer customer profiles with monthly spend and favorite items.',
+      'Estimated customer region/timezone based on their purchase times.'
+    ]
+  },
+  {
+    v: '1.1', date: '2026-06-03',
+    nl: [
+      'Activiteit-tab met drukke tijden, een weekdag-grafiek en een dag/uur-heatmap.',
+      'Leuke feitjes over je winkel op het overzicht en bij Inzichten.'
+    ],
+    en: [
+      'Activity tab with peak times, a weekday chart and a day/hour heatmap.',
+      'Fun facts about your shop on the overview and in Insights.'
+    ]
+  },
+  {
+    v: '1.0', date: '2026-05-25',
+    nl: [
+      'Eerste versie: overzicht, items, voorraad, klanten, inzichten en recente verkopen.',
+      'Beveiligd bewerken met een wachtwoord en live synchronisatie tussen mede-eigenaren.'
+    ],
+    en: [
+      'First version: overview, items, stock, customers, insights and recent sales.',
+      'Password-protected editing and live sync between co-owners.'
+    ]
+  }
+];
+const APP_VERSION = CHANGELOG[0].v;
 
 function loadStorage(key, fb) { try { const v = localStorage.getItem(key); return v == null ? fb : JSON.parse(v); } catch (e) { return fb; } }
 function saveStorage(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
@@ -1726,6 +1844,32 @@ function renderLoans() {
   document.getElementById('loansContent').innerHTML = html;
 }
 
+function updateVersionBadge() {
+  const b = document.getElementById('verBtn'); if (!b) return;
+  const isNew = loadStorage('qs_seen_version', '') !== APP_VERSION;
+  b.innerHTML = 'v' + APP_VERSION + (isNew ? '<span class="nd"></span>' : '');
+}
+function openChangelog() {
+  saveStorage('qs_seen_version', APP_VERSION);
+  updateVersionBadge();
+  const existing = document.getElementById('changelogModal'); if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'modal-bg open'; el.id = 'changelogModal';
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  const fmtDate = (d) => new Date(d).toLocaleDateString(dloc(), { day: 'numeric', month: 'short', year: 'numeric' });
+  const entries = CHANGELOG.map((e, i) => {
+    const items = (lang === 'en' ? e.en : e.nl).map(li => `<li>${esc(li)}</li>`).join('');
+    const cur = i === 0 ? `<span class="badge green">${t('changelogCurrent')}</span>` : '';
+    return `<div class="cl-entry"><div class="cl-head"><span class="cl-ver">v${e.v}</span>${cur}<span class="cl-date">${fmtDate(e.date)}</span></div><ul class="cl-items">${items}</ul></div>`;
+  }).join('');
+  el.innerHTML = `<div class="modal" style="max-width:520px">
+    <h3>${t('changelogTitle')}</h3>
+    <div class="cl-list">${entries}</div>
+    <div class="modal-actions"><button class="btn" onclick="document.getElementById('changelogModal').remove()">${t('close')}</button></div>
+  </div>`;
+  document.body.appendChild(el);
+}
+
 /* generic yes/no confirm modal */
 function openConfirm(opts) {
   const existing = document.getElementById('confirmModal'); if (existing) existing.remove();
@@ -2252,7 +2396,7 @@ function wireEvents() {
   });
   // Escape closes any open modal
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal' || m.id === 'unlockModal' || m.id === 'loanModal' || m.id === 'confirmModal') ? m.remove() : m.classList.remove('open')); }
+    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal' || m.id === 'unlockModal' || m.id === 'loanModal' || m.id === 'confirmModal' || m.id === 'changelogModal') ? m.remove() : m.classList.remove('open')); }
   });
   // Scroll-to-top
   window.addEventListener('scroll', () => { document.getElementById('toTop').classList.toggle('show', window.scrollY > 600); }, { passive: true });
@@ -2270,6 +2414,7 @@ async function init() {
   document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀' : '☾';
   wireEvents();
   applyLanguage();
+  updateVersionBadge();
 
   // Load transaction data (public, no auth needed)
   try {
