@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-15T21:34:53.997Z",
+  "updated": "2026-06-15T21:34:57.539Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -331,8 +331,8 @@
       "returnedAt": null,
       "note": "",
       "by": "Neph",
-      "mod": "2026-06-15T21:34:52.884Z",
-      "del": false
+      "mod": "2026-06-15T21:34:56.431Z",
+      "del": true
     }
   ]
 }
