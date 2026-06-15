@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-15T22:05:01.027Z",
+  "updated": "2026-06-15T22:05:33.143Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -374,6 +374,20 @@
       "note": "",
       "by": "Neph",
       "mod": "2026-06-15T22:04:59.888Z",
+      "del": false
+    },
+    {
+      "id": "ln_1781561132018_jk0lg",
+      "borrower": "_Grouch",
+      "item": "Strap on",
+      "qty": 2,
+      "amount": 12,
+      "start": "2026-06-15T22:05:32.018Z",
+      "days": 365,
+      "returnedAt": null,
+      "note": "Persoonlijke voorkeur",
+      "by": "Neph",
+      "mod": "2026-06-15T22:05:32.018Z",
       "del": false
     }
   ]
