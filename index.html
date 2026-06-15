@@ -345,6 +345,7 @@ let lang = 'nl';
 let sinceLastVisit = null;
 let pollTimer = null;
 let syncInFlight = false;
+let lastCsvText = null;
 
 /* Co-owners: counted for stock + shop visibility, never shown as customers.
    Edit this one line to add/remove a name (lowercase). */
@@ -1155,21 +1156,57 @@ async function pullAndRender(authenticated) {
   updateSyncStatus();
 }
 
+async function loadTransactionsCsv() {
+  const repo = getRepo(); if (!repo) return null;
+  const branches = [getWriteBranch(), 'main', 'master'].filter((b, i, a) => a.indexOf(b) === i);
+  for (const branch of branches) {
+    try {
+      const r = await fetch(rawUrl(repo, branch, 'transactions_archive.csv'), { cache: 'no-store' });
+      if (r.ok) { setWriteBranch(branch); return await r.text(); }
+    } catch (e) {}
+  }
+  return null;
+}
+
+async function pollOnce() {
+  if (syncInFlight) return;
+  try {
+    // 1. shared state (stock / loans / notes)
+    const beforeStock = JSON.stringify(getStockData());
+    const beforeLoans = JSON.stringify(getLoans());
+    const remote = await pullState(canWrite());
+    if (remote) { applyState(mergeStates(remote, gatherState())); migrateStockKeys(); }
+    const stockChanged = JSON.stringify(getStockData()) !== beforeStock;
+    const loansChanged = JSON.stringify(getLoans()) !== beforeLoans;
+
+    // 2. transaction data (new sales pushed by the pipeline)
+    let txChanged = false;
+    const csv = await loadTransactionsCsv();
+    if (csv != null && csv !== lastCsvText) {
+      lastCsvText = csv;
+      allTransactions = parseCSV(csv);
+      rebuildAnalyticsSet();
+      transactions = applyDateFilter(analyticsAll);
+      txChanged = true;
+    }
+
+    // 3. reflect changes on screen
+    if (txChanged) {
+      const sy = window.scrollY;        // keep the viewer's scroll position
+      render();                         // refreshes charts, lists, badges, facts
+      window.scrollTo(0, sy);
+      checkMilestones();
+    } else {
+      if (stockChanged) { if (activeTab === 'stock') renderStock(); updateStockBadge(); }
+      if (loansChanged) { if (activeTab === 'loans') renderLoans(); updateLoanBadge(); }
+    }
+    updateSyncStatus();
+  } catch (e) {}
+}
+
 function startSharedPolling() {
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(async () => {
-    if (document.hidden || syncInFlight) return;
-    try {
-      const before = JSON.stringify(getStockData());
-      const beforeLoans = JSON.stringify(getLoans());
-      const remote = await pullState(canWrite());
-      if (remote) { applyState(mergeStates(remote, gatherState())); migrateStockKeys(); }
-      const after = JSON.stringify(getStockData());
-      if (before !== after) { if (activeTab === 'stock') renderStock(); updateStockBadge(); }
-      if (beforeLoans !== JSON.stringify(getLoans())) { if (activeTab === 'loans') renderLoans(); updateLoanBadge(); }
-      updateSyncStatus();
-    } catch (e) {}
-  }, 45000);
+  pollTimer = setInterval(() => { if (!document.hidden) pollOnce(); }, 45000);
 }
 
 function updateSyncStatus(state) {
@@ -2156,6 +2193,8 @@ function wireEvents() {
   });
   // Scroll-to-top
   window.addEventListener('scroll', () => { document.getElementById('toTop').classList.toggle('show', window.scrollY > 600); }, { passive: true });
+  // Refresh the moment the tab is focused again (so an always-open page is never stale)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pollOnce(); });
 }
 
 async function init() {
@@ -2171,12 +2210,9 @@ async function init() {
 
   // Load transaction data (public, no auth needed)
   try {
-    const repo = getRepo();
-    let csv = null;
-    for (const branch of ['main', 'master']) {
-      try { const r = await fetch(rawUrl(repo, branch, 'transactions_archive.csv')); if (r.ok) { csv = await r.text(); setWriteBranch(branch); break; } } catch (e) {}
-    }
-    if (csv) {
+    const csv = await loadTransactionsCsv();
+    if (csv != null) {
+      lastCsvText = csv;
       allTransactions = parseCSV(csv);
       rebuildAnalyticsSet();
       transactions = applyDateFilter(analyticsAll);
