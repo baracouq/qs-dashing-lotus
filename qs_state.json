@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-14T22:58:16.479Z",
+  "updated": "2026-06-15T18:03:45.859Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -20,6 +20,24 @@
     },
     "Purple Wool@@19977, 75, -17192": {
       "history": [
+        {
+          "t": "2026-06-09T19:46:30.892Z",
+          "type": "recount",
+          "amount": 1714,
+          "by": "Grouch"
+        },
+        {
+          "t": "2026-06-09T19:47:30.647Z",
+          "type": "fill",
+          "amount": 1714,
+          "by": "Grouch"
+        },
+        {
+          "t": "2026-06-09T19:47:35.363Z",
+          "type": "recount",
+          "amount": 1701,
+          "by": "Grouch"
+        },
         {
           "t": "2026-06-09T20:29:28.647Z",
           "type": "recount",
@@ -242,7 +260,51 @@
       ],
       "lastBy": "Neph",
       "lastType": "delete"
+    },
+    "Ink Sac@@20036, 75, -17150": {
+      "deletedAt": "2026-06-14T22:58:25.783Z",
+      "history": [
+        {
+          "t": "2026-06-14T22:58:25.783Z",
+          "type": "delete",
+          "qty": 0,
+          "by": "Neph",
+          "note": ""
+        }
+      ],
+      "lastBy": "Neph",
+      "lastType": "delete"
     }
   },
-  "notes": {}
+  "notes": {},
+  "loans": [
+    {
+      "id": "ln_1781478591196_8bjvo",
+      "borrower": "Plant",
+      "item": "Odin's",
+      "qty": 1,
+      "amount": 100000,
+      "start": "2026-06-14T23:09:51.196Z",
+      "days": 7,
+      "returnedAt": "2026-06-14T23:12:35.448Z",
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-14T23:12:35.448Z",
+      "del": false
+    },
+    {
+      "id": "ln_1781546624756_s2frc",
+      "borrower": "IGN",
+      "item": "pickaxe",
+      "qty": 1,
+      "amount": 8000,
+      "start": "2026-06-15T18:03:44.756Z",
+      "days": 1,
+      "returnedAt": null,
+      "note": "rent",
+      "by": "Grouch",
+      "mod": "2026-06-15T18:03:44.756Z",
+      "del": false
+    }
+  ]
 }
