@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-15T21:34:35.960Z",
+  "updated": "2026-06-15T21:34:53.997Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -319,6 +319,20 @@
       "by": "Neph",
       "mod": "2026-06-15T21:27:43.950Z",
       "del": true
+    },
+    {
+      "id": "ln_1781559292884_j4mow",
+      "borrower": "___Plant",
+      "item": "Odin's",
+      "qty": 1,
+      "amount": 10000,
+      "start": "2026-06-15T21:34:52.884Z",
+      "days": 7,
+      "returnedAt": null,
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-15T21:34:52.884Z",
+      "del": false
     }
   ]
 }
