@@ -625,7 +625,7 @@ async function readApiJson(path) {
 }
 async function getSha(path, branch) {
   const repo = getRepo(), token = getEditToken();
-  try { const r = await fetch(`${GH_API}/repos/${repo}/contents/${path}?ref=${branch}`, { headers: ghHeaders(token) }); if (r.ok) return (await r.json()).sha; } catch (e) {}
+  try { const r = await fetch(`${GH_API}/repos/${repo}/contents/${path}?ref=${branch}&t=${Date.now()}`, { headers: ghHeaders(token), cache: 'no-store' }); if (r.ok) return (await r.json()).sha; } catch (e) {}
   return null;
 }
 async function writeJson(path, obj, message) {
@@ -636,7 +636,7 @@ async function writeJson(path, obj, message) {
   const body = { message: message || ('update ' + path), content: b64encode(JSON.stringify(obj, null, 2)), branch };
   if (sha) body.sha = sha;
   const r = await fetch(`${GH_API}/repos/${repo}/contents/${path}`, { method: 'PUT', headers: { ...ghHeaders(token), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error('GitHub ' + r.status + ': ' + (await r.text()).slice(0, 120));
+  if (!r.ok) { const err = new Error('GitHub ' + r.status + ': ' + (await r.text()).slice(0, 120)); err.status = r.status; throw err; }
   return await r.json();
 }
 
@@ -1136,11 +1136,24 @@ async function pushState() {
   if (!canWrite() || syncInFlight) return;
   syncInFlight = true; updateSyncStatus('pushing');
   try {
-    const remote = await pullState(true);
-    const merged = mergeStates(remote, gatherState());
-    applyState(merged);
-    await writeJson('qs_state.json', merged, 'update stock state');
-    updateSyncStatus();
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const remote = await pullState(true);          // fresh (cache-busted) base
+      const merged = mergeStates(remote, gatherState());
+      applyState(merged);
+      try {
+        await writeJson('qs_state.json', merged, 'update stock state');
+        updateSyncStatus();
+        return;
+      } catch (e) {
+        // 409 = someone (or a stale cache) changed the file first.
+        // Re-pull the latest, re-merge our change in, and try again.
+        if (e.status === 409 && attempt < 3) {
+          await new Promise(res => setTimeout(res, 250 * (attempt + 1)));
+          continue;
+        }
+        throw e;
+      }
+    }
   } catch (e) {
     updateSyncStatus('error');
     showToast(t('syncFailed', e.message), 'red', 3500);
