@@ -230,6 +230,33 @@
   .btn.del-btn:hover { background: rgba(229,87,87,0.12); border-color: var(--red); }
   .btn.primary.danger { background: var(--red); border-color: var(--red); color: #fff; }
 
+  .loan-sec { margin-top: 18px; }
+  .loan-sec:first-child { margin-top: 2px; }
+  .loan-sec-h { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 9px; display: flex; align-items: center; gap: 7px; }
+  .loan-sec-h .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .loan-card { background: var(--bg-panel-2); border: 1px solid var(--border); border-left: 3px solid var(--border); border-radius: 12px; padding: 13px; margin-bottom: 10px; }
+  .loan-card.s-overdue { border-left-color: var(--red); }
+  .loan-card.s-active { border-left-color: var(--accent-2); }
+  .loan-card.s-returned { border-left-color: var(--border); opacity: .6; }
+  .loan-card .lc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .loan-card .lc-who { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .loan-card .lc-amt { font-family: var(--mono); font-weight: 700; font-size: 14px; color: var(--accent); white-space: nowrap; text-align: right; line-height: 1.1; }
+  .loan-card .lc-amt small { display: block; color: var(--text-faint); font-weight: 400; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+  .loan-card .lc-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); margin-bottom: 11px; }
+  .loan-card .lc-item .q { color: var(--text-dim); font-family: var(--mono); }
+  .loan-card .lc-item b { font-weight: 600; }
+  .loan-bar { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; margin-bottom: 7px; }
+  .loan-bar > i { display: block; height: 100%; border-radius: 999px; background: var(--accent-2); }
+  .loan-bar.warn > i { background: var(--accent); }
+  .loan-bar.over > i { background: var(--red); }
+  .loan-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
+  .loan-row .when { font-weight: 600; color: var(--text-dim); white-space: nowrap; }
+  .loan-row .when.over { color: var(--red); }
+  .loan-note { margin-top: 9px; font-size: 12px; color: var(--text-dim); background: var(--bg); border: 1px solid var(--border-soft); border-radius: 8px; padding: 7px 9px; }
+  .loan-actions { display: flex; gap: 8px; margin-top: 11px; }
+  .loan-actions .btn { flex: 1; }
+  .loan-actions .btn.del-btn { flex: 0 0 auto; width: auto; margin-top: 0; padding-left: 13px; padding-right: 13px; }
+
   @media (min-width: 768px) {
     body { padding: 26px 30px 80px; }
     .container { max-width: 920px; }
@@ -399,6 +426,7 @@ const I18N = {
     loanErrBorrower: 'Vul de naam van de lener in.', loanErrItem: 'Vul een item in.', loanErrQty: 'Vul een geldig aantal in.', loanErrDays: 'Vul een geldige duur in (dagen).',
     loanAddedToast: (i, b) => `${i} uitgeleend aan ${b}`, loanReturnedToast: (i) => `${i} gemarkeerd als terug`, loanDeletedToast: 'Uitlening verwijderd',
     loanDelTitle: 'Uitlening verwijderen', loanDelDesc: (i, b) => `Verwijder de uitlening van ${i} aan ${b}?`, loanDelOk: 'Verwijder',
+    loanSecOverdue: 'Te laat', loanSecActive: 'Lopend', loanSecReturned: 'Teruggebracht', loanFeeLabel: 'bedrag', loanDuePreview: (d) => `Terug verwacht op ${d}`,
     custSearchPh: 'Zoek klant…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> hoge besteder · <span class="badge green">stamklant</span> 5+ orders · <span class="badge blue">nieuw</span> eerste week · <span class="badge red">blijft weg</span> 30+ dagen stil · <span class="badge gray">groothandel</span> grote orders',
     tagVIP: 'VIP', tagRegular: 'stamklant', tagNew: 'nieuw', tagGone: 'blijft weg', tagWholesale: 'groothandel',
@@ -494,6 +522,7 @@ const I18N = {
     loanErrBorrower: 'Enter the borrower name.', loanErrItem: 'Enter an item.', loanErrQty: 'Enter a valid quantity.', loanErrDays: 'Enter a valid duration (days).',
     loanAddedToast: (i, b) => `Lent ${i} to ${b}`, loanReturnedToast: (i) => `${i} marked as returned`, loanDeletedToast: 'Loan removed',
     loanDelTitle: 'Delete loan', loanDelDesc: (i, b) => `Delete the loan of ${i} to ${b}?`, loanDelOk: 'Delete',
+    loanSecOverdue: 'Overdue', loanSecActive: 'Active', loanSecReturned: 'Returned', loanFeeLabel: 'amount', loanDuePreview: (d) => `Due back on ${d}`,
     custSearchPh: 'Search customer…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> high spender · <span class="badge green">regular</span> 5+ orders · <span class="badge blue">new</span> first week · <span class="badge red">churning</span> 30+ days quiet · <span class="badge gray">wholesale</span> large orders',
     tagVIP: 'VIP', tagRegular: 'regular', tagNew: 'new', tagGone: 'churning', tagWholesale: 'wholesale',
@@ -1519,6 +1548,13 @@ function updateStockBadge() {
 }
 
 /* ============ LOANS (uitleen) ============ */
+function _loanDuePreview() {
+  const el = document.getElementById('loanDuePrev'); if (!el) return;
+  const days = parseInt((document.getElementById('loanDays') || {}).value, 10);
+  if (isNaN(days) || days < 1) { el.textContent = ''; return; }
+  const due = new Date(Date.now() + days * 86400000);
+  el.textContent = t('loanDuePreview', due.toLocaleDateString(dloc(), { weekday: 'short', day: 'numeric', month: 'short' }));
+}
 function loanDueMs(loan) { return new Date(loan.start).getTime() + (Number(loan.days) || 0) * 86400000; }
 function loanStatus(loan) {
   if (loan.returnedAt) return 'returned';
@@ -1544,7 +1580,8 @@ function openLoanModal() {
       <div><label>${t('loanFAmount')}</label><input type="number" id="loanAmount" inputmode="decimal" value="0" min="0" /></div>
     </div>
     <label>${t('loanFDays')}</label>
-    <input type="number" id="loanDays" inputmode="numeric" value="7" min="1" />
+    <input type="number" id="loanDays" inputmode="numeric" value="7" min="1" oninput="_loanDuePreview()" />
+    <div class="small-note" id="loanDuePrev" style="margin-top:-2px"></div>
     <label>${t('loanFNote')}</label>
     <input type="text" id="loanNote" placeholder="${t('loanFNotePh')}" />
     <div class="err" id="loanErr"></div>
@@ -1554,6 +1591,7 @@ function openLoanModal() {
     </div>
   </div>`;
   document.body.appendChild(el);
+  _loanDuePreview();
   const submit = () => {
     const borrower = document.getElementById('loanBorrower').value.trim();
     const item = document.getElementById('loanItem').value.trim();
@@ -1614,16 +1652,13 @@ function updateLoanBadge() {
 function renderLoans() {
   const unlocked = canWrite();
   const loans = activeLoans();
-  const rank = { overdue: 0, active: 1, returned: 2 };
-  const withStatus = loans.map(l => ({ l, s: loanStatus(l) }));
-  withStatus.sort((a, b) => {
-    if (rank[a.s] !== rank[b.s]) return rank[a.s] - rank[b.s];
-    if (a.s === 'returned') return new Date(b.l.returnedAt) - new Date(a.l.returnedAt);
-    return loanDueMs(a.l) - loanDueMs(b.l);
-  });
-  const out = withStatus.filter(x => x.s !== 'returned').reduce((s, x) => s + (Number(x.l.amount) || 0), 0);
-  const activeCount = withStatus.filter(x => x.s !== 'returned').length;
-  const overdueCount = withStatus.filter(x => x.s === 'overdue').length;
+  const groups = { overdue: [], active: [], returned: [] };
+  loans.forEach(l => groups[loanStatus(l)].push(l));
+  groups.overdue.sort((a, b) => loanDueMs(a) - loanDueMs(b));
+  groups.active.sort((a, b) => loanDueMs(a) - loanDueMs(b));
+  groups.returned.sort((a, b) => new Date(b.returnedAt) - new Date(a.returnedAt));
+  const out = [...groups.overdue, ...groups.active].reduce((s, l) => s + (Number(l.amount) || 0), 0);
+  const activeCount = groups.overdue.length + groups.active.length;
 
   let html = `<div class="panel">
     <div class="panel-title">${t('tabLoans')} <span class="count">${loans.length}</span></div>
@@ -1631,7 +1666,7 @@ function renderLoans() {
     <div class="grid-3">
       <div class="mini-card"><div class="ml">${t('loanActive')}</div><div class="mv">${activeCount}</div></div>
       <div class="mini-card"><div class="ml">${t('loanOut')}</div><div class="mv" style="color:var(--accent)">${fmtMoney(out)}</div></div>
-      <div class="mini-card"><div class="ml">${t('loanOverdue')}</div><div class="mv" style="color:${overdueCount ? 'var(--red)' : 'var(--text)'}">${overdueCount}</div></div>
+      <div class="mini-card"><div class="ml">${t('loanOverdue')}</div><div class="mv" style="color:${groups.overdue.length ? 'var(--red)' : 'var(--text)'}">${groups.overdue.length}</div></div>
     </div>
   </div>`;
 
@@ -1641,37 +1676,52 @@ function renderLoans() {
     return;
   }
 
-  const badgeFor = { overdue: 'red', active: 'green', returned: 'gray' };
-  const labelFor = { overdue: t('stOverdue'), active: t('stActive'), returned: t('stReturned') };
-  html += `<div class="panel">`;
-  html += withStatus.map(({ l, s }) => {
-    const dueStr = new Date(loanDueMs(l)).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' });
+  const card = (l, s) => {
     const startStr = new Date(l.start).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' });
-    let timeTxt;
-    if (s === 'returned') timeTxt = t('loanReturnedOn', new Date(l.returnedAt).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' }));
-    else {
+    const dueStr = new Date(loanDueMs(l)).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' });
+    const amt = (Number(l.amount) || 0) > 0 ? `<div class="lc-amt">${fmtMoney(l.amount)}<small>${t('loanFeeLabel')}</small></div>` : '';
+    let bar = '', whenTxt = '', whenCls = '';
+    if (s === 'returned') {
+      whenTxt = t('loanReturnedOn', new Date(l.returnedAt).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' }));
+    } else {
+      const total = (Number(l.days) || 0) * 86400000;
+      const elapsed = Date.now() - new Date(l.start).getTime();
+      const pct = total > 0 ? Math.max(3, Math.min(100, elapsed / total * 100)) : 100;
       const d = Math.ceil((loanDueMs(l) - Date.now()) / 86400000);
-      timeTxt = d >= 0 ? t('loanDaysLeft', d) : t('loanOverdueBy', -d);
+      if (s === 'overdue') {
+        whenTxt = t('loanOverdueBy', Math.max(1, -d)); whenCls = 'over';
+        bar = `<div class="loan-bar over"><i style="width:100%"></i></div>`;
+      } else {
+        whenTxt = t('loanDaysLeft', Math.max(0, d));
+        bar = `<div class="loan-bar ${pct >= 75 ? 'warn' : ''}"><i style="width:${pct.toFixed(0)}%"></i></div>`;
+      }
     }
-    const amountTxt = (Number(l.amount) || 0) > 0 ? `<span class="badge amber">${fmtMoney(l.amount)}</span>` : '';
-    const noteTxt = l.note ? `<div class="t2" style="opacity:.85">📝 ${esc(l.note)}</div>` : '';
-    const dim = s === 'returned' ? 'opacity:.6;' : '';
-    return `<div class="row-item" style="align-items:flex-start;${dim}">
-      ${avatarImg(l.borrower, 30)}
-      <div class="main">
-        <div class="t1">${esc(l.borrower)} <span class="badge ${badgeFor[s]}">${labelFor[s]}</span> ${amountTxt}</div>
-        <div class="t2">${itemIcon(l.item, 18)} ${fmtNum(l.qty)}× ${esc(l.item)}</div>
-        <div class="t2">${t('loanLentOn', startStr)} · ${t('loanDue', dueStr)} · ${timeTxt}${l.by ? ' · ' + esc(l.by) : ''}</div>
-        ${noteTxt}
-        ${unlocked ? `<div class="stock-actions">
-          ${s === 'returned'
-            ? `<button class="btn" onclick="reopenLoan('${jsStr(l.id)}')">${t('loanReopen')}</button>`
-            : `<button class="btn primary" onclick="markLoanReturned('${jsStr(l.id)}')">${t('loanReturn')}</button>`}
-          <button class="btn del-btn" style="width:auto;margin-top:0" onclick="deleteLoan('${jsStr(l.id)}')">${t('delBtn')}</button>
-        </div>` : ''}
-      </div>
+    const note = l.note ? `<div class="loan-note">📝 ${esc(l.note)}</div>` : '';
+    const by = l.by ? ` · ${esc(l.by)}` : '';
+    const actions = unlocked ? `<div class="loan-actions">
+        ${s === 'returned'
+          ? `<button class="btn" onclick="reopenLoan('${jsStr(l.id)}')">${t('loanReopen')}</button>`
+          : `<button class="btn primary" onclick="markLoanReturned('${jsStr(l.id)}')">${t('loanReturn')}</button>`}
+        <button class="btn del-btn" onclick="deleteLoan('${jsStr(l.id)}')">${t('delBtn')}</button>
+      </div>` : '';
+    return `<div class="loan-card s-${s}">
+      <div class="lc-top">${avatarImg(l.borrower, 32)}<div class="lc-who">${esc(l.borrower)}</div>${amt}</div>
+      <div class="lc-item">${itemIcon(l.item, 20)}<span class="q">${fmtNum(l.qty)}×</span><b>${esc(l.item)}</b></div>
+      ${bar}
+      <div class="loan-row"><span>${t('loanLentOn', startStr)} → ${dueStr}${by}</span><span class="when ${whenCls}">${whenTxt}</span></div>
+      ${note}
+      ${actions}
     </div>`;
-  }).join('');
+  };
+
+  const section = (key, list, s, dot) => list.length
+    ? `<div class="loan-sec"><div class="loan-sec-h"><span class="dot" style="background:${dot}"></span>${t(key)} <span class="count">${list.length}</span></div>${list.map(l => card(l, s)).join('')}</div>`
+    : '';
+
+  html += `<div class="panel">`;
+  html += section('loanSecOverdue', groups.overdue, 'overdue', 'var(--red)');
+  html += section('loanSecActive', groups.active, 'active', 'var(--accent-2)');
+  html += section('loanSecReturned', groups.returned, 'returned', 'var(--text-faint)');
   html += `</div>`;
   document.getElementById('loansContent').innerHTML = html;
 }
