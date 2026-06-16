@@ -1,6 +1,6 @@
 {
   "v": 2,
-  "updated": "2026-06-15T21:34:57.539Z",
+  "updated": "2026-06-15T22:05:57.253Z",
   "stock": {
     "Purple Wool@@world 19977,75,-17192": {
       "history": [
@@ -333,6 +333,62 @@
       "by": "Neph",
       "mod": "2026-06-15T21:34:56.431Z",
       "del": true
+    },
+    {
+      "id": "ln_1781561033622_s1muv",
+      "borrower": "___Plant",
+      "item": "Odin's",
+      "qty": 1,
+      "amount": 10000,
+      "start": "2026-06-15T22:03:53.622Z",
+      "days": 3,
+      "returnedAt": "2026-06-15T22:04:02.218Z",
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-15T22:05:48.838Z",
+      "del": true
+    },
+    {
+      "id": "ln_1781561079293_03xcr",
+      "borrower": "softpines",
+      "item": "Test item",
+      "qty": 1,
+      "amount": 9000,
+      "start": "2026-06-15T22:04:39.293Z",
+      "days": 7,
+      "returnedAt": "2026-06-15T22:05:42.605Z",
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-15T22:05:47.063Z",
+      "del": true
+    },
+    {
+      "id": "ln_1781561099888_lynzv",
+      "borrower": "Luhvliii",
+      "item": "Micro Penis",
+      "qty": 1,
+      "amount": 200,
+      "start": "2026-06-15T22:04:59.888Z",
+      "days": 3,
+      "returnedAt": "2026-06-15T22:05:54.019Z",
+      "note": "",
+      "by": "Neph",
+      "mod": "2026-06-15T22:05:56.056Z",
+      "del": true
+    },
+    {
+      "id": "ln_1781561132018_jk0lg",
+      "borrower": "_Grouch",
+      "item": "Strap on",
+      "qty": 2,
+      "amount": 12,
+      "start": "2026-06-15T22:05:32.018Z",
+      "days": 365,
+      "returnedAt": null,
+      "note": "Persoonlijke voorkeur",
+      "by": "Neph",
+      "mod": "2026-06-15T22:05:32.018Z",
+      "del": false
     }
   ]
 }
