@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0f14" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="QS·INSIGHTS" />
 <title>QS·INSIGHTS — Lotus shop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -269,6 +274,8 @@
   .cl-items { margin: 0; padding-left: 18px; }
   .cl-items li { font-size: 13px; color: var(--text-dim); margin: 4px 0; line-height: 1.5; }
 
+  .stale-banner { display: flex; align-items: center; gap: 8px; background: rgba(255, 209, 102, 0.08); border: 1px solid var(--accent); color: var(--accent); border-radius: 12px; padding: 9px 12px; margin: 0 0 14px; font-family: var(--mono); font-size: 12px; line-height: 1.4; }
+
   @media (min-width: 768px) {
     body { padding: 26px 30px 80px; }
     .container { max-width: 920px; }
@@ -295,6 +302,8 @@
       <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">☀</button>
     </div>
   </div>
+
+  <div id="staleBanner" class="stale-banner" style="display:none"></div>
 
   <div class="metabar">
     <div class="sync readonly" id="sync"><span class="led"></span><span id="syncText">verbinden…</span></div>
@@ -334,6 +343,11 @@
       <button class="btn" id="langNl" onclick="setLang('nl')">Nederlands</button>
       <button class="btn" id="langEn" onclick="setLang('en')">English</button>
     </div>
+    <div class="divider"></div>
+    <label data-i18n="exportTitle">Exporteren</label>
+    <div class="desc" data-i18n="exportDesc">Download de verkopen van de huidige periode als CSV (aankopen van mede-eigenaren niet meegerekend).</div>
+    <button class="btn" style="width:100%" onclick="exportCsv()" data-i18n="exportBtn">⬇ Download CSV</button>
+    <div class="small-note" style="margin-top:10px" data-i18n="pwaHint">Tip: installeer dit dashboard als app. Android/Chrome: menu ⋮ → App installeren. iPhone/Safari: deelknop → Zet op beginscherm.</div>
     <div class="divider"></div>
     <h3 style="font-size:14px;" data-i18n="setAdminTitle">Bewerken inschakelen (eenmalig, beheerder)</h3>
     <div class="desc" data-i18n-html="setAdminDesc">Plak een GitHub-token (Contents: read &amp; write) en kies een wachtwoord. De token wordt <b>versleuteld</b> opgeslagen; mede-eigenaren ontgrendelen bewerken met alleen het wachtwoord.</div>
@@ -385,6 +399,8 @@ let sinceLastVisit = null;
 let pollTimer = null;
 let syncInFlight = false;
 let lastCsvText = null;
+let recentQuery = '';
+let recentLimit = 30;
 
 /* Co-owners: counted for stock + shop visibility, never shown as customers.
    Edit this one line to add/remove a name (lowercase). */
@@ -440,6 +456,19 @@ const I18N = {
     loanDelTitle: 'Uitlening verwijderen', loanDelDesc: (i, b) => `Verwijder de uitlening van ${i} aan ${b}?`, loanDelOk: 'Verwijder',
     loanSecOverdue: 'Te laat', loanSecActive: 'Lopend', loanSecReturned: 'Teruggebracht', loanFeeLabel: 'bedrag', loanDuePreview: (d) => `Terug verwacht op ${d}`,
     changelogTitle: 'Wat is er nieuw', changelogCurrent: 'nu',
+    staleWarn: (rel) => `Laatste verkoop-data is van ${rel}. Draai de pipeline voor verse cijfers.`,
+    restockBtn: '📋 Bijvul-lijst', restockTitle: 'Bijvul-lijst', restockDesc: 'Wat er nodig is om alles weer vol te krijgen, opgeteld per item.',
+    restockNone: 'Niets bij te vullen. Alles zit vol!', restockNoneHint: 'Shops zonder ingestelde voorraad tellen niet mee.',
+    restockShops: (n) => `${n} shop${n === 1 ? '' : 's'}`, restockPieces: (n) => `${n} stuks`, restockStacks: (s, r) => r ? `${s} stacks + ${r}` : `${s} stacks`,
+    restockCopy: '📋 Kopieer lijst', restockCopied: 'Lijst gekopieerd!',
+    recentSearchPh: 'Zoek koper, item of coördinaten…', recentShowMore: (n) => `Toon meer (nog ${n})`, recentNoMatch: 'Geen verkopen gevonden voor deze zoekopdracht.',
+    shopRankTitle: '🏪 Beste locaties', shopRankDesc: 'Omzet per shop-locatie, hoogste eerst.', shopRankBest: (i) => `vooral ${i}`,
+    shopDeadTitle: '😴 Stille shops', shopDeadDesc: (d) => `Al ${d}+ dagen geen verkoop. Kandidaten om iets anders te verkopen.`, shopDeadNone: 'Geen stille shops, overal is recent verkocht!',
+    shopDeadLast: (rel) => `laatste verkoop ${rel}`, shopMore: (n) => `+ nog ${n} locaties`,
+    pLoansTitle: 'Openstaande leningen', pLoanDue: (d) => `terug voor ${d}`,
+    loanExtend: 'Verleng', loanExtendTitle: 'Lening verlengen', loanExtendDesc: (i, b) => `Extra dagen voor ${i} aan ${b}.`, loanExtended: (d) => `Verlengd tot ${d}`,
+    exportTitle: 'Exporteren', exportDesc: 'Download de verkopen van de huidige periode als CSV (aankopen van mede-eigenaren niet meegerekend).', exportBtn: '⬇ Download CSV', exportDone: (n) => `${n} verkopen geëxporteerd`, exportNone: 'Geen verkopen in de huidige selectie.',
+    pwaHint: 'Tip: installeer dit dashboard als app. Android/Chrome: menu ⋮ → App installeren. iPhone/Safari: deelknop → Zet op beginscherm.',
     custSearchPh: 'Zoek klant…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> hoge besteder · <span class="badge green">stamklant</span> 5+ orders · <span class="badge blue">nieuw</span> eerste week · <span class="badge red">blijft weg</span> 30+ dagen stil · <span class="badge gray">groothandel</span> grote orders',
     tagVIP: 'VIP', tagRegular: 'stamklant', tagNew: 'nieuw', tagGone: 'blijft weg', tagWholesale: 'groothandel',
@@ -537,6 +566,19 @@ const I18N = {
     loanDelTitle: 'Delete loan', loanDelDesc: (i, b) => `Delete the loan of ${i} to ${b}?`, loanDelOk: 'Delete',
     loanSecOverdue: 'Overdue', loanSecActive: 'Active', loanSecReturned: 'Returned', loanFeeLabel: 'amount', loanDuePreview: (d) => `Due back on ${d}`,
     changelogTitle: "What's new", changelogCurrent: 'current',
+    staleWarn: (rel) => `Latest sales data is from ${rel}. Run the pipeline for fresh numbers.`,
+    restockBtn: '📋 Restock list', restockTitle: 'Restock list', restockDesc: 'What is needed to fill everything back up, totaled per item.',
+    restockNone: 'Nothing to restock. Everything is full!', restockNoneHint: 'Shops without configured stock are not counted.',
+    restockShops: (n) => `${n} shop${n === 1 ? '' : 's'}`, restockPieces: (n) => `${n} pieces`, restockStacks: (s, r) => r ? `${s} stacks + ${r}` : `${s} stacks`,
+    restockCopy: '📋 Copy list', restockCopied: 'List copied!',
+    recentSearchPh: 'Search buyer, item or coordinates…', recentShowMore: (n) => `Show more (${n} left)`, recentNoMatch: 'No sales match this search.',
+    shopRankTitle: '🏪 Top locations', shopRankDesc: 'Revenue per shop location, highest first.', shopRankBest: (i) => `mostly ${i}`,
+    shopDeadTitle: '😴 Quiet shops', shopDeadDesc: (d) => `No sales for ${d}+ days. Candidates to sell something else.`, shopDeadNone: 'No quiet shops, everything sold recently!',
+    shopDeadLast: (rel) => `last sale ${rel}`, shopMore: (n) => `+ ${n} more locations`,
+    pLoansTitle: 'Outstanding loans', pLoanDue: (d) => `due by ${d}`,
+    loanExtend: 'Extend', loanExtendTitle: 'Extend loan', loanExtendDesc: (i, b) => `Extra days for ${i} to ${b}.`, loanExtended: (d) => `Extended until ${d}`,
+    exportTitle: 'Export', exportDesc: 'Download the sales of the current period as CSV (co-owner purchases excluded).', exportBtn: '⬇ Download CSV', exportDone: (n) => `Exported ${n} sales`, exportNone: 'No sales in the current selection.',
+    pwaHint: 'Tip: install this dashboard as an app. Android/Chrome: menu ⋮ → Install app. iPhone/Safari: share button → Add to Home Screen.',
     custSearchPh: 'Search customer…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> high spender · <span class="badge green">regular</span> 5+ orders · <span class="badge blue">new</span> first week · <span class="badge red">churning</span> 30+ days quiet · <span class="badge gray">wholesale</span> large orders',
     tagVIP: 'VIP', tagRegular: 'regular', tagNew: 'new', tagGone: 'churning', tagWholesale: 'wholesale',
@@ -599,6 +641,27 @@ function dloc() { return lang === 'en' ? 'en-US' : 'nl-NL'; }
 
 /* ============ CHANGELOG ============ */
 const CHANGELOG = [
+  {
+    v: '1.9', date: '2026-06-16',
+    nl: [
+      'Bijvul-lijst op Voorraad: alles wat aangevuld moet worden, opgeteld per item, met kopieerknop voor onderweg.',
+      'Waarschuwing bovenaan als de verkoopdata verouderd is, zodat een altijd-open scherm nooit stilletjes oude cijfers toont.',
+      'Recent: zoeken op koper, item of locatie, en verder bladeren met Toon meer.',
+      'Inzichten: ranglijst van best verdienende locaties plus een lijst met stille shops.',
+      'Klantprofiel toont openstaande leningen, en leningen kun je nu verlengen.',
+      'Installeerbaar als app op je telefoon, en CSV-export van de huidige periode via Instellingen.',
+      'De pipeline bewaart nu automatisch de laatste 7 back-ups van het archief.'
+    ],
+    en: [
+      'Restock list on Stock: everything that needs refilling, totaled per item, with a copy button for on the go.',
+      'Warning at the top when sales data is stale, so an always-open screen never silently shows old numbers.',
+      'Recent: search by buyer, item or location, and page through with Show more.',
+      'Insights: ranking of top-earning locations plus a list of quiet shops.',
+      'Customer profile shows outstanding loans, and loans can now be extended.',
+      'Installable as an app on your phone, and CSV export of the current period via Settings.',
+      'The pipeline now automatically keeps the last 7 backups of the archive.'
+    ]
+  },
   {
     v: '1.8', date: '2026-06-16',
     nl: [
@@ -878,6 +941,25 @@ function openSettings() {
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
 
+function exportCsv() {
+  const rows = transactions;
+  if (!rows.length) { showToast(t('exportNone'), 'red'); return; }
+  const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const head = ['time', 'buyer', 'item', 'quantity', 'gross', 'tax', 'net', 'shop'];
+  const lines = [head.join(',')].concat(rows.map(tx => [
+    tx.time, tx.buyer, tx.item, tx.qty,
+    Number(tx.gross || 0).toFixed(2), Number(tx.tax || 0).toFixed(2), Number(tx.net || 0).toFixed(2),
+    tx.shop
+  ].map(q).join(',')));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'qs_export_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  showToast(t('exportDone', rows.length), 'green');
+}
+
 async function saveSettings() {
   const name = document.getElementById('nameInput').value.trim();
   if (name) setUserName(name);
@@ -1140,6 +1222,56 @@ function stockConfidence(entry) {
 }
 
 /* ---- stock actions (all gated by ensureUnlocked) ---- */
+
+/* ---- restock list (read-only, for everyone) ---- */
+function computeRestock() {
+  const combos = buildStockCombos();
+  const all = getStockData();
+  const perItem = {};
+  Object.values(combos).forEach(c => {
+    const e = all[c.key];
+    if (!e || isShopDeleted(e, c)) return;
+    const est = estimateStock(e, c);
+    if (est == null) return;
+    const full = (e.capacity && e.capacity > 0) ? e.capacity : e.baseline;
+    const need = Math.max(0, Math.round((full || 0) - est));
+    if (need <= 0) return;
+    const o = perItem[c.item] || (perItem[c.item] = { item: c.item, need: 0, shops: 0 });
+    o.need += need; o.shops++;
+  });
+  return Object.values(perItem).sort((a, b) => b.need - a.need);
+}
+function openRestockList() {
+  const list = computeRestock();
+  const existing = document.getElementById('restockModal'); if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'modal-bg open'; el.id = 'restockModal';
+  el.onclick = (e) => { if (e.target === el) el.remove(); };
+  let body;
+  if (!list.length) body = `<div class="empty"><div class="art">[ ✔ ]</div><p>${t('restockNone')}</p><p class="hint">${t('restockNoneHint')}</p></div>`;
+  else body = `<div class="prof-scroll tall">` + list.map(r => {
+    const st = Math.floor(r.need / 64), rest = r.need % 64;
+    const stackTxt = r.need >= 64 ? ` · ${t('restockStacks', st, rest)}` : '';
+    return `<div class="row-item">${itemIcon(r.item, 22)}<div class="main"><div class="t1" style="font-size:13px">${esc(r.item)}</div><div class="t2">${t('restockShops', r.shops)}${stackTxt}</div></div><div class="amount">${t('restockPieces', fmtNum(r.need))}</div></div>`;
+  }).join('') + `</div>`;
+  el.innerHTML = `<div class="modal" style="max-width:480px">
+    <h3>${t('restockTitle')}</h3>
+    <div class="desc">${t('restockDesc')}</div>
+    ${body}
+    <div class="modal-actions">
+      ${list.length ? `<button class="btn" onclick="copyRestockList()">${t('restockCopy')}</button>` : ''}
+      <button class="btn primary" onclick="document.getElementById('restockModal').remove()">${t('close')}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+}
+function copyRestockList() {
+  const list = computeRestock();
+  const txt = list.map(r => `${r.need}x ${r.item} (${t('restockShops', r.shops)})`).join('\n');
+  const fallback = () => { try { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(t('restockCopied'), 'green'); } catch (e) {} };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => showToast(t('restockCopied'), 'green'), fallback);
+  else fallback();
+}
 function _pushHistory(entry, type, qty, note) {
   entry.history = entry.history || [];
   entry.history.push({ t: new Date().toISOString(), type, qty, by: ensureUserName(), note: note || '' });
@@ -1361,6 +1493,7 @@ async function pollOnce() {
       if (loansChanged) { if (activeTab === 'loans') renderLoans(); updateLoanBadge(); }
     }
     updateSyncStatus();
+    updateStaleBanner();
   } catch (e) {}
 }
 
@@ -1440,11 +1573,49 @@ function applyCustomRange() {
 }
 
 /* ============ RENDER DISPATCHER ============ */
+function updateStaleBanner() {
+  const el = document.getElementById('staleBanner'); if (!el) return;
+  let newest = 0, newestIso = null;
+  allTransactions.forEach(tx => { const m = new Date(tx.time).getTime(); if (m > newest) { newest = m; newestIso = tx.time; } });
+  if (!newest || (Date.now() - newest) < 48 * 3600000) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.textContent = '⚠ ' + t('staleWarn', formatRelativeDate(newestIso));
+}
+
+function setupPWA() {
+  try {
+    const icon = (size) => {
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const x = c.getContext('2d');
+      x.fillStyle = '#0b0f14'; x.fillRect(0, 0, size, size);
+      x.fillStyle = '#ffd166'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.font = '700 ' + Math.round(size * 0.34) + 'px "JetBrains Mono", monospace';
+      x.fillText('QS', size / 2, size * 0.46);
+      x.fillStyle = '#5ec46c'; x.fillRect(size * 0.31, size * 0.63, size * 0.38, Math.max(3, size * 0.045));
+      return c.toDataURL('image/png');
+    };
+    const manifest = {
+      name: 'QS·INSIGHTS', short_name: 'QS·INSIGHTS',
+      start_url: location.href.split('#')[0], scope: location.href.replace(/[^/]*$/, ''),
+      display: 'standalone', background_color: '#0b0f14', theme_color: '#0b0f14',
+      icons: [
+        { src: icon(192), sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: icon(512), sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: icon(512), sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ]
+    };
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+    document.head.appendChild(link);
+  } catch (e) {}
+}
+
 function render() {
   const dash = document.getElementById('dashboard');
   if (!allTransactions.length) {
     dash.innerHTML = `<div class="panel"><div class="empty"><div class="art">[ ⛏ ]</div><p>${t('emptyNoSales')}</p><p class="hint">${t('emptyNoSalesHint')}</p></div></div>`;
-    updateSyncStatus(); return;
+    updateSyncStatus(); updateStaleBanner(); return;
   }
   dash.innerHTML =
     tabDiv('overview', renderOverview()) +
@@ -1464,6 +1635,7 @@ function render() {
   fillFacts('funFactsBox', 6);
   updateStockBadge();
   updateLoanBadge();
+  updateStaleBanner();
 }
 function tabDiv(name, html) {
   return `<div class="tab-content ${activeTab === name ? 'active' : ''}" data-tab="${name}">${html}</div>`;
@@ -1572,6 +1744,7 @@ function stockShell() {
     <div class="panel">
       <div class="panel-title">${t('tabStock')} <span class="count" id="stockCount"></span></div>
       <input class="search" id="stockSearch" data-i18n-ph="stockSearchPh" placeholder="${t('stockSearchPh')}" oninput="renderStock()" />
+      <button class="btn" style="margin-bottom:8px;width:100%" onclick="openRestockList()">${t('restockBtn')}</button>
       ${unlocked
         ? `<button class="btn primary" style="margin-bottom:12px;width:100%" onclick="fillAllToCapacity()">${t('stockFillAll')}</button>`
         : `<div class="locked-note">${t('stockLockedNote')}</div>`}
@@ -1750,6 +1923,27 @@ function reopenLoan(id) {
   _updateLoan(id, { returnedAt: null });
   renderLoans(); updateLoanBadge();
 }
+function extendLoan(id) {
+  if (!ensureUnlocked()) return;
+  const l = getLoans().find(x => x.id === id && !x.del);
+  if (!l) return;
+  openInputModal({
+    title: t('loanExtendTitle'),
+    desc: t('loanExtendDesc', l.item, l.borrower),
+    value: 7,
+    okLabel: t('loanExtend'),
+    onOk: (n) => {
+      const add = Math.round(n);
+      if (!add || add < 1) return t('imInvalid');
+      _updateLoan(id, { days: (Number(l.days) || 0) + add });
+      renderLoans(); updateLoanBadge();
+      const fresh = getLoans().find(x => x.id === id);
+      const due = fresh ? new Date(loanDueMs(fresh)).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' }) : '';
+      showToast(t('loanExtended', due), 'green');
+      return true;
+    }
+  });
+}
 function deleteLoan(id) {
   if (!ensureUnlocked()) return;
   const loan = getLoans().find(l => l.id === id); if (!loan) return;
@@ -1819,7 +2013,8 @@ function renderLoans() {
     const actions = unlocked ? `<div class="loan-actions">
         ${s === 'returned'
           ? `<button class="btn" onclick="reopenLoan('${jsStr(l.id)}')">${t('loanReopen')}</button>`
-          : `<button class="btn primary" onclick="markLoanReturned('${jsStr(l.id)}')">${t('loanReturn')}</button>`}
+          : `<button class="btn primary" onclick="markLoanReturned('${jsStr(l.id)}')">${t('loanReturn')}</button>
+             <button class="btn" onclick="extendLoan('${jsStr(l.id)}')">${t('loanExtend')}</button>`}
         <button class="btn del-btn" onclick="deleteLoan('${jsStr(l.id)}')">${t('delBtn')}</button>
       </div>` : '';
     return `<div class="loan-card s-${s}">
@@ -2133,6 +2328,17 @@ function showCustomerProfile(name) {
   const histHtml = txs.slice(0, 30).map(t => `<div class="row-item">${itemIcon(t.item, 22)}<div class="main"><div class="t1" style="font-size:13px">${fmtNum(t.qty)}× ${esc(t.item)}</div><div class="t2">${formatRelativeDate(t.time)} · @ ${esc(coordsOf(t.shop))}</div></div><div class="amount" style="font-size:12px">${fmtMoney(t.net)}</div></div>`).join('');
   const itemsHtml = itemList.map(([it, q]) => `<div class="row-item">${itemIcon(it, 22)}<div class="main"><div class="t1" style="font-size:13px">${esc(it)}</div></div><div class="amount" style="font-size:12px;color:var(--text-dim)">${fmtNum(q)}×</div></div>`).join('');
 
+  const myLoans = activeLoans().filter(l => (l.borrower || '').trim().toLowerCase() === name.trim().toLowerCase() && loanStatus(l) !== 'returned');
+  let loanBlock = '';
+  if (myLoans.length) {
+    loanBlock = `<div class="divider"></div><div class="panel-title">${t('pLoansTitle')} <span class="count">${myLoans.length}</span></div>` +
+      myLoans.map(l => {
+        const s = loanStatus(l);
+        const due = new Date(loanDueMs(l)).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' });
+        return `<div class="row-item">${itemIcon(l.item, 22)}<div class="main"><div class="t1" style="font-size:13px">${fmtNum(l.qty)}× ${esc(l.item)}</div><div class="t2">${t('pLoanDue', due)}</div></div><span class="badge ${s === 'overdue' ? 'red' : 'green'}">${s === 'overdue' ? t('stOverdue') : t('stActive')}</span></div>`;
+      }).join('');
+  }
+
   const el = document.createElement('div');
   el.className = 'modal-bg open'; el.id = 'profileModal';
   el.onclick = (e) => { if (e.target === el) closeProfile(); };
@@ -2150,6 +2356,7 @@ function showCustomerProfile(name) {
     </div>
     <div class="small-note">${t('pCustSince', new Date(first).toLocaleDateString(dloc(), { day: 'numeric', month: 'short', year: 'numeric' }), formatRelativeDate(last), favShop ? esc(favShop[0]) : '')}</div>
     ${tzBlock}
+    ${loanBlock}
     ${hasMonthly ? `<div class="divider"></div><div class="panel-title">${t('pMonthly')}</div><div class="chart-wrap" style="height:140px"><canvas id="profileChart"></canvas></div>` : ''}
     <div class="divider"></div>
     <div class="panel-title">${t('pItems')} <span class="count">${itemList.length}</span></div>
@@ -2203,13 +2410,40 @@ function suspiciousPanel() {
 }
 
 /* ============ RECENT ============ */
+function recentFiltered() {
+  const q = recentQuery.trim().toLowerCase();
+  const sorted = [...transactions].sort((a, b) => new Date(b.time) - new Date(a.time));
+  if (!q) return sorted;
+  return sorted.filter(tx =>
+    tx.buyer.toLowerCase().includes(q) ||
+    tx.item.toLowerCase().includes(q) ||
+    coordsOf(tx.shop).toLowerCase().includes(q));
+}
+function recentRowHtml(tx) {
+  return `<div class="row-item">${itemIcon(tx.item)}<div class="main"><div class="t1">${t('recentBought', esc(tx.buyer), fmtNum(tx.qty), esc(tx.item))}</div><div class="t2">${formatRelativeDate(tx.time)} · @ ${esc(coordsOf(tx.shop))}</div></div><div class="amount">${fmtMoney(tx.net)}</div></div>`;
+}
+function recentListHtml() {
+  const f = recentFiltered();
+  const shown = f.slice(0, recentLimit);
+  let h = shown.map(recentRowHtml).join('');
+  if (!shown.length) h = `<div class="small-note" style="padding:8px 2px">${t('recentNoMatch')}</div>`;
+  if (f.length > shown.length) h += `<button class="btn" style="width:100%;margin-top:10px" onclick="recentMore()">${t('recentShowMore', f.length - shown.length)}</button>`;
+  return { h, total: f.length };
+}
+function updateRecentList() {
+  const host = document.getElementById('recentList'); if (!host) return;
+  const { h, total } = recentListHtml();
+  host.innerHTML = h;
+  const c = document.getElementById('recentCount'); if (c) c.textContent = total;
+}
+function recentSearchInput(v) { recentQuery = v; recentLimit = 30; updateRecentList(); }
+function recentMore() { recentLimit += 50; updateRecentList(); }
 function renderRecent() {
-  const recent = [...transactions].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 30);
-  if (!recent.length) return emptyPanel(t('recentNone'));
-  let html = `<div class="panel"><div class="panel-title">${t('recentTitle')} <span class="count">${recent.length}</span></div>`;
-  html += recent.map(tx => `<div class="row-item">${itemIcon(tx.item)}<div class="main"><div class="t1">${t('recentBought', esc(tx.buyer), fmtNum(tx.qty), esc(tx.item))}</div><div class="t2">${formatRelativeDate(tx.time)} · @ ${esc(coordsOf(tx.shop))}</div></div><div class="amount">${fmtMoney(tx.net)}</div></div>`).join('');
-  html += `</div>`;
-  return html;
+  if (!transactions.length) return emptyPanel(t('recentNone'));
+  const { h, total } = recentListHtml();
+  return `<div class="panel"><div class="panel-title">${t('recentTitle')} <span class="count" id="recentCount">${total}</span></div>
+    <input class="search" id="recentSearch" placeholder="${t('recentSearchPh')}" value="${esc(recentQuery)}" oninput="recentSearchInput(this.value)" />
+    <div id="recentList">${h}</div></div>`;
 }
 
 /* ============ INSIGHTS (lifetime — analyticsAll) ============ */
@@ -2297,6 +2531,36 @@ function renderInsights() {
     <div class="mini-card"><div class="ml">${t('insLongStreak')}</div><div class="mv" style="color:var(--blue)">${t('insStreakDays', best)}</div><div class="ms">${t('insStreakSub')}</div></div>
     <div class="mini-card"><div class="ml">${t('insBestCust')}</div><div class="mv" style="color:var(--accent)">${topCust ? esc(topCust.name) : '—'}</div><div class="ms">${topCust ? fmtMoney(topCust.total) : ''}</div></div>
   </div></div>`;
+
+  // 6. Shop locations: best earners + quiet shops
+  const byLoc = {};
+  analyticsAll.forEach(tx => {
+    const c = coordsOf(tx.shop) || '?';
+    const o = byLoc[c] || (byLoc[c] = { coords: c, net: 0, count: 0, last: 0, items: {} });
+    o.net += tx.net; o.count++;
+    const tm = new Date(tx.time).getTime(); if (tm > o.last) o.last = tm;
+    o.items[tx.item] = (o.items[tx.item] || 0) + tx.net;
+  });
+  const shopArr = Object.values(byLoc);
+  if (shopArr.length) {
+    const top = [...shopArr].sort((a, b) => b.net - a.net).slice(0, 8);
+    const maxN = top[0].net || 1;
+    html += `<div class="panel"><div class="panel-title">${t('shopRankTitle')}</div><div class="small-note" style="margin-bottom:10px">${t('shopRankDesc')}</div>`;
+    html += top.map(s => {
+      const bi = Object.entries(s.items).sort((a, b) => b[1] - a[1])[0];
+      return `<div class="row-item">${itemIcon(bi ? bi[0] : '', 22)}<div class="main"><div class="t1" style="font-size:13px;font-family:var(--mono)">@ ${esc(s.coords)}</div><div class="bar-track"><div class="bar-fill green" style="width:${(s.net / maxN * 100).toFixed(0)}%"></div></div><div class="t2">${bi ? t('shopRankBest', esc(bi[0])) : ''} · ${s.count}×</div></div><div class="amount">${fmtMoney(s.net)}</div></div>`;
+    }).join('');
+    html += `</div>`;
+    const DEAD_D = 14;
+    const dead = shopArr.filter(s => (Date.now() - s.last) > DEAD_D * 86400000).sort((a, b) => a.last - b.last);
+    html += `<div class="panel"><div class="panel-title">${t('shopDeadTitle')} <span class="count">${dead.length}</span></div><div class="small-note" style="margin-bottom:10px">${t('shopDeadDesc', DEAD_D)}</div>`;
+    if (!dead.length) html += `<div class="small-note">${t('shopDeadNone')}</div>`;
+    else {
+      html += dead.slice(0, 10).map(s => `<div class="row-item"><div class="main"><div class="t1" style="font-size:13px;font-family:var(--mono)">@ ${esc(s.coords)}</div><div class="t2">${t('shopDeadLast', formatRelativeDate(new Date(s.last).toISOString()))}</div></div><div class="amount" style="color:var(--text-dim)">${fmtMoney(s.net)}</div></div>`).join('');
+      if (dead.length > 10) html += `<div class="small-note" style="margin-top:6px">${t('shopMore', dead.length - 10)}</div>`;
+    }
+    html += `</div>`;
+  }
 
   host.innerHTML = html;
 }
@@ -2396,7 +2660,7 @@ function wireEvents() {
   });
   // Escape closes any open modal
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal' || m.id === 'unlockModal' || m.id === 'loanModal' || m.id === 'confirmModal' || m.id === 'changelogModal') ? m.remove() : m.classList.remove('open')); }
+    if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.open').forEach(m => (m.id === 'profileModal' || m.id === 'rangeModal' || m.id === 'unlockModal' || m.id === 'loanModal' || m.id === 'confirmModal' || m.id === 'changelogModal' || m.id === 'restockModal') ? m.remove() : m.classList.remove('open')); }
   });
   // Scroll-to-top
   window.addEventListener('scroll', () => { document.getElementById('toTop').classList.toggle('show', window.scrollY > 600); }, { passive: true });
@@ -2415,6 +2679,7 @@ async function init() {
   wireEvents();
   applyLanguage();
   updateVersionBadge();
+  setupPWA();
 
   // Load transaction data (public, no auth needed)
   try {
