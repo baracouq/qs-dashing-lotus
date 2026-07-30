@@ -307,6 +307,7 @@
 <div class="sheet-bg" id="restockSheet" onclick="if(event.target===this)closeSheet('restockSheet')"><div class="sheet"><div class="handle"></div><div id="restockBody"></div></div></div>
 <div class="sheet-bg" id="loanSheet" onclick="if(event.target===this)closeSheet('loanSheet')"><div class="sheet"><div class="handle"></div><div id="loanBody"></div></div></div>
 <div class="sheet-bg" id="loanForm" onclick="if(event.target===this)closeSheet('loanForm')"><div class="sheet"><div class="handle"></div><div id="loanFormBody"></div></div></div>
+<div class="sheet-bg" id="customersSheet" onclick="if(event.target===this)closeSheet('customersSheet')"><div class="sheet"><div class="handle"></div><div id="customersBody"></div></div></div>
 <div class="sheet-bg" id="profileSheet" onclick="if(event.target===this)closeSheet('profileSheet')"><div class="sheet"><div class="handle"></div><div id="profileBody"></div></div></div>
 <div class="sheet-bg" id="settingsSheet" onclick="if(event.target===this)closeSheet('settingsSheet')"><div class="sheet"><div class="handle"></div><div id="settingsBody"></div></div></div>
 <div class="sheet-bg" id="unlockSheet" onclick="if(event.target===this)closeSheet('unlockSheet')"><div class="sheet"><div class="handle"></div><div id="unlockBody"></div></div></div>
@@ -365,7 +366,14 @@ const I18N = {
     lnDue: (d) => `terug voor ${d}`, lnDays: (n) => `nog ${n} dagen`, lnLate: (n) => `${n} dagen te laat`, lnRet: (d) => `terug op ${d}`, lnBy: (n) => `door ${n}`,
     lnReturn: '✓ Terug', lnExtend: 'Verleng', lnReopen: 'Heropen', lnExtTitle: 'Lening verlengen', lnExtDesc: (i, b) => `Extra dagen voor ${i} aan ${b}.`, lnExtDone: (d) => `Verlengd tot ${d}`,
     lnDelDesc: (i, b) => `Verwijder de uitlening van ${i} aan ${b}?`, lnErr: 'Vul minstens wie, wat en hoeveel dagen in.',
-    prSince: (d) => `Klant sinds ${d}`, prTotal: 'Totaal besteed', prSales: 'Aankopen', prAvg: 'Gemiddeld', prFav: 'Favoriete items', prRecent: 'Laatste aankopen', prLoans: 'Openstaande leningen',
+    prSince: (d) => `Klant sinds ${d}`,
+    cuTitle: 'Alle klanten', cuSearch: 'Zoek een klant…', cuScope: 'Alle tijd. Regio is geschat uit aankooptijden (jouw klok): een speelse indicatie, geen exacte locatie.',
+    cuMeta: (n, rel) => `${n} aankopen · laatste ${rel}`, buyersAll: (n) => `Alle klanten (${n}) →`,
+    confLow: 'lage zekerheid', confRough: 'ruwe schatting', confFair: 'redelijk zeker',
+    regEU: 'West-/Centraal-Europa', regEUsub: 'zelfde tijdzone als jij', regEEast: 'Oost-Europa / Midden-Oosten', regEEastSub: 'iets vóór op jou',
+    regAsia: 'Azië', regAsiaSub: 'ver vóór op jou', regOcea: 'Oost-Azië / Oceanië', regOceaSub: 'andere kant van de wereld',
+    regWEur: 'West-Europa / Atlantisch', regWEurSub: 'iets achter op jou', regAmer: 'Noord-/Zuid-Amerika', regAmerSub: 'achter op jou',
+    tzSameTime: 'ongeveer jouw tijd', tzBehind: (h) => `~${h} uur achter op jou`, tzAhead: (h) => `~${h} uur vóór op jou`, prTotal: 'Totaal besteed', prSales: 'Aankopen', prAvg: 'Gemiddeld', prFav: 'Favoriete items', prRecent: 'Laatste aankopen', prLoans: 'Openstaande leningen',
     lockView: 'Meekijken', ulTitle: 'Bewerken ontgrendelen', ulDesc: 'Vul je naam en het gedeelde wachtwoord in. Je naam komt bij voorraad-updates te staan.',
     ulName: 'Je naam', ulPass: 'Wachtwoord', ulGo: 'Ontgrendel', ulNoAuth: 'Er is nog geen wachtwoord ingesteld (zie Instellingen → Beheer).', ulWrong: 'Onjuist wachtwoord.', ulHi: (n) => `Ontgrendeld. Hoi ${n}!`, lockDone: 'Vergrendeld. Je kijkt weer mee.',
     seTitle: 'Instellingen', seLang: 'Taal', seTheme: 'Thema', seThemeD: 'Donker', seThemeL: 'Licht',
@@ -408,7 +416,14 @@ const I18N = {
     lnDue: (d) => `due by ${d}`, lnDays: (n) => `${n} days left`, lnLate: (n) => `${n} days overdue`, lnRet: (d) => `returned ${d}`, lnBy: (n) => `by ${n}`,
     lnReturn: '✓ Returned', lnExtend: 'Extend', lnReopen: 'Reopen', lnExtTitle: 'Extend loan', lnExtDesc: (i, b) => `Extra days for ${i} to ${b}.`, lnExtDone: (d) => `Extended until ${d}`,
     lnDelDesc: (i, b) => `Delete the loan of ${i} to ${b}?`, lnErr: 'Fill in at least who, what and how many days.',
-    prSince: (d) => `Customer since ${d}`, prTotal: 'Total spent', prSales: 'Purchases', prAvg: 'Average', prFav: 'Favorite items', prRecent: 'Latest purchases', prLoans: 'Outstanding loans',
+    prSince: (d) => `Customer since ${d}`,
+    cuTitle: 'All customers', cuSearch: 'Search a customer…', cuScope: 'All time. Region is estimated from purchase times (your clock): a playful hint, not an exact location.',
+    cuMeta: (n, rel) => `${n} purchases · last ${rel}`, buyersAll: (n) => `All customers (${n}) →`,
+    confLow: 'low confidence', confRough: 'rough estimate', confFair: 'fairly confident',
+    regEU: 'Western/Central Europe', regEUsub: 'same timezone as you', regEEast: 'Eastern Europe / Middle East', regEEastSub: 'a bit ahead of you',
+    regAsia: 'Asia', regAsiaSub: 'far ahead of you', regOcea: 'East Asia / Oceania', regOceaSub: 'other side of the world',
+    regWEur: 'Western Europe / Atlantic', regWEurSub: 'a bit behind you', regAmer: 'North/South America', regAmerSub: 'behind you',
+    tzSameTime: 'about your time', tzBehind: (h) => `~${h}h behind you`, tzAhead: (h) => `~${h}h ahead of you`, prTotal: 'Total spent', prSales: 'Purchases', prAvg: 'Average', prFav: 'Favorite items', prRecent: 'Latest purchases', prLoans: 'Outstanding loans',
     lockView: 'Viewing', ulTitle: 'Unlock editing', ulDesc: 'Enter your name and the shared password. Your name is attached to stock updates.',
     ulName: 'Your name', ulPass: 'Password', ulGo: 'Unlock', ulNoAuth: 'No password has been set up yet (see Settings → Admin).', ulWrong: 'Wrong password.', ulHi: (n) => `Unlocked. Hi ${n}!`, lockDone: 'Locked. You are viewing again.',
     seTitle: 'Settings', seLang: 'Language', seTheme: 'Theme', seThemeD: 'Dark', seThemeL: 'Light',
@@ -460,6 +475,7 @@ function rerenderOpenSheets() {
   if (sheetOpen('stockSheet')) renderStockSheet();
   if (sheetOpen('loanSheet')) renderLoanSheet();
   if (sheetOpen('restockSheet')) renderRestockSheet();
+  if (sheetOpen('customersSheet')) renderCustomersSheet();
   if (sheetOpen('settingsSheet')) renderSettings();
 }
 
@@ -495,6 +511,38 @@ function _cfYes() { closeSheet('confirmSheet'); if (_cf && _cf.onYes) _cf.onYes(
 
 <script>
 /* ================ PORTED CORE (bewezen motor uit v1–v2.1) ================ */
+function estimateTimezone(txs) {
+  const hours = Array(24).fill(0);
+  txs.forEach(t => hours[new Date(t.time).getHours()]++);
+  const n = txs.length;
+  if (!n) return null;
+  let sx = 0, sy = 0;
+  for (let h = 0; h < 24; h++) { if (!hours[h]) continue; const a = h / 24 * 2 * Math.PI; sx += hours[h] * Math.cos(a); sy += hours[h] * Math.sin(a); }
+  const R = Math.sqrt(sx * sx + sy * sy) / n;          // 0..1 concentration of activity
+  let ang = Math.atan2(sy, sx); if (ang < 0) ang += 2 * Math.PI;
+  const peakAms = ang / (2 * Math.PI) * 24;            // fractional peak hour (your clock)
+  let offset = 20 - peakAms;                            // assume local evening peak ~20:00
+  offset = ((offset % 24) + 24) % 24; if (offset >= 12) offset -= 24;  // normalize to range -12..+12
+  let conf;
+  if (n < 4 || R < 0.25) conf = { label: t('confLow'), cls: 'gray' };
+  else if (n >= 8 && R >= 0.5) conf = { label: t('confFair'), cls: 'green' };
+  else conf = { label: t('confRough'), cls: 'amber' };
+  return { hours, n, R, peakAms, offset, region: regionForOffset(offset), conf };
+}
+function regionForOffset(o) {
+  if (o >= -1.5 && o <= 1.5) return { flag: '🇪🇺', label: t('regEU'), sub: t('regEUsub') };
+  if (o > 1.5 && o <= 4) return { flag: '🌍', label: t('regEEast'), sub: t('regEEastSub') };
+  if (o > 4 && o <= 8.5) return { flag: '🌏', label: t('regAsia'), sub: t('regAsiaSub') };
+  if (o > 8.5 || o <= -10.5) return { flag: '🌏', label: t('regOcea'), sub: t('regOceaSub') };
+  if (o < -1.5 && o >= -4.5) return { flag: '🌍', label: t('regWEur'), sub: t('regWEurSub') };
+  return { flag: '🌎', label: t('regAmer'), sub: t('regAmerSub') };
+}
+function tzOffsetText(offset) {
+  const r = Math.round(offset);
+  if (r === 0) return t('tzSameTime');
+  return r < 0 ? t('tzBehind', -r) : t('tzAhead', r);
+}
+
 let _syncTimer = null;
 
 function b64encode(str) { return btoa(unescape(encodeURIComponent(str))); }
@@ -1229,6 +1277,8 @@ function renderTops() {
   document.getElementById('topBuyers').innerHTML = topB.map(b =>
     `<div class="li click" onclick="openProfile('${jsStr(b.name)}')">${avatarImg(b.name, 24)}<div class="m"><div class="a">${esc(b.name)}</div><div class="b">${t('buyersMeta', b.count)}</div></div><div class="amt">${fmtMoney(b.net)}</div></div>`
   ).join('') || `<div class="empty"><div class="fx">✿</div><p class="h">${t('rNoMatch')}</p></div>`;
+  const totalCust = new Set(analyticsAll.map(x => x.buyer)).size;
+  if (totalCust) document.getElementById('topBuyers').innerHTML += `<button class="btn ghost wide" style="margin-top:10px" onclick="openCustomers()">${t('buyersAll', totalCust)}</button>`;
 }
 function renderActivity() {
   const tt = document.getElementById('actTitle'); if (tt) tt.textContent = t('sAct');
@@ -1303,6 +1353,46 @@ function renderRecentList() {
 function recentSearchInput(v) { recentQuery = v; recentLimit = 25; renderRecentList(); }
 function recentMore() { recentLimit += 50; renderRecentList(); }
 
+/* ---------------- customers overview ---------------- */
+let _cuQ = '';
+function openCustomers() { ensureCustomersSkeleton(); renderCustomersSheet(); openSheet('customersSheet'); }
+function ensureCustomersSkeleton() {
+  const b = document.getElementById('customersBody'); if (!b || b.dataset.ready) return; b.dataset.ready = '1';
+  b.innerHTML = `<h3>👥 <span id="cuTitle"></span></h3><p class="desc" id="cuScope"></p>
+    <input class="search" id="cuSearch" oninput="_cuQ=this.value;renderCustomersList()" />
+    <div id="cuList"></div>
+    <div class="s-foot"><button class="btn ghost" id="cuClose" onclick="closeSheet('customersSheet')"></button></div>`;
+}
+function renderCustomersSheet() {
+  ensureCustomersSkeleton();
+  const el = document.getElementById('cuTitle'); if (!el) return;
+  el.textContent = t('cuTitle');
+  document.getElementById('cuScope').textContent = t('cuScope');
+  document.getElementById('cuSearch').placeholder = t('cuSearch');
+  document.getElementById('cuClose').textContent = t('close');
+  renderCustomersList();
+}
+function renderCustomersList() {
+  const host = document.getElementById('cuList'); if (!host) return;
+  const per = {};
+  analyticsAll.forEach(tx => {
+    const p = per[tx.buyer] || (per[tx.buyer] = { name: tx.buyer, net: 0, count: 0, last: 0, txs: [] });
+    p.net += tx.net; p.count++; p.txs.push(tx);
+    const ms = new Date(tx.time).getTime(); if (ms > p.last) { p.last = ms; p.lastIso = tx.time; }
+  });
+  let list = Object.values(per).sort((a, b) => b.net - a.net);
+  const q = _cuQ.trim().toLowerCase();
+  if (q) list = list.filter(p => p.name.toLowerCase().includes(q));
+  host.innerHTML = list.map(p => {
+    const est = estimateTimezone(p.txs);
+    const chip = (est && est.conf.cls !== 'gray')
+      ? `<span class="chip ${est.conf.cls === 'green' ? 'green' : 'amber'}" style="margin-left:6px">${est.region.flag} ${esc(est.region.label)}</span>` : '';
+    return `<div class="li click" onclick="openProfile('${jsStr(p.name)}')">${avatarImg(p.name, 26)}
+      <div class="m"><div class="a">${esc(p.name)}${chip}</div><div class="b">${t('cuMeta', p.count, formatRelativeDate(p.lastIso))}</div></div>
+      <div class="amt">${fmtMoney(p.net)}</div></div>`;
+  }).join('') || `<div class="empty"><div class="fx">👥</div><p class="h">${t('rNoMatch')}</p></div>`;
+}
+
 /* ---------------- profile ---------------- */
 function openProfile(name) {
   const mine = analyticsAll.filter(tx => tx.buyer === name).sort((a, b) => new Date(b.time) - new Date(a.time));
@@ -1315,6 +1405,8 @@ function openProfile(name) {
   b.innerHTML = `
     <h3>${avatarImg(name, 30)} ${esc(name)}</h3>
     <p class="desc">${t('prSince', new Date(first).toLocaleDateString(dloc(), { day: 'numeric', month: 'short', year: 'numeric' }))}</p>
+    ${(() => { const est = estimateTimezone(mine); if (!est || est.conf.cls === 'gray') return '';
+      return `<p class="desc" style="margin-top:-6px">${est.region.flag} ${esc(est.region.label)} · ${esc(tzOffsetText(est.offset))} <span class="chip ${est.conf.cls === 'green' ? 'green' : 'amber'}">${esc(est.conf.label)}</span></p>`; })()}
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px">
       <div><div class="k-l">${t('prTotal')}</div><div class="k-v" style="font-size:22px;color:var(--mint)">${fmtMoney(total)}</div></div>
       <div><div class="k-l">${t('prSales')}</div><div class="k-v" style="font-size:22px">${mine.length}</div></div>
@@ -1677,8 +1769,17 @@ function applyStatic() {
 }
 
 /* ---------------- changelog ---------------- */
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 const CHANGELOG = [
+  { v: '3.1', date: '2026-06-16',
+    nl: [
+      'Nieuw klantenoverzicht: alle klanten doorzoekbaar op één plek, met totaal, aantal aankopen en laatste bezoek.',
+      'De geschatte regio per klant is terug, in het overzicht én in het klantprofiel, mét zekerheidslabel.'
+    ],
+    en: [
+      'New customer overview: every customer searchable in one place, with totals, purchase count and last visit.',
+      'The estimated region per customer is back, in the overview and the profile, with a confidence label.'
+    ] },
   { v: '3.0', date: '2026-06-16',
     nl: [
       'Volledig opnieuw ontworpen en herbouwd: warm blossom-thema, één rustige letterfamilie en alles op één pagina in een bento-overzicht.',
