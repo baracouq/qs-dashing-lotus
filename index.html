@@ -11,29 +11,32 @@
 <title>QS·INSIGHTS — Lotus shop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #0b0f14; --bg-panel: #131a22; --bg-panel-2: #1a232d;
-    --border: #232e3a; --border-soft: #1c2530;
-    --text: #e6edf3; --text-dim: #9aa6b3; --text-faint: #66727f;
-    --accent: #ffd166; --accent-2: #5ec46c; --blue: #5b8cff; --red: #ff6b6b;
-    --amber-soft: rgba(255,209,102,0.12); --green-soft: rgba(94,196,108,0.12);
-    --blue-soft: rgba(91,140,255,0.12); --red-soft: rgba(255,107,107,0.12);
-    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --bg: #07090f; --bg-panel: rgba(148,163,196,0.055); --bg-panel-2: rgba(148,163,196,0.10);
+    --border: rgba(148,163,196,0.16); --border-soft: rgba(148,163,196,0.09);
+    --text: #eef2fb; --text-dim: #9aa5b8; --text-faint: #647084;
+    --accent: #8b5cff; --accent-2: #2dd4a7; --blue: #38bdf8; --red: #fb7185; --amber: #fbbf24;
+    --amber-soft: rgba(251,191,36,0.14); --green-soft: rgba(45,212,167,0.14);
+    --blue-soft: rgba(56,189,248,0.14); --red-soft: rgba(251,113,133,0.14);
+    --grad-a: #8b5cff; --grad-b: #22d3ee;
+    --shadow: 0 10px 34px rgba(2,6,18,0.45);
     --mono: 'JetBrains Mono', ui-monospace, monospace;
-    --display: 'VT323', 'JetBrains Mono', monospace;
+    --display: 'Space Grotesk', 'Inter', sans-serif;
+    --body: 'Inter', system-ui, sans-serif;
     color-scheme: dark;
   }
   [data-theme="light"] {
-    --bg: #f4f1ea; --bg-panel: #ffffff; --bg-panel-2: #f0ece2;
-    --border: #ddd6c8; --border-soft: #e8e2d6;
-    --text: #1c2530; --text-dim: #55606b; --text-faint: #8a929b;
-    --accent: #c9952a; --accent-2: #3a9d4a; --blue: #2f5fd0; --red: #d64545;
-    --amber-soft: rgba(201,149,42,0.14); --green-soft: rgba(58,157,74,0.14);
-    --blue-soft: rgba(47,95,208,0.12); --red-soft: rgba(214,69,69,0.12);
-    --shadow: 0 4px 20px rgba(0,0,0,0.1);
+    --bg: #f3f5fb; --bg-panel: rgba(255,255,255,0.82); --bg-panel-2: rgba(15,23,42,0.05);
+    --border: rgba(15,23,42,0.12); --border-soft: rgba(15,23,42,0.07);
+    --text: #0e1424; --text-dim: #4b5568; --text-faint: #7c8698;
+    --accent: #7c4dff; --accent-2: #0fa77f; --blue: #0284c7; --red: #e11d48; --amber: #b45309;
+    --amber-soft: rgba(180,83,9,0.12); --green-soft: rgba(15,167,127,0.13);
+    --blue-soft: rgba(2,132,199,0.12); --red-soft: rgba(225,29,72,0.10);
+    --grad-a: #7c4dff; --grad-b: #06b6d4;
+    --shadow: 0 10px 30px rgba(15,23,42,0.10);
     color-scheme: light;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -275,6 +278,7 @@
   .cl-items li { font-size: 13px; color: var(--text-dim); margin: 4px 0; line-height: 1.5; }
 
   .stale-banner { display: flex; align-items: center; gap: 8px; background: rgba(255, 209, 102, 0.08); border: 1px solid var(--accent); color: var(--accent); border-radius: 12px; padding: 9px 12px; margin: 0 0 14px; font-family: var(--mono); font-size: 12px; line-height: 1.4; }
+  .data-age { display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11px; color: var(--text-faint); white-space: nowrap; }
 
   @media (min-width: 768px) {
     body { padding: 26px 30px 80px; }
@@ -286,14 +290,119 @@
     .heatmap { grid-template-columns: 40px repeat(24, 1fr); font-size: 10px; }
   }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* ================= V2 SKIN — flashy & modern ================= */
+  body { font-family: var(--body); background:
+      radial-gradient(1100px 500px at 85% -80px, rgba(139,92,255,0.13), transparent 60%),
+      radial-gradient(900px 460px at -10% 30%, rgba(34,211,238,0.10), transparent 55%),
+      var(--bg); }
+  [data-theme="light"] body { background:
+      radial-gradient(1100px 500px at 85% -80px, rgba(124,77,255,0.10), transparent 60%),
+      radial-gradient(900px 460px at -10% 30%, rgba(6,182,212,0.08), transparent 55%),
+      var(--bg); }
+  .aurora { position: fixed; border-radius: 50%; filter: blur(90px); opacity: .16; pointer-events: none; z-index: 0; }
+  .a1 { width: 480px; height: 480px; top: -160px; right: -120px; background: #8b5cff; animation: drift 26s ease-in-out infinite alternate; }
+  .a2 { width: 420px; height: 420px; bottom: -180px; left: -140px; background: #22d3ee; animation: drift 32s ease-in-out infinite alternate-reverse; }
+  .a3 { width: 300px; height: 300px; top: 40%; left: 55%; background: #2dd4a7; opacity: .09; animation: drift 40s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,26px) scale(1.12); } }
+  @media (prefers-reduced-motion: reduce) { .aurora { animation: none; } }
+  [data-theme="light"] .aurora { opacity: .10; }
+  .container { position: relative; z-index: 1; }
+  ::selection { background: rgba(139,92,255,.35); }
+
+  .brand .logo { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -0.5px; line-height: 1.05;
+    background: linear-gradient(92deg, var(--text) 0%, var(--grad-a) 55%, var(--grad-b) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .brand .logo .dot { -webkit-text-fill-color: var(--grad-b); }
+  .brand .logo .ver-btn { -webkit-text-fill-color: var(--text-faint); }
+  .tagline { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; font-weight: 500; letter-spacing: .2px; }
+
+  .icon-btn { border-radius: 999px; padding: 8px 12px; font-family: var(--body); font-weight: 600; backdrop-filter: blur(8px); background: var(--bg-panel); }
+  .icon-btn:hover { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,92,255,.12); }
+
+  .filter-btn { border-radius: 999px; padding: 7px 12px; font-family: var(--body); font-weight: 600; backdrop-filter: blur(8px); }
+  .filter-btn.active { background: linear-gradient(135deg, var(--grad-a), var(--grad-b)); border-color: transparent; color: #fff; box-shadow: 0 4px 16px rgba(139,92,255,.35); }
+
+  .tabs { gap: 6px; padding-bottom: 6px; }
+  .tab { border: 1px solid transparent; border-radius: 999px; padding: 8px 14px; font-family: var(--body); font-weight: 600; font-size: 12.5px; }
+  .tab:hover { background: var(--bg-panel); color: var(--text); }
+  .tab.active { color: #fff; border-color: transparent; border-bottom-color: transparent;
+    background: linear-gradient(135deg, var(--grad-a), var(--grad-b)); box-shadow: 0 4px 16px rgba(139,92,255,.30); }
+
+  .panel, .kpi, .hero { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 18px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: var(--shadow); }
+  .panel { padding: 18px; }
+  .panel-title { font-family: var(--body); letter-spacing: 1.4px; }
+
+  .hero { position: relative; padding: 20px; overflow: hidden; }
+  .hero::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+    background: linear-gradient(135deg, rgba(139,92,255,.55), rgba(34,211,238,.35), transparent 60%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+  .hero .eyebrow { color: var(--grad-b); font-weight: 700; }
+  .hero .big { font-family: var(--display); font-weight: 700; font-size: clamp(44px, 12vw, 62px); letter-spacing: -1.5px;
+    background: linear-gradient(92deg, var(--grad-a), var(--grad-b)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    font-variant-numeric: tabular-nums; }
+  .hero .stat .n { font-family: var(--display); font-size: 20px; font-weight: 700; }
+
+  .kpis { gap: 12px; }
+  .kpi { padding: 15px 16px; }
+  .kpi::before { height: 3px; background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); opacity: .85; }
+  .kpi.green { grid-column: 1 / -1; }
+  .kpi.green::before { background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); }
+  .kpi.blue::before { background: linear-gradient(90deg, var(--blue), var(--grad-b)); }
+  .kpi .label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--body); font-weight: 600; }
+  .kpi .value { font-family: var(--display); font-weight: 700; font-size: 34px; letter-spacing: -0.8px; font-variant-numeric: tabular-nums; }
+  .kpi.green .value { font-size: clamp(38px, 10vw, 48px);
+    background: linear-gradient(92deg, var(--grad-a), var(--grad-b)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .kpi .sub { font-family: var(--body); }
+
+  .pill { display: inline-flex; align-items: center; gap: 3px; font-family: var(--mono); font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.up { color: var(--accent-2); background: var(--green-soft); }
+  .pill.down { color: var(--red); background: var(--red-soft); }
+  .pill.flat { color: var(--text-faint); background: var(--bg-panel-2); }
+
+  .btn { border-radius: 12px; font-family: var(--body); font-weight: 600; backdrop-filter: blur(8px); }
+  .btn:hover { box-shadow: 0 0 0 3px rgba(139,92,255,.12); }
+  .btn.primary { background: linear-gradient(135deg, var(--grad-a), var(--grad-b)); border-color: transparent; color: #fff; box-shadow: 0 4px 14px rgba(139,92,255,.30); }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .btn.primary.danger { background: linear-gradient(135deg, #fb7185, #f43f5e); box-shadow: 0 4px 14px rgba(244,63,94,.30); }
+
+  .search { border-radius: 12px; font-family: var(--body); background: var(--bg-panel); backdrop-filter: blur(8px); }
+  .search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,92,255,.15); }
+
+  .bar-track { border-radius: 999px; height: 7px; background: var(--bg-panel-2); }
+  .bar-fill { border-radius: 999px; background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); }
+  .bar-fill.green { background: linear-gradient(90deg, #2dd4a7, #22d3ee); }
+  .bar-fill.blue { background: linear-gradient(90deg, #38bdf8, #22d3ee); }
+
+  .badge { border-radius: 999px; font-family: var(--body); font-weight: 600; }
+  .badge.amber { background: var(--amber-soft); color: var(--amber); }
+  .stock-card, .loan-card { border-radius: 16px; backdrop-filter: blur(10px); }
+  .stock-card.low { border-color: var(--amber); }
+  .stock-est .num { font-family: var(--display); font-weight: 700; }
+  .stock-est .num.low { color: var(--amber); }
+  .loan-bar { border-radius: 999px; }
+  .loan-bar > i { background: linear-gradient(90deg, #2dd4a7, #22d3ee); }
+  .loan-bar.warn > i { background: linear-gradient(90deg, var(--amber), #fb923c); }
+  .loan-bar.over > i { background: linear-gradient(90deg, #fb7185, #f43f5e); }
+  .loan-card .lc-amt { color: var(--grad-b); }
+
+  .stale-banner { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); border-radius: 14px; backdrop-filter: blur(10px); font-family: var(--body); font-weight: 600; }
+  .empty .art { font-family: var(--display); font-weight: 700; color: var(--grad-b); }
+  .modal { border-radius: 20px; }
+  .modal-bg { backdrop-filter: blur(8px); background: rgba(3,6,14,0.62); }
+  .heatmap .cell:hover { box-shadow: 0 0 0 1px var(--grad-b); }
+  .ver-btn { border-radius: 999px; font-family: var(--mono); }
+  .cl-ver { color: var(--grad-b); }
+  .data-age { font-family: var(--body); font-weight: 500; }
 </style>
 </head>
 <body>
+<div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
 <div class="container">
   <div class="topbar">
     <div class="brand">
-      <div class="logo"><span class="chev">&gt;</span>QS<span class="dot">·</span>INSIGHTS<button class="ver-btn" id="verBtn" onclick="openChangelog()">v1.0</button></div>
-      <div class="prompt"><span class="path">~/blossomcraft/lotus</span> $ shop --analytics<span class="caret"></span></div>
+      <div class="logo">QS<span class="dot">·</span>INSIGHTS<button class="ver-btn" id="verBtn" onclick="openChangelog()">v1.0</button></div>
+      <div class="tagline" data-i18n="tagline">Live shop-analytics · BlossomCraft</div>
     </div>
     <div class="actions">
       <button class="icon-btn" id="lockBtn" onclick="toggleEditLock()">🔒 Bekijken</button>
@@ -307,6 +416,7 @@
 
   <div class="metabar">
     <div class="sync readonly" id="sync"><span class="led"></span><span id="syncText">verbinden…</span></div>
+    <div class="data-age" id="dataAgeWrap" style="display:none">🕒 <span id="dataAge"></span></div>
     <div class="filters">
       <button class="filter-btn active" data-range="all" data-i18n="fAll" onclick="setDateFilter('all')">Alles</button>
       <button class="filter-btn" data-range="1d" data-i18n="fToday" onclick="setDateFilter('1d')">Vandaag</button>
@@ -469,6 +579,8 @@ const I18N = {
     loanExtend: 'Verleng', loanExtendTitle: 'Lening verlengen', loanExtendDesc: (i, b) => `Extra dagen voor ${i} aan ${b}.`, loanExtended: (d) => `Verlengd tot ${d}`,
     exportTitle: 'Exporteren', exportDesc: 'Download de verkopen van de huidige periode als CSV (aankopen van mede-eigenaren niet meegerekend).', exportBtn: '⬇ Download CSV', exportDone: (n) => `${n} verkopen geëxporteerd`, exportNone: 'Geen verkopen in de huidige selectie.',
     pwaHint: 'Tip: installeer dit dashboard als app. Android/Chrome: menu ⋮ → App installeren. iPhone/Safari: deelknop → Zet op beginscherm.',
+    dataAgeLabel: (rel) => `data ${rel}`,
+    tagline: 'Live shop-analytics · BlossomCraft', kpiVsPrev: 't.o.v. vorige periode',
     custSearchPh: 'Zoek klant…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> hoge besteder · <span class="badge green">stamklant</span> 5+ orders · <span class="badge blue">nieuw</span> eerste week · <span class="badge red">blijft weg</span> 30+ dagen stil · <span class="badge gray">groothandel</span> grote orders',
     tagVIP: 'VIP', tagRegular: 'stamklant', tagNew: 'nieuw', tagGone: 'blijft weg', tagWholesale: 'groothandel',
@@ -579,6 +691,8 @@ const I18N = {
     loanExtend: 'Extend', loanExtendTitle: 'Extend loan', loanExtendDesc: (i, b) => `Extra days for ${i} to ${b}.`, loanExtended: (d) => `Extended until ${d}`,
     exportTitle: 'Export', exportDesc: 'Download the sales of the current period as CSV (co-owner purchases excluded).', exportBtn: '⬇ Download CSV', exportDone: (n) => `Exported ${n} sales`, exportNone: 'No sales in the current selection.',
     pwaHint: 'Tip: install this dashboard as an app. Android/Chrome: menu ⋮ → Install app. iPhone/Safari: share button → Add to Home Screen.',
+    dataAgeLabel: (rel) => `data ${rel}`,
+    tagline: 'Live shop analytics · BlossomCraft', kpiVsPrev: 'vs previous period',
     custSearchPh: 'Search customer…', custLabelsTitle: 'Labels',
     custLabelsBody: '<span class="badge amber">VIP</span> high spender · <span class="badge green">regular</span> 5+ orders · <span class="badge blue">new</span> first week · <span class="badge red">churning</span> 30+ days quiet · <span class="badge gray">wholesale</span> large orders',
     tagVIP: 'VIP', tagRegular: 'regular', tagNew: 'new', tagGone: 'churning', tagWholesale: 'wholesale',
@@ -641,6 +755,41 @@ function dloc() { return lang === 'en' ? 'en-US' : 'nl-NL'; }
 
 /* ============ CHANGELOG ============ */
 const CHANGELOG = [
+  {
+    v: '2.1', date: '2026-06-16',
+    nl: [
+      'Blossom custom items worden herkend: hun eigen iconen komen rechtstreeks uit de Blossom-database (dagelijks ververst).',
+      'Op de Items-pagina zie je bij custom items nu ook hun zeldzaamheid.'
+    ],
+    en: [
+      'Blossom custom items are recognized: their own icons come straight from the Blossom database (refreshed daily).',
+      'The Items page now also shows the rarity of custom items.'
+    ]
+  },
+  {
+    v: '2.0', date: '2026-06-16',
+    nl: [
+      'Compleet nieuw, modern uiterlijk: gradients, glas-panelen en een frisse typografie, in donker en licht.',
+      'KPI\'s glashelder: omzet, verkopen, klanten en gemiddelde per verkoop tonen elk hun trend ten opzichte van de vorige periode.',
+      'Het omzetcijfer telt live op bij nieuwe verkopen.'
+    ],
+    en: [
+      'Completely new, modern look: gradients, glass panels and fresh typography, in dark and light.',
+      'Crystal-clear KPIs: revenue, sales, customers and average per sale each show their trend versus the previous period.',
+      'The revenue number counts up live when new sales arrive.'
+    ]
+  },
+  {
+    v: '1.9.1', date: '2026-06-16',
+    nl: [
+      'In de statusbalk zie je nu live hoe vers de verkoopdata is.',
+      'De pipeline kan volledig automatisch draaien via de Taakplanner en meldt storingen voortaan zelf in Discord.'
+    ],
+    en: [
+      'The status bar now shows live how fresh the sales data is.',
+      'The pipeline can run fully unattended via Task Scheduler and now reports failures to Discord by itself.'
+    ]
+  },
   {
     v: '1.9', date: '2026-06-16',
     nl: [
@@ -1013,6 +1162,7 @@ function applyLanguage() {
   if (ln && le) { ln.classList.toggle('primary', lang === 'nl'); le.classList.toggle('primary', lang === 'en'); }
   updateLockButton();
   updateSyncStatus();
+  updateStaleBanner();
 }
 function setLang(l) {
   if (l !== 'nl' && l !== 'en') return;
@@ -1111,11 +1261,64 @@ function slugify(name) {
   if (ITEM_SLUG_OVERRIDES[k]) return ITEM_SLUG_OVERRIDES[k];
   return k.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
+/* ---- Blossom custom items (blossom.atn.gg) ---- */
+let blossomItems = null;
+function blossomNorm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+function blossomIconFor(name) {
+  if (!blossomItems) return null;
+  const raw = String(name || '').trim().toLowerCase();
+  const hit = blossomItems.exact[raw];
+  if (hit) return hit;
+  // Normalized matching ONLY for decorated names (❀ ✦ ☠ …), so a vanilla
+  // item that shares its name with a custom one never gets the wrong icon.
+  if (/[^\x20-\x7e]/.test(raw)) return blossomItems.norm[blossomNorm(raw)] || null;
+  return null;
+}
+async function loadBlossomItems() {
+  try {
+    const cached = loadStorage('qs_blossom_v1', null);
+    if (cached && cached.t && (Date.now() - cached.t) < 24 * 3600000 && cached.exact) { blossomItems = cached; return; }
+  } catch (e) {}
+  const exact = {}, norm = {};
+  const pull = async (url, dir, info) => {
+    let rows = null;
+    try { const r = await fetch(url, { headers: { 'I-INCLUDED-INFO': info } }); if (r.ok) { const j = await r.json(); rows = j && j.data; } } catch (e) {}
+    if (!rows) { try { const r = await fetch(url); if (r.ok) { const j = await r.json(); rows = j && j.data; } } catch (e) {} }
+    (rows || []).forEach(it => {
+      if (!it || !it.ItemName || it.id == null) return;
+      const entry = { u: `https://www.blossom.atn.gg/static/images/${dir}/${it.id}.${it.ImageType || 'png'}`, r: it.RarityHuman || null };
+      exact[String(it.ItemName).trim().toLowerCase()] = entry;
+      const n = blossomNorm(it.ItemName); if (n) norm[n] = entry;
+    });
+    return !!(rows && rows.length);
+  };
+  const a = await pull('https://www.blossom.atn.gg/api/items', 'BlossomCraft_Icons', 'id;ItemName;ImageType;RarityHuman');
+  const b = await pull('https://www.blossom.atn.gg/api/miscitems', 'BlossomCraft_Misc_Icons', 'id;ItemName;ImageType');
+  if (a || b) {
+    blossomItems = { t: Date.now(), exact, norm };
+    try { saveStorage('qs_blossom_v1', blossomItems); } catch (e) {}
+    try { render(); } catch (e) {}
+  }
+}
+function blossomBadge(name) {
+  const b = blossomIconFor(name);
+  if (!b || !b.r) return '';
+  return ` <span class="badge" style="background:rgba(139,92,255,.14);color:var(--accent)">${esc(b.r)}</span>`;
+}
+function _icoErr(el) {
+  const steps = (el.dataset.alt || '').split('|').filter(Boolean);
+  const i = parseInt(el.dataset.i || '0', 10);
+  if (i < steps.length) { el.dataset.i = i + 1; el.src = steps[i]; }
+  else el.style.visibility = 'hidden';
+}
 function itemIcon(name, size = 26) {
   const slug = slugify(name);
   const item = `${ASSET}/item/${slug}.png`;
   const block = `${ASSET}/block/${slug}.png`;
-  return `<img class="icon-img" style="width:${size}px;height:${size}px" alt="" src="${item}" onerror="if(!this.dataset.b){this.dataset.b=1;this.src='${block}';}else{this.style.visibility='hidden';}">`;
+  const b = blossomIconFor(name);
+  const first = b ? b.u : item;
+  const alt = b ? [item, block] : [block];
+  return `<img class="icon-img" style="width:${size}px;height:${size}px" alt="" src="${first}" data-alt="${alt.join('|')}" onerror="_icoErr(this)">`;
 }
 function avatarImg(name, size = 28) {
   const u = `https://mc-heads.net/avatar/${encodeURIComponent(name || 'Steve')}/${size * 2}`;
@@ -1574,9 +1777,19 @@ function applyCustomRange() {
 
 /* ============ RENDER DISPATCHER ============ */
 function updateStaleBanner() {
-  const el = document.getElementById('staleBanner'); if (!el) return;
   let newest = 0, newestIso = null;
   allTransactions.forEach(tx => { const m = new Date(tx.time).getTime(); if (m > newest) { newest = m; newestIso = tx.time; } });
+  // Always-on freshness stamp in the metabar
+  const wrap = document.getElementById('dataAgeWrap');
+  if (wrap) {
+    if (newest) {
+      wrap.style.display = 'flex';
+      const sp = document.getElementById('dataAge');
+      if (sp) sp.textContent = t('dataAgeLabel', formatRelativeDate(newestIso));
+    } else wrap.style.display = 'none';
+  }
+  // Amber warning banner only when genuinely stale (>48h)
+  const el = document.getElementById('staleBanner'); if (!el) return;
   if (!newest || (Date.now() - newest) < 48 * 3600000) { el.style.display = 'none'; return; }
   el.style.display = 'flex';
   el.textContent = '⚠ ' + t('staleWarn', formatRelativeDate(newestIso));
@@ -1587,11 +1800,11 @@ function setupPWA() {
     const icon = (size) => {
       const c = document.createElement('canvas'); c.width = c.height = size;
       const x = c.getContext('2d');
-      x.fillStyle = '#0b0f14'; x.fillRect(0, 0, size, size);
-      x.fillStyle = '#ffd166'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillStyle = '#07090f'; x.fillRect(0, 0, size, size);
+      x.fillStyle = '#8b5cff'; x.textAlign = 'center'; x.textBaseline = 'middle';
       x.font = '700 ' + Math.round(size * 0.34) + 'px "JetBrains Mono", monospace';
       x.fillText('QS', size / 2, size * 0.46);
-      x.fillStyle = '#5ec46c'; x.fillRect(size * 0.31, size * 0.63, size * 0.38, Math.max(3, size * 0.045));
+      x.fillStyle = '#22d3ee'; x.fillRect(size * 0.31, size * 0.63, size * 0.38, Math.max(3, size * 0.045));
       return c.toDataURL('image/png');
     };
     const manifest = {
@@ -1636,6 +1849,7 @@ function render() {
   updateStockBadge();
   updateLoanBadge();
   updateStaleBanner();
+  animateHero();
 }
 function tabDiv(name, html) {
   return `<div class="tab-content ${activeTab === name ? 'active' : ''}" data-tab="${name}">${html}</div>`;
@@ -1652,6 +1866,45 @@ function weekRange(offsetWeeks) {
 }
 
 /* ============ OVERVIEW ============ */
+function periodWindows() {
+  const now = Date.now();
+  if (dateFilter === '1d') { const s = startOfDay(new Date()); return { pf: s - 86400000, pt: s }; }
+  if (dateFilter === '7d' || dateFilter === '30d' || dateFilter === '90d') {
+    const n = parseInt(dateFilter) * 86400000; return { pf: now - 2 * n, pt: now - n };
+  }
+  if (dateFilter === 'custom' && customFrom && customTo) {
+    const len = customTo - customFrom; return { pf: customFrom - len - 1, pt: customFrom - 1 };
+  }
+  return null; // 'all': geen vergelijkbare vorige periode
+}
+function pctDelta(cur, prev) { if (prev > 0) return (cur - prev) / prev * 100; return cur > 0 ? 100 : 0; }
+function deltaPill(p) {
+  if (p == null || !isFinite(p)) return '';
+  const flat = Math.abs(p) < 0.5;
+  const cls = flat ? 'flat' : (p > 0 ? 'up' : 'down');
+  const arrow = flat ? '=' : (p > 0 ? '▲' : '▼');
+  return `<span class="pill ${cls}" title="${t('kpiVsPrev')}">${arrow} ${p > 0 ? '+' : ''}${Math.round(p)}%</span>`;
+}
+
+let _lastHero = null;
+function animateHero() {
+  const el = document.getElementById('heroNet'); if (!el) return;
+  const target = parseFloat(el.dataset.target || '0');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (_lastHero === null || _lastHero === target || reduce || typeof requestAnimationFrame !== 'function') {
+    el.textContent = fmtMoney(target); _lastHero = target; return;
+  }
+  const from = _lastHero, t0 = performance.now(), dur = 700;
+  _lastHero = target;
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmtMoney(from + (target - from) * e);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 function renderOverview() {
   const total = sumNet(transactions);
   const count = transactions.length;
@@ -1671,6 +1924,17 @@ function renderOverview() {
   const twNet = sumNet(twTx), lwNet = sumNet(lwTx);
   const wowPct = lwNet > 0 ? Math.round((twNet - lwNet) / lwNet * 100) : (twNet > 0 ? 100 : 0);
 
+  // Trends t.o.v. de direct voorafgaande periode van gelijke lengte
+  const w = periodWindows();
+  let d = null;
+  if (w) {
+    const prevTx = analyticsAll.filter(tx => { const x = new Date(tx.time).getTime(); return x >= w.pf && x < w.pt; });
+    const pNet = sumNet(prevTx), pCount = prevTx.length;
+    const pBuyers = new Set(prevTx.map(x => x.buyer)).size;
+    const pAvg = pCount ? pNet / pCount : 0;
+    d = { net: pctDelta(total, pNet), count: pctDelta(count, pCount), buyers: pctDelta(buyers, pBuyers), avg: pctDelta(avg, pAvg) };
+  }
+
   const periodLabel = (dateFilter === 'custom' && customFrom && customTo)
     ? new Date(customFrom).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' }) + ' – ' + new Date(customTo).toLocaleDateString(dloc(), { day: 'numeric', month: 'short' })
     : ({ all: t('periodAll'), '1d': t('periodToday'), '7d': t('period7'), '30d': t('period30'), '90d': t('period90') }[dateFilter]);
@@ -1678,7 +1942,7 @@ function renderOverview() {
   let html = `
     <div class="hero">
       <div class="eyebrow">${t('ovTodayEyebrow')}</div>
-      <div class="big">${fmtMoney(todayNet).replace('$', '<span class="cur">$</span>')}</div>
+      <div class="big"><span id="heroNet" data-target="${todayNet}">${fmtMoney(todayNet)}</span></div>
       <div class="row">
         <div class="stat"><div class="n">${todayTx.length}</div><div class="l">${t('ovSales')}</div></div>
         <div class="stat"><div class="n">${todayBuyers}</div><div class="l">${t('ovCustomers')}</div></div>
@@ -1686,10 +1950,10 @@ function renderOverview() {
       </div>
     </div>
     <div class="kpis">
-      <div class="kpi green"><div class="label">${t('kpiRevenue')} (${esc(periodLabel)})</div><div class="value">${fmtMoney(total)}</div><div class="sub">${t('kpiRevSub')}</div></div>
-      <div class="kpi"><div class="label">${t('kpiSales')}</div><div class="value">${fmtNum(count)}</div><div class="sub">${t('kpiSalesSub')}</div></div>
-      <div class="kpi blue"><div class="label">${t('kpiCustomers')}</div><div class="value">${fmtNum(buyers)}</div><div class="sub">${t('kpiCustSub')}</div></div>
-      <div class="kpi"><div class="label">${t('kpiAvg')}</div><div class="value">${fmtMoney(avg)}</div><div class="sub">${t('kpiAvgSub')}</div></div>
+      <div class="kpi green"><div class="label"><span>${t('kpiRevenue')} · ${esc(periodLabel)}</span>${d ? deltaPill(d.net) : ''}</div><div class="value">${fmtMoney(total)}</div><div class="sub">${d ? t('kpiVsPrev') : t('kpiRevSub')}</div></div>
+      <div class="kpi"><div class="label"><span>${t('kpiSales')}</span>${d ? deltaPill(d.count) : ''}</div><div class="value">${fmtNum(count)}</div><div class="sub">${d ? t('kpiVsPrev') : t('kpiSalesSub')}</div></div>
+      <div class="kpi blue"><div class="label"><span>${t('kpiCustomers')}</span>${d ? deltaPill(d.buyers) : ''}</div><div class="value">${fmtNum(buyers)}</div><div class="sub">${d ? t('kpiVsPrev') : t('kpiCustSub')}</div></div>
+      <div class="kpi"><div class="label"><span>${t('kpiAvg')}</span>${d ? deltaPill(d.avg) : ''}</div><div class="value">${fmtMoney(avg)}</div><div class="sub">${d ? t('kpiVsPrev') : t('kpiAvgSub')}</div></div>
     </div>
     <div class="panel">
       <div class="panel-title">${t('ovRev14')}</div>
@@ -1731,7 +1995,7 @@ function renderItems() {
   let html = `<div class="panel"><div class="panel-title">${t('tabItems')} <span class="count">${arr.length}</span></div>`;
   arr.forEach(it => {
     const avgP = it.qty ? it.net / it.qty : 0;
-    html += `<div class="row-item">${itemIcon(it.item)}<div class="main"><div class="t1">${esc(it.item)}</div><div class="t2">${t('itemsSub', fmtNum(it.qty), it.count, fmtMoney(avgP), it.shops.size)}</div><div class="bar-track"><div class="bar-fill" style="width:${(it.qty / maxQty * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(it.net)}</div></div>`;
+    html += `<div class="row-item">${itemIcon(it.item)}<div class="main"><div class="t1">${esc(it.item)}${blossomBadge(it.item)}</div><div class="t2">${t('itemsSub', fmtNum(it.qty), it.count, fmtMoney(avgP), it.shops.size)}</div><div class="bar-track"><div class="bar-fill" style="width:${(it.qty / maxQty * 100).toFixed(0)}%"></div></div></div><div class="amount">${fmtMoney(it.net)}</div></div>`;
   });
   html += `</div>`;
   return html;
@@ -2096,7 +2360,7 @@ function buildCharts() {
     transactions.forEach(t => { const k = new Date(t.time).toISOString().slice(0, 10); if (k in map) map[k] += t.net; });
     charts.rev = new Chart(rev, {
       type: 'line',
-      data: { labels: days.map(d => d.slice(5)), datasets: [{ data: days.map(d => map[d]), borderColor: '#5ec46c', backgroundColor: 'rgba(94,196,108,0.12)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
+      data: { labels: days.map(d => d.slice(5)), datasets: [{ data: days.map(d => map[d]), borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,0.14)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => '$' + Math.round(i.parsed.y).toLocaleString('en-US') } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { color: grid } } } }
     });
   }
@@ -2113,7 +2377,7 @@ function buildCharts() {
   if (hourC) {
     charts.hour = new Chart(hourC, {
       type: 'bar',
-      data: { labels: Array.from({ length: 24 }, (_, i) => i), datasets: [{ data: hourly, backgroundColor: '#5b8cff', borderRadius: 2 }] },
+      data: { labels: Array.from({ length: 24 }, (_, i) => i), datasets: [{ data: hourly, backgroundColor: '#8b5cff', borderRadius: 3 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => t('actSalesCount', i.parsed.y) } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, precision: 0 }, grid: { color: grid } } } }
     });
   }
@@ -2122,7 +2386,7 @@ function buildCharts() {
     const order = [1, 2, 3, 4, 5, 6, 0], labels = L().weekdayMon;
     charts.weekday = new Chart(wkC, {
       type: 'bar',
-      data: { labels, datasets: [{ data: order.map(d => dayTotals[d]), backgroundColor: order.map(d => d === busiestDayIdx ? '#ffd166' : '#5b8cff'), borderRadius: 3 }] },
+      data: { labels, datasets: [{ data: order.map(d => dayTotals[d]), backgroundColor: order.map(d => d === busiestDayIdx ? '#22d3ee' : '#8b5cff'), borderRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => t('actSalesCount', i.parsed.y) } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 }, precision: 0 }, grid: { color: grid } } } }
     });
   }
@@ -2137,7 +2401,7 @@ function buildCharts() {
       cells += `<div class="dlabel">${days[di]}</div>`;
       for (let h = 0; h < 24; h++) {
         const v = heat[di][h]; const a = 0.05 + (v / max) * 0.85;
-        cells += `<div class="cell" style="background:rgba(255,209,102,${v ? a.toFixed(2) : 0.05})" title="${days[di]} ${h}:00 — ${v}"></div>`;
+        cells += `<div class="cell" style="background:rgba(139,92,255,${v ? a.toFixed(2) : 0.06})" title="${days[di]} ${h}:00 — ${v}"></div>`;
       }
     }
     hm.innerHTML = cells;
@@ -2379,7 +2643,7 @@ function showCustomerProfile(name) {
     if (_profileChart) { _profileChart.destroy(); _profileChart = null; }
     _profileChart = new Chart(cv, {
       type: 'bar',
-      data: { labels: months.map(m => m.label), datasets: [{ data: months.map(m => mmap[m.k]), backgroundColor: '#5ec46c', borderRadius: 3 }] },
+      data: { labels: months.map(m => m.label), datasets: [{ data: months.map(m => mmap[m.k]), backgroundColor: '#2dd4a7', borderRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => '$' + Math.round(i.parsed.y).toLocaleString('en-US') } } }, scales: { x: { ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: axis, font: { family: 'JetBrains Mono', size: 9 } }, grid: { color: 'rgba(128,128,128,0.12)' } } } }
     });
   }
@@ -2680,6 +2944,8 @@ async function init() {
   applyLanguage();
   updateVersionBadge();
   setupPWA();
+  loadBlossomItems();
+  if (window.Chart) { Chart.defaults.color = '#8b94a8'; Chart.defaults.borderColor = 'rgba(139,148,168,0.14)'; Chart.defaults.font.family = "'Inter', system-ui, sans-serif"; }
 
   // Load transaction data (public, no auth needed)
   try {
