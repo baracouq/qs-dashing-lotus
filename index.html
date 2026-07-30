@@ -595,6 +595,12 @@ const ASSET = 'https://cdn.jsdelivr.net/gh/InventivetalentDev/minecraft-assets@1
 const isExcludedBuyer = (name) => EXCLUDED_BUYERS.has((name || '').trim().toLowerCase());
 
 const EXCLUDED_BUYERS = new Set(['syncora', 'geertje', 'j_grubby', '_grouch']);
+// Buy shops: these items are sold TO us (we buy them in), so they are NOT our
+// sales. Like the co-owner buyers above, they stay in the archive but are
+// excluded from every sales view and from sell-stock. Matched on the plain
+// name so any decoration variant (❀ … ❀, ► … ◄) is caught.
+const EXCLUDED_ITEMS = new Set(['blossom petal', 'pinata shard']);
+const isBuyShopItem = (name) => EXCLUDED_ITEMS.has(String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim());
 
 let _writeBranch = 'main';
 
@@ -736,6 +742,7 @@ function buildStockCombos() {
   const combos = {};
   const src = allTransactions.length ? allTransactions : transactions;
   src.forEach(t => {
+    if (isBuyShopItem(t.item)) return;   // buy shops are not sell-stock
     const key = stockKey(t.item, t.shop);
     if (!combos[key]) combos[key] = { key, item: t.item, shop: t.shop, coords: coordsOf(t.shop), totalQty: 0, txs: [] };
     combos[key].totalQty += t.qty;
@@ -1170,7 +1177,7 @@ function triggerSync() {
   _syncTimer = setTimeout(pushState, 800);
 }
 
-function rebuildAnalyticsSet() { analyticsAll = allTransactions.filter(t => !isExcludedBuyer(t.buyer)); }
+function rebuildAnalyticsSet() { analyticsAll = allTransactions.filter(t => !isExcludedBuyer(t.buyer) && !isBuyShopItem(t.item)); }
 
 </script>
 
