@@ -11,7 +11,7 @@
 <title>QS·INSIGHTS — Lotus shop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -26,6 +26,7 @@
     --mono: 'JetBrains Mono', ui-monospace, monospace;
     --display: 'Space Grotesk', 'Inter', sans-serif;
     --body: 'Inter', system-ui, sans-serif;
+    --num: 'Inter', system-ui, sans-serif;
     color-scheme: dark;
   }
   [data-theme="light"] {
@@ -338,10 +339,10 @@
     background: linear-gradient(135deg, rgba(139,92,255,.55), rgba(34,211,238,.35), transparent 60%);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
   .hero .eyebrow { color: var(--grad-b); font-weight: 700; }
-  .hero .big { font-family: var(--display); font-weight: 700; font-size: clamp(44px, 12vw, 62px); letter-spacing: -1.5px;
+  .hero .big { font-family: var(--num); font-weight: 800; font-size: clamp(42px, 11vw, 58px); letter-spacing: -1px;
     background: linear-gradient(92deg, var(--grad-a), var(--grad-b)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     font-variant-numeric: tabular-nums; }
-  .hero .stat .n { font-family: var(--display); font-size: 20px; font-weight: 700; }
+  .hero .stat .n { font-family: var(--num); font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
   .kpis { gap: 12px; }
   .kpi { padding: 15px 16px; }
@@ -349,13 +350,13 @@
   .kpi.green { grid-column: 1 / -1; }
   .kpi.green::before { background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); }
   .kpi.blue::before { background: linear-gradient(90deg, var(--blue), var(--grad-b)); }
-  .kpi .label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--body); font-weight: 600; }
-  .kpi .value { font-family: var(--display); font-weight: 700; font-size: 34px; letter-spacing: -0.8px; font-variant-numeric: tabular-nums; }
+  .kpi .label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--body); font-weight: 600; font-size: 10.5px; letter-spacing: .7px; }
+  .kpi .value { font-family: var(--num); font-weight: 800; font-size: 30px; letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
   .kpi.green .value { font-size: clamp(38px, 10vw, 48px);
     background: linear-gradient(92deg, var(--grad-a), var(--grad-b)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
   .kpi .sub { font-family: var(--body); }
 
-  .pill { display: inline-flex; align-items: center; gap: 3px; font-family: var(--mono); font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 3px; font-family: var(--body); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
   .pill.up { color: var(--accent-2); background: var(--green-soft); }
   .pill.down { color: var(--red); background: var(--red-soft); }
   .pill.flat { color: var(--text-faint); background: var(--bg-panel-2); }
@@ -378,7 +379,7 @@
   .badge.amber { background: var(--amber-soft); color: var(--amber); }
   .stock-card, .loan-card { border-radius: 16px; backdrop-filter: blur(10px); }
   .stock-card.low { border-color: var(--amber); }
-  .stock-est .num { font-family: var(--display); font-weight: 700; }
+  .stock-est .num { font-family: var(--num); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.4px; }
   .stock-est .num.low { color: var(--amber); }
   .loan-bar { border-radius: 999px; }
   .loan-bar > i { background: linear-gradient(90deg, #2dd4a7, #22d3ee); }
