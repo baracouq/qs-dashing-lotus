@@ -252,7 +252,7 @@
 <div class="wrap">
 
   <div class="cmd">
-    <div class="mark"><span class="flower">✿</span><span class="name">QS<i>·</i>Insights</span><button class="ver" id="verBtn" onclick="openChangelog()">v3.0</button></div>
+    <div class="mark"><span class="flower">✿</span><span class="name">QS<i>·</i>Insights</span><button class="ver" id="verBtn" onclick="openChangelog()">v3.2</button></div>
     <button class="ib" id="lockBtn" onclick="toggleLock()">🔒</button>
     <button class="ib" id="langBtn" onclick="toggleLang()">EN</button>
     <button class="ib" onclick="toggleTheme()" id="themeBtn">☀</button>
@@ -1776,8 +1776,17 @@ function applyStatic() {
 }
 
 /* ---------------- changelog ---------------- */
-const APP_VERSION = '3.1';
+const APP_VERSION = '3.2';
 const CHANGELOG = [
+  { v: '3.2', date: '2026-07-30',
+    nl: [
+      'Opkoop-items tellen niet meer als verkoop: ❀ Blossom Petal ❀ en ► Pinata Shard ◄ worden overal uit omzet, topitems, klanten en voorraad gefilterd (ze blijven wel in het archief).',
+      'Versienummer nu zichtbaar in de balk, zodat je kunt controleren of een update echt live staat.'
+    ],
+    en: [
+      'Buy-in items no longer count as sales: ❀ Blossom Petal ❀ and ► Pinata Shard ◄ are filtered out of revenue, top items, customers and stock everywhere (they stay in the archive).',
+      'Version number now shown in the bar so you can check whether an update is actually live.'
+    ] },
   { v: '3.1', date: '2026-06-16',
     nl: [
       'Nieuw klantenoverzicht: alle klanten doorzoekbaar op één plek, met totaal, aantal aankopen en laatste bezoek.',
